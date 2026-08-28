@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Roadmap
 
-> Status: Phase 0 complete; implementation not started  
+> Status: Phase 1 / M1 baseline in progress; product implementation not started
 > Last updated: 2026-08-28
 
 ## 1. Delivery policy
@@ -27,12 +27,15 @@ Decision:
 - Use Mobilerun, AndroidWorld, MobileAgent, Open-AutoGLM, Android-MCP and hermes-mobile as scoped references.
 - Do not enter large-scale refactoring until ADR-0001–0003 and repository import are complete.
 
-Remaining Phase 0 exit prerequisites that require an actual repository:
+Repository prerequisites now have the following status:
 
-- Pin upstream SHAs and establish remote/upstream workflow.
-- Produce dependency/license SBOM from real builds.
-- Run baseline Hermes and Android builds/tests.
-- Record exact patches applied to third-party Android code.
+| Prerequisite | Status |
+|---|---|
+| Pin upstream SHAs and define upstream workflow | Proposed in ADR-0001 |
+| Record hermes-android license and import ledger | Complete; no source imported |
+| Run Hermes baseline checks | Recorded in [`docs/testing/phase-1-baseline.md`](docs/testing/phase-1-baseline.md); restricted-workspace suite is not green |
+| Run Android baseline build/tests | Blocked until CI provides JDK 17 and Android SDK 34 |
+| Produce dependency/license SBOM policy and artifacts | Pending HMR-002 |
 
 ## 3. First engineering backlog
 
@@ -157,4 +160,3 @@ Goal: prove a secure, observable vertical slice before porting the entire Androi
 - Vision-first automation.
 - Permanent automatic Skill Learning.
 - Supporting broad app catalogs before the five MVP tests are stable.
-
