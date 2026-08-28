@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 0 proposed architecture  
+> Status: Phase 1 governance baseline
 > Last reviewed: 2026-08-28  
 > No production implementation exists in the current workspace.
 
@@ -9,6 +9,10 @@
 Hermes Mobile Runtime will be built by **forking [`NousResearch/hermes-agent`](https://github.com/NousResearch/hermes-agent) as the primary repository** while keeping the fork delta small. Android execution primitives will be adapted from [`raulvidis/hermes-android`](https://github.com/raulvidis/hermes-android) with upstream provenance, not copied as an untracked code dump.
 
 The full evidence and comparison are in [`docs/research/open-source-comparison.md`](docs/research/open-source-comparison.md).
+
+Security inputs for implementation are maintained in
+[`docs/security/threat-model.md`](docs/security/threat-model.md) and
+[`docs/security/supply-chain-and-sbom.md`](docs/security/supply-chain-and-sbom.md).
 
 This decision separates two responsibilities:
 
@@ -253,4 +257,3 @@ If Hermes tool discovery requires a root `tools/` entry, it is a thin registrati
 - ADR-0006: Error taxonomy and bounded recovery policy.
 
 Phase 1 may bootstrap only enough code to validate ADR-0001–0003 and the `phone.current_app` vertical slice. See [`ROADMAP.md`](ROADMAP.md).
-

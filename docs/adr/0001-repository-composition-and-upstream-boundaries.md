@@ -1,6 +1,6 @@
 # ADR-0001: Repository Composition and Upstream Boundaries
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-28
 - Decision owners: Hermes Mobile Runtime maintainers
 - Phase: 1 / M1 Baseline

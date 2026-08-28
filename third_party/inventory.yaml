@@ -1,0 +1,80 @@
+schema_version: 1
+as_of_commit: 261302f58ddb55eae0bcef1f123bed5acb0dab91
+last_reviewed: "2026-08-28"
+policy: docs/security/supply-chain-and-sbom.md
+
+entries:
+  - id: nousresearch-hermes-agent
+    artifact_type: source_base
+    relationship: fork_base
+    reference_only: false
+    distributed: true
+    source:
+      repository: https://github.com/NousResearch/hermes-agent
+      revision: 31e41eed347f62de312e59ccc822b30a635d4aba
+    version: 0.20.6
+    license:
+      expression: MIT
+      notice: LICENSE
+      notice_sha256: 821556e6336796450ab852d375117b48a4887e71d255794fd6318d99982a5ab6
+    local_paths:
+      - .
+    modifications: downstream_mobile_runtime_documentation
+    distribution_scope: repository_and_future_release
+    review:
+      status: approved_base
+      owner: Hermes Mobile Runtime maintainers
+      date: "2026-08-28"
+
+  - id: raulvidis-hermes-android
+    artifact_type: source_reference
+    relationship: implementation_reference
+    reference_only: true
+    distributed: false
+    source:
+      repository: https://github.com/raulvidis/hermes-android
+      revision: fbd623840bdcf1b38c835c7d2973c7b667d55da8
+    version: 0.4.1
+    license:
+      expression: MIT
+      notice: third_party/notices/hermes-android-LICENSE.txt
+      notice_sha256: a6dbadb8acae262b20da52d7d1ea600fc736fc37e546563118bccbffddf05216
+    local_paths: []
+    modifications: none_imported
+    distribution_scope: none
+    provenance: third_party/notices/hermes-android.md
+    review:
+      status: approved_reference_only
+      owner: Hermes Mobile Runtime maintainers
+      date: "2026-08-28"
+
+  - id: sqlite-amalgamation-headers
+    artifact_type: vendored_source
+    relationship: inherited_from_fork_base
+    reference_only: false
+    distributed: conditional
+    source:
+      repository: https://sqlite.org/
+      revision: unresolved_source_archive
+    version: 3.50.4
+    license:
+      expression: LicenseRef-SQLite-Public-Domain
+      notice: embedded_in_source_headers
+    local_paths:
+      - native/fts5_cjk/vendor/sqlite3.h
+      - native/fts5_cjk/vendor/sqlite3ext.h
+    content_sha256:
+      native/fts5_cjk/vendor/sqlite3.h: abd1514e0351f79393d1be882830afdb40a8099e8257f311f0bfdf8486f11bea
+      native/fts5_cjk/vendor/sqlite3ext.h: 9a91de0d5e5ccc04ec59041275c67972d6f8894f7543a10033e387b69987beb5
+    modifications: unknown_inherited_state
+    distribution_scope: native_fts5_cjk_extension_when_built
+    review:
+      status: inherited_gap_source_archive_reconciliation_required
+      owner: Hermes upstream and Mobile Runtime release maintainers
+      date: "2026-08-28"
+
+declared_absent:
+  downstream_android_product: true
+  bundled_mobile_models: true
+  bundled_mobile_datasets: true
+  bundled_third_party_apks: true

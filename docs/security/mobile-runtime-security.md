@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Security
 
-> Status: Phase 0 security architecture  
+> Status: Phase 1 security baseline
 > Last reviewed: 2026-08-28  
 > Security-sensitive implementation must not proceed without ADR-0003 and a reviewed threat model.
 
@@ -17,7 +17,7 @@ The system must ensure:
 - UI, notifications, Skills, MCP and recovery cannot bypass policy;
 - sensitive data is minimized, protected and deletable.
 
-The open-source security findings motivating this design are recorded in [`docs/research/open-source-comparison.md`](docs/research/open-source-comparison.md).
+The open-source security findings motivating this design are recorded in [`docs/research/open-source-comparison.md`](../research/open-source-comparison.md). The detailed threat register and data lifecycle are maintained in [`threat-model.md`](threat-model.md).
 
 ## 2. Non-negotiable invariants
 
@@ -46,6 +46,10 @@ The open-source security findings motivating this design are recorded in [`docs/
 Risk is computed from the effective action, not the tool name. For example, tapping a “Send” button is L3 even though the primitive is `phone.tap`.
 
 ## 4. Threat model
+
+This section is the policy summary. Numbered threats, trust-boundary controls,
+verification evidence and residual decisions are normative in
+[`threat-model.md`](threat-model.md).
 
 ### 4.1 Adversaries and failures
 
@@ -120,6 +124,9 @@ Before a coordinate/accessibility action, Observer should identify the target se
 
 ## 7. Data classification and handling
 
+The formal D0–D4 classification, V0.1 maximum retention defaults and deletion
+requirements are defined in [`threat-model.md`](threat-model.md).
+
 | Data | Default sensitivity | Handling |
 |---|---:|---|
 | App/package/activity | Internal | Audit allowed with retention limit |
@@ -165,6 +172,9 @@ Shizuku/Shell is not part of V0.1. Future implementation requires all of:
 - explicit feature flag and supported-device policy.
 
 ## 11. Skills, MCP and supply chain
+
+Repository inventory, license disposition and release SBOM requirements are
+defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
 
 - Every Skill has provenance, version, content hash, permissions and validation evidence.
 - Skill installation/update is reviewed; auto-learned candidates are quarantined.
@@ -223,4 +233,3 @@ Until a full process is implemented:
 7. Record a security ADR/postmortem without publishing exploitable private details prematurely.
 
 Security questions and unresolved decisions must block the relevant capability rather than be left as runtime warnings.
-

@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Roadmap
 
-> Status: Phase 1 / M1 baseline in progress; product implementation not started
+> Status: Phase 1 governance in progress; product implementation not started
 > Last updated: 2026-08-28
 
 ## 1. Delivery policy
@@ -31,11 +31,12 @@ Repository prerequisites now have the following status:
 
 | Prerequisite | Status |
 |---|---|
-| Pin upstream SHAs and define upstream workflow | Proposed in ADR-0001 |
+| Pin upstream SHAs and define upstream workflow | Complete; ADR-0001 accepted |
 | Record hermes-android license and import ledger | Complete; no source imported |
 | Run Hermes baseline checks | Recorded in [`docs/testing/phase-1-baseline.md`](docs/testing/phase-1-baseline.md); restricted-workspace suite is not green |
 | Run Android baseline build/tests | Blocked until CI provides JDK 17 and Android SDK 34 |
-| Produce dependency/license SBOM policy and artifacts | Pending HMR-002 |
+| Produce dependency/license SBOM policy and artifacts | Policy and manual inventory in HMR-002; generated release artifacts pending CI |
+| Approve detailed threat model and data classification | In review under HMR-003 |
 
 ## 3. First engineering backlog
 
@@ -43,9 +44,9 @@ Repository prerequisites now have the following status:
 
 | ID | Task | Result |
 |---|---|---|
-| HMR-001 | ADR: repository composition and upstream boundaries | Fork/subtree/package policy and owner |
-| HMR-002 | Third-party license inventory and SBOM policy | Code/model/APK/data obligations separated |
-| HMR-003 | Threat model and data classification | Abuse cases, trust boundaries, retention |
+| HMR-001 | ADR: repository composition and upstream boundaries | Complete; ADR-0001 accepted |
+| HMR-002 | Third-party license inventory and SBOM policy | In review; code/model/APK/data obligations separated |
+| HMR-003 | Threat model and data classification | In review; abuse cases, trust boundaries, retention |
 | HMR-004 | ADR: Mobile Agent Protocol V0.1 | Schemas, versioning, idempotency, fixtures |
 | HMR-005 | ADR: executor-enforced Permission Gate | L0–L5 and non-bypassable confirmation |
 | HMR-006 | Android device/API compatibility matrix | Emulator + real-device plan |
