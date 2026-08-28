@@ -1,3 +1,11 @@
+# Hermes Mobile Runtime Security Addendum
+
+Hermes Mobile Runtime adds Android-device control, observation, notification and future privileged-capability surfaces to Hermes Agent. The mobile-specific threat model, permission levels (L0–L5), confirmation rules, audit requirements and V0.1 security constraints are documented in [docs/security/mobile-runtime-security.md](docs/security/mobile-runtime-security.md).
+
+The upstream Hermes Agent security policy remains applicable and is preserved below. Mobile implementation work must satisfy both policies. If they conflict, the more restrictive requirement applies.
+
+---
+
 # Hermes Agent Security Policy
 
 This document describes Hermes Agent's trust model, names the one
