@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 governance baseline
+> Status: Phase 1 protocol and security design in review
 > Last reviewed: 2026-08-28  
 > No production implementation exists in the current workspace.
 
@@ -13,6 +13,9 @@ The full evidence and comparison are in [`docs/research/open-source-comparison.m
 Security inputs for implementation are maintained in
 [`docs/security/threat-model.md`](docs/security/threat-model.md) and
 [`docs/security/supply-chain-and-sbom.md`](docs/security/supply-chain-and-sbom.md).
+The proposed wire boundary and non-bypassable enforcement design are in
+[`ADR-0002`](docs/adr/0002-mobile-agent-protocol-v0.1.md) and
+[`ADR-0003`](docs/adr/0003-permission-gate-enforcement.md).
 
 This decision separates two responsibilities:
 
@@ -115,6 +118,11 @@ The audit span begins at validation and ends only after verification, denial or 
 
 ## 8. Protocol V0.1
 
+The normative decision is
+[`ADR-0002`](docs/adr/0002-mobile-agent-protocol-v0.1.md). It separates the
+provider-facing Hermes alias, the canonical `phone.*` Runtime operation and the
+protected broker-to-device `AuthorizedAction`.
+
 V0.1 exposes only:
 
 - `phone.read_screen`
@@ -205,6 +213,12 @@ Policy has two enforcement points:
 1. Runtime PDP evaluates intent, parameters, user policy and current context.
 2. Device PEP validates the decision, expiry, device, request hash and confirmation binding immediately before capability execution.
 
+[`ADR-0003`](docs/adr/0003-permission-gate-enforcement.md) proposes the
+concrete isolation: the PDP/signing broker runs as a separate OS process and
+identity outside the Hermes planner sandbox, while Android independently
+enforces a short-lived exact-action authorization. Hermes never receives the
+policy signing key, device credential or confirmation receipt.
+
 L0–L5 policy is defined in [`SECURITY.md`](SECURITY.md). A Skill declares required permissions but cannot lower them. Recovery repeats the original permission decision only when the action hash and risk context remain unchanged.
 
 ## 11. Event and Skill boundaries
@@ -250,8 +264,8 @@ If Hermes tool discovery requires a root `tools/` entry, it is a thin registrati
 ## 14. Required ADRs before implementation expands
 
 - ADR-0001: Repository composition and upstream boundaries.
-- ADR-0002: Mobile Agent Protocol V0.1.
-- ADR-0003: Permission Gate enforcement.
+- ADR-0002: Mobile Agent Protocol V0.1 — proposed.
+- ADR-0003: Permission Gate enforcement — proposed.
 - ADR-0004: PhoneState consistency and artifact storage.
 - ADR-0005: Device identity, transport and key rotation.
 - ADR-0006: Error taxonomy and bounded recovery policy.
