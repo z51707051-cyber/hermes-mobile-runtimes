@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 protocol and security design in review
+> Status: Phase 1 P0 governance baseline
 > Last reviewed: 2026-08-28  
 > No production implementation exists in the current workspace.
 
@@ -13,7 +13,7 @@ The full evidence and comparison are in [`docs/research/open-source-comparison.m
 Security inputs for implementation are maintained in
 [`docs/security/threat-model.md`](docs/security/threat-model.md) and
 [`docs/security/supply-chain-and-sbom.md`](docs/security/supply-chain-and-sbom.md).
-The proposed wire boundary and non-bypassable enforcement design are in
+The accepted wire boundary and non-bypassable enforcement design are in
 [`ADR-0002`](docs/adr/0002-mobile-agent-protocol-v0.1.md) and
 [`ADR-0003`](docs/adr/0003-permission-gate-enforcement.md).
 
@@ -68,10 +68,16 @@ flowchart TD
     S --> R
 ```
 
-The logical deployment has two trust domains:
+The logical deployment has two locations containing the three trust domains
+defined by ADR-0003:
 
-- **Agent host:** Hermes Agent, Mobile Runtime server components, policy configuration and encrypted audit store.
-- **Android device:** bridge app, Accessibility/Notification services, native Intent/API adapters and the device-side Policy Enforcement Point.
+- **Agent host / planner domain:** Hermes Agent and untrusted Skills, plugins,
+  MCP/model inputs.
+- **Agent host / protected broker domain:** separately isolated Mobile Runtime
+  policy decision point, policy configuration and encrypted audit store.
+- **Android device / enforcement domain:** bridge app, device Policy
+  Enforcement Point, Accessibility/Notification services and native
+  Intent/API adapters.
 
 Transport must be authenticated, encrypted and replay-resistant. Development-only local transports may exist behind an explicit insecure build flag and must not be enabled in release builds.
 
@@ -252,6 +258,12 @@ If Hermes tool discovery requires a root `tools/` entry, it is a thin registrati
 
 ## 13. Testing architecture
 
+The normative API, emulator and physical-device baseline is
+[`docs/testing/android-compatibility-matrix.md`](docs/testing/android-compatibility-matrix.md):
+V0.1 has `minSdk` 30, builds against and targets API 36, blocks releases on API
+30/33/35/36 plus Pixel and Samsung device lanes, and treats API 37 as a
+non-blocking preview canary until explicitly promoted.
+
 - Pure unit tests for schema, policy, state diff, error and recovery decisions.
 - Python/Kotlin golden contract fixtures for protocol compatibility.
 - Fake Android capability provider for deterministic Runtime tests.
@@ -264,8 +276,8 @@ If Hermes tool discovery requires a root `tools/` entry, it is a thin registrati
 ## 14. Required ADRs before implementation expands
 
 - ADR-0001: Repository composition and upstream boundaries.
-- ADR-0002: Mobile Agent Protocol V0.1 — proposed.
-- ADR-0003: Permission Gate enforcement — proposed.
+- ADR-0002: Mobile Agent Protocol V0.1 — accepted.
+- ADR-0003: Permission Gate enforcement — accepted.
 - ADR-0004: PhoneState consistency and artifact storage.
 - ADR-0005: Device identity, transport and key rotation.
 - ADR-0006: Error taxonomy and bounded recovery policy.

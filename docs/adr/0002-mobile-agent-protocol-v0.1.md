@@ -1,6 +1,6 @@
 # ADR-0002: Mobile Agent Protocol V0.1
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-28
 - Decision owners: Hermes Mobile Runtime maintainers
 - Phase: 1 / HMR-004
