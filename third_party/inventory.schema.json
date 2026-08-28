@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermes-mobile-runtime.invalid/schemas/third-party-inventory-v1.json",
+  "title": "Hermes Mobile Runtime third-party inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "as_of_commit",
+    "last_reviewed",
+    "policy",
+    "entries",
+    "declared_absent"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "as_of_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "last_reviewed": { "type": "string", "format": "date" },
+    "policy": { "type": "string", "minLength": 1 },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    },
+    "declared_absent": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "artifact_type",
+        "relationship",
+        "reference_only",
+        "distributed",
+        "source",
+        "license",
+        "local_paths",
+        "modifications",
+        "distribution_scope",
+        "review"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "artifact_type": { "type": "string", "minLength": 1 },
+        "relationship": { "type": "string", "minLength": 1 },
+        "reference_only": { "type": "boolean" },
+        "distributed": {
+          "oneOf": [
+            { "type": "boolean" },
+            { "const": "conditional" }
+          ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "revision"],
+          "properties": {
+            "repository": { "type": "string", "minLength": 1 },
+            "revision": { "type": "string", "minLength": 1 }
+          }
+        },
+        "version": { "type": ["string", "number"] },
+        "license": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["expression", "notice"],
+          "properties": {
+            "expression": { "type": "string", "minLength": 1 },
+            "notice": { "type": "string", "minLength": 1 },
+            "notice_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        "local_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "content_sha256": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "modifications": { "type": "string", "minLength": 1 },
+        "distribution_scope": { "type": "string", "minLength": 1 },
+        "provenance": { "type": "string", "minLength": 1 },
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "owner", "date"],
+          "properties": {
+            "status": { "type": "string", "minLength": 1 },
+            "owner": { "type": "string", "minLength": 1 },
+            "date": { "type": "string", "format": "date" }
+          }
+        }
+      }
+    }
+  }
+}
