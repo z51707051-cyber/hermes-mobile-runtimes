@@ -1,6 +1,6 @@
 # ADR-0003: Executor-Enforced Permission Gate
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-28
 - Decision owners: Hermes Mobile Runtime maintainers
 - Phase: 1 / HMR-005

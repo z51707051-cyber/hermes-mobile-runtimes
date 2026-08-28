@@ -34,7 +34,7 @@ Repository prerequisites now have the following status:
 | Pin upstream SHAs and define upstream workflow | Complete; ADR-0001 accepted |
 | Record hermes-android license and import ledger | Complete; no source imported |
 | Run Hermes baseline checks | Recorded in [`docs/testing/phase-1-baseline.md`](docs/testing/phase-1-baseline.md); restricted-workspace suite is not green |
-| Run Android baseline build/tests | Blocked until CI provides JDK 17 and Android SDK 34 |
+| Run Android baseline build/tests | Blocked until CI provides JDK 17 plus SDK 34 for the untouched upstream baseline and SDK 36 for HMR-101 |
 | Produce dependency/license SBOM policy and artifacts | Policy and manual inventory in HMR-002; generated release artifacts pending CI |
 | Approve detailed threat model and data classification | Complete; Phase 1 baseline merged |
 
@@ -47,9 +47,9 @@ Repository prerequisites now have the following status:
 | HMR-001 | ADR: repository composition and upstream boundaries | Complete; ADR-0001 accepted |
 | HMR-002 | Third-party license inventory and SBOM policy | Complete; baseline policy and manual inventory merged |
 | HMR-003 | Threat model and data classification | Complete; abuse cases, trust boundaries and retention merged |
-| HMR-004 | ADR: Mobile Agent Protocol V0.1 | In review; schemas, versioning, idempotency and fixture contract |
-| HMR-005 | ADR: executor-enforced Permission Gate | In review; L0–L5, process isolation and exact-action confirmation |
-| HMR-006 | Android device/API compatibility matrix | Emulator + real-device plan |
+| HMR-004 | ADR: Mobile Agent Protocol V0.1 | Complete; ADR-0002 accepted |
+| HMR-005 | ADR: executor-enforced Permission Gate | Complete; ADR-0003 accepted |
+| HMR-006 | Android device/API compatibility matrix | In review; API 30/33/35/36 blocking, API 37 canary, Pixel + Samsung release gates |
 
 ### P0 Phase 1 foundation
 
@@ -88,6 +88,7 @@ Goal: prove a secure, observable vertical slice before porting the entire Androi
    - Pin Hermes Agent and hermes-android SHAs.
    - Establish third-party notice and patch inventory.
    - Build/test unmodified baselines.
+   - Apply the API/OEM/degradation baseline from [`docs/testing/android-compatibility-matrix.md`](docs/testing/android-compatibility-matrix.md).
 2. Protocol kernel
    - Approve ADR-0002.
    - Implement schemas, codec, compatibility negotiation and golden fixtures.
