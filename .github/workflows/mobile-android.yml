@@ -105,6 +105,16 @@ jobs:
             cyclonedxBom
           git diff --exit-code -- gradle/verification-metadata.xml app/gradle.lockfile gradle.lockfile
 
+      - name: Report Android lint findings
+        if: failure()
+        run: |
+          set -euo pipefail
+          mapfile -t reports < <(find app/build -name 'lint-results-*.txt' -type f -print | LC_ALL=C sort)
+          for report in "${reports[@]}"; do
+            echo "### $report"
+            sed -n '1,400p' "$report"
+          done
+
       - name: Collect dependency metadata
         if: always()
         run: |

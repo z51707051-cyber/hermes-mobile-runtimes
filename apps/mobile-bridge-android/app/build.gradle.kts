@@ -36,6 +36,9 @@ android {
     lint {
         abortOnError = true
         checkDependencies = true
+        // HMR-006 intentionally holds the release baseline at stable API 36.
+        // API 37 remains a canary until an explicit compatibility review.
+        disable += "OldTargetApi"
         warningsAsErrors = true
     }
 
@@ -49,4 +52,3 @@ android {
 dependencies {
     testImplementation("junit:junit:4.13.2")
 }
-
