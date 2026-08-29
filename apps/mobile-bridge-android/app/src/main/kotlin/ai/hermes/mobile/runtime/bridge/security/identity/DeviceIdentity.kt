@@ -6,6 +6,7 @@ import java.util.Base64
 
 internal enum class IdentitySecurityLevel {
     SOFTWARE,
+    HARDWARE_BACKED,
     TRUSTED_ENVIRONMENT,
     STRONGBOX,
     UNKNOWN,

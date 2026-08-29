@@ -26,7 +26,7 @@ notifications, screenshots, Intent, Shell, Shizuku or any `phone.*` tool.
 | Network config | Cleartext false; Android system trust only; no debug/user CA override |
 | Endpoint | Exact HTTPS `/v0/enroll`; no URL credentials, query token or fragment |
 | TLS | Enable only TLS 1.3 and 1.2; require HTTPS endpoint identification |
-| Identity | Device id is a stable SHA-256 SPKI binding; private key is non-exportable |
+| Identity | Device id is a stable SHA-256 SPKI binding; private key is non-exportable; API 30 does not overclaim an exact hardware tier |
 | Replay | Strict next sequence, 16–64-byte nonce, 30-second authorization maximum |
 | Persistence | Record before accept; restart keeps state; read/write corruption fails closed |
 | Backup | Keystore keys and replay/enrollment state cannot move to another device |

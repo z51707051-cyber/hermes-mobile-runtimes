@@ -83,7 +83,9 @@ The bridge creates the identity key with `AndroidKeyStore`, curve
 
 1. Prefer StrongBox only when the device advertises it.
 2. If StrongBox rejects this supported key profile, retry in ordinary Android
-   Keystore and record the actual `KeyInfo.securityLevel`.
+   Keystore. API 31+ records the exact `KeyInfo.securityLevel`; API 30 records
+   hardware-backed versus software because that platform cannot safely report
+   the newer exact level.
 3. Production enrollment requires `TRUSTED_ENVIRONMENT` or `STRONGBOX` by
    default. A future explicit compatibility policy may permit a software-backed
    key, but it cannot silently claim hardware protection.
@@ -326,7 +328,8 @@ Before a phone capability is enabled:
    route.
 3. Device identity private material cannot be exported and backup/restore does
    not preserve enrollment.
-4. StrongBox fallback reports the actual TEE/software level.
+4. StrongBox fallback reports exact security level on API 31+ and the truthful
+   hardware-backed/software distinction on API 30.
 5. Invalid attestation root, revoked chain, wrong challenge and altered SPKI
    fail broker validation.
 6. Replayed nonce/sequence, sequence gap, expired authorization and future time
