@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hermes Mobile Runtime</string>
+    <string name="bootstrap_title">%1$s bootstrap</string>
+    <string name="bootstrap_status">%1$s</string>
+    <string name="capabilities_disabled">No device capabilities are enabled.</string>
+</resources>
+

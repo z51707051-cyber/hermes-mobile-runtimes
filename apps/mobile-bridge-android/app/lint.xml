@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+      HMR-006 intentionally holds compileSdk/targetSdk at the stable API 36
+      release lane. API 37 remains a canary until an explicit compatibility
+      review promotes it.
+    -->
+    <issue id="OldTargetApi">
+        <ignore path="build.gradle.kts" />
+    </issue>
+    <issue id="GradleDependency">
+        <ignore regexp="compileSdk" />
+    </issue>
+
+    <!-- AGP 9.3.2 declares Gradle 9.5.0 as its compatible default baseline. -->
+    <issue id="AndroidGradlePluginVersion">
+        <ignore regexp="Gradle than 9\.5\.0" />
+    </issue>
+</lint>

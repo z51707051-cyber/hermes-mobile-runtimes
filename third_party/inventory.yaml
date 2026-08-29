@@ -1,6 +1,6 @@
 schema_version: 1
-as_of_commit: 261302f58ddb55eae0bcef1f123bed5acb0dab91
-last_reviewed: "2026-08-28"
+as_of_commit: 06339e02a0251951630db0a3b9e1b6c55e968114
+last_reviewed: "2026-08-29"
 policy: docs/security/supply-chain-and-sbom.md
 
 entries:
@@ -48,6 +48,36 @@ entries:
       owner: Hermes Mobile Runtime maintainers
       date: "2026-08-28"
 
+  - id: gradle-wrapper-9-5-0
+    artifact_type: build_bootstrap_binary
+    relationship: vendored_build_tool
+    reference_only: false
+    distributed: true
+    source:
+      repository: https://github.com/gradle/gradle
+      revision: 3fe117d68f3907790f3809f121aa36303a9151f8
+    version: 9.5.0
+    license:
+      expression: Apache-2.0
+      notice: third_party/notices/gradle-9.5.0-LICENSE.txt
+      notice_sha256: cf234c4188d773406f640bf89be680d9288f40ff96901c70d643fcea96ad46df
+    local_paths:
+      - apps/mobile-bridge-android/gradlew
+      - apps/mobile-bridge-android/gradlew.bat
+      - apps/mobile-bridge-android/gradle/wrapper/gradle-wrapper.jar
+      - apps/mobile-bridge-android/gradle/wrapper/gradle-wrapper.properties
+    content_sha256:
+      apps/mobile-bridge-android/gradlew: 45bda8deaef01b732f07bd317f962a736e349c6faa6662829bc0f41293b51212
+      apps/mobile-bridge-android/gradlew.bat: 64ee0217063be57a980927455b295fdfc9a6b8ff49e3f7bfb4429b5d8a2f7686
+      apps/mobile-bridge-android/gradle/wrapper/gradle-wrapper.jar: 497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
+    modifications: wrapper_properties_pins_final_distribution_and_sha256
+    distribution_scope: repository_build_bootstrap
+    provenance: third_party/notices/gradle-wrapper.md
+    review:
+      status: approved_build_bootstrap
+      owner: Hermes Mobile Runtime maintainers
+      date: "2026-08-29"
+
   - id: sqlite-amalgamation-headers
     artifact_type: vendored_source
     relationship: inherited_from_fork_base
@@ -74,7 +104,7 @@ entries:
       date: "2026-08-28"
 
 declared_absent:
-  downstream_android_product: true
+  downstream_android_product: false
   bundled_mobile_models: true
   bundled_mobile_datasets: true
   bundled_third_party_apks: true

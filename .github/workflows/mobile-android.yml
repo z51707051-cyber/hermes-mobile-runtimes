@@ -1,0 +1,193 @@
+name: Mobile Android bootstrap
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile-bridge-android/**"
+      - "scripts/android/**"
+      - "tests/mobile/**"
+      - "third_party/**"
+      - "docs/testing/android-bootstrap.md"
+      - ".github/workflows/mobile-android.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile-bridge-android/**"
+      - "scripts/android/**"
+      - "tests/mobile/**"
+      - "third_party/**"
+      - "docs/testing/android-bootstrap.md"
+      - ".github/workflows/mobile-android.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-android-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bootstrap:
+    name: Build, test and inspect minimal APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: apps/mobile-bridge-android
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+
+      - name: Install pinned Android packages
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Verify vendored Gradle wrapper
+        run: |
+          set -euo pipefail
+          echo "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7  gradle/wrapper/gradle-wrapper.jar" | sha256sum -c -
+          ./gradlew --version
+
+      - name: Verify source manifest policy
+        run: python3 ../../scripts/android/verify_android_bootstrap.py app/src/main/AndroidManifest.xml
+
+      - name: Detect dependency metadata bootstrap
+        id: metadata
+        run: |
+          set -euo pipefail
+          if [[ -f gradle/verification-metadata.xml && -f app/gradle.lockfile ]]; then
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate dependency verification and lock metadata
+        if: steps.metadata.outputs.bootstrap == 'true'
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon \
+            --write-locks \
+            --write-verification-metadata sha256 \
+            :app:testDebugUnitTest \
+            :app:lintDebug \
+            :app:assembleDebug \
+            cyclonedxBom
+
+      - name: Build with strict dependency verification
+        if: steps.metadata.outputs.bootstrap == 'false'
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon \
+            --dependency-verification=strict \
+            :app:testDebugUnitTest \
+            :app:lintDebug \
+            :app:assembleDebug \
+            cyclonedxBom
+          git diff --exit-code -- gradle/verification-metadata.xml app/gradle.lockfile gradle.lockfile
+
+      - name: Report Android lint findings
+        if: failure()
+        run: |
+          set -euo pipefail
+          mapfile -t reports < <(find app/build -name 'lint-results-*.txt' -type f -print | LC_ALL=C sort)
+          for report in "${reports[@]}"; do
+            echo "### $report"
+            sed -n '1,400p' "$report"
+          done
+
+      - name: Collect dependency metadata
+        if: always()
+        run: |
+          set -euo pipefail
+          report_dir="build/reports/hmr/dependency-metadata"
+          mkdir -p "$report_dir/gradle" "$report_dir/app"
+          [[ ! -f gradle/verification-metadata.xml ]] || cp gradle/verification-metadata.xml "$report_dir/gradle/"
+          [[ ! -f app/gradle.lockfile ]] || cp app/gradle.lockfile "$report_dir/app/"
+          [[ ! -f gradle.lockfile ]] || cp gradle.lockfile "$report_dir/"
+
+      - name: Inspect built APK
+        if: success()
+        run: |
+          set -euo pipefail
+          apk="app/build/outputs/apk/debug/app-debug.apk"
+          report_dir="build/reports/hmr/apk"
+          mkdir -p "$report_dir"
+          apkanalyzer manifest print "$apk" > "$report_dir/AndroidManifest.xml"
+          apkanalyzer files list "$apk" | LC_ALL=C sort > "$report_dir/packaged-files.txt"
+          sha256sum "$apk" > "$report_dir/app-debug.apk.sha256"
+          python3 ../../scripts/android/verify_android_bootstrap.py "$report_dir/AndroidManifest.xml"
+          if grep -Ei '(secret|credential|\.pem$|\.key$|\.p12$|\.jks$|\.keystore$)' "$report_dir/packaged-files.txt"; then
+            echo "forbidden secret-like file name found in APK" >&2
+            exit 1
+          fi
+
+      - name: Collect and validate CycloneDX SBOM
+        if: success()
+        run: |
+          set -euo pipefail
+          report_dir="build/reports/hmr/sbom"
+          build_source="build/reports/cyclonedx"
+          apk_source="app/build/reports/cyclonedx-direct"
+          mkdir -p "$report_dir"
+          test -f "$build_source/bom.json"
+          test -f "$build_source/bom.xml"
+          test -f "$apk_source/bom.json"
+          test -f "$apk_source/bom.xml"
+          cp "$build_source/bom.json" "$report_dir/build-bom.json"
+          cp "$build_source/bom.xml" "$report_dir/build-bom.xml"
+          cp "$apk_source/bom.json" "$report_dir/apk-bom.json"
+          cp "$apk_source/bom.xml" "$report_dir/apk-bom.xml"
+          jq -e '
+            .bomFormat == "CycloneDX" and
+            .metadata.component.type == "application" and
+            .metadata.component.name == "hermes-mobile-runtime-android" and
+            .metadata.licenses[0].license.name == "MIT" and
+            (.components | type == "array")
+          ' "$report_dir/apk-bom.json" >/dev/null
+
+      - name: Upload dependency bootstrap metadata
+        if: always() && steps.metadata.outputs.bootstrap == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hmr-101-gradle-metadata
+          path: apps/mobile-bridge-android/build/reports/hmr/dependency-metadata
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Require reviewed dependency metadata
+        if: steps.metadata.outputs.bootstrap == 'true'
+        run: |
+          echo "Generated dependency locks and verification metadata must be reviewed and committed." >&2
+          exit 1
+
+      - name: Upload Android review evidence
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hmr-101-android-evidence
+          path: |
+            apps/mobile-bridge-android/app/build/outputs/apk/debug/app-debug.apk
+            apps/mobile-bridge-android/build/reports/hmr/apk
+            apps/mobile-bridge-android/build/reports/hmr/sbom
+          if-no-files-found: error
+          retention-days: 14
