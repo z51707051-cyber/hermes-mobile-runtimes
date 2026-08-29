@@ -36,9 +36,7 @@ android {
     lint {
         abortOnError = true
         checkDependencies = true
-        // HMR-006 intentionally holds the release baseline at stable API 36.
-        // API 37 remains a canary until an explicit compatibility review.
-        disable += "OldTargetApi"
+        lintConfig = file("lint.xml")
         warningsAsErrors = true
     }
 
