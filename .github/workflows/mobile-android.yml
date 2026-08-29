@@ -146,15 +146,12 @@ jobs:
         run: |
           set -euo pipefail
           report_dir="build/reports/hmr/sbom"
+          source_dir="build/reports/cyclonedx"
           mkdir -p "$report_dir"
-          mapfile -t sboms < <(find . -path '*/build/reports/cyclonedx*/*' \( -name 'bom.json' -o -name 'bom.xml' \) -print | LC_ALL=C sort)
-          if [[ "${#sboms[@]}" -eq 0 ]]; then
-            echo "CycloneDX SBOM was not generated" >&2
-            exit 1
-          fi
-          cp "${sboms[@]}" "$report_dir/"
+          test -f "$source_dir/bom.json"
+          test -f "$source_dir/bom.xml"
+          cp "$source_dir/bom.json" "$source_dir/bom.xml" "$report_dir/"
           json_sbom="$report_dir/bom.json"
-          test -f "$json_sbom"
           jq -e '.bomFormat == "CycloneDX" and (.components | type == "array")' "$json_sbom" >/dev/null
 
       - name: Upload dependency bootstrap metadata
