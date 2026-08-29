@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -15,6 +16,7 @@ COMPONENT_TAGS = ("activity", "activity-alias", "service", "receiver", "provider
 PERMISSION_TAGS = ("uses-permission", "uses-permission-sdk-23")
 ALLOWED_PERMISSIONS = {"android.permission.INTERNET"}
 NETWORK_SECURITY_CONFIG = "@xml/network_security_config"
+COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
 
 
@@ -22,7 +24,27 @@ def _android(element: ET.Element, attribute: str) -> str | None:
     return element.get(f"{ANDROID}{attribute}")
 
 
-def validate_manifest(path: Path) -> list[str]:
+def _compiled_reference_matches(
+    value: str | None,
+    resource_table: str | None,
+) -> bool:
+    if value is None or resource_table is None:
+        return False
+    match = COMPILED_REFERENCE.fullmatch(value)
+    if match is None:
+        return False
+    resource_id = re.escape(match.group(1).lower())
+    resource_name = r"(?:[^\\s:]+:)?xml/network_security_config"
+    return re.search(
+        rf"(?im)^\\s*resource\\s+{resource_id}\\s+{resource_name}(?::|\\s|$)",
+        resource_table,
+    ) is not None
+
+
+def validate_manifest(
+    path: Path,
+    resource_table: str | None = None,
+) -> list[str]:
     """Return all HMR-102 manifest policy violations."""
 
     try:
@@ -52,7 +74,10 @@ def validate_manifest(path: Path) -> list[str]:
     if _android(application, "usesCleartextTraffic") != "false":
         errors.append("application android:usesCleartextTraffic must be false")
     network_security_config = _android(application, "networkSecurityConfig")
-    if network_security_config != NETWORK_SECURITY_CONFIG:
+    if (
+        network_security_config != NETWORK_SECURITY_CONFIG
+        and not _compiled_reference_matches(network_security_config, resource_table)
+    ):
         errors.append(
             "application android:networkSecurityConfig must reference "
             f"{NETWORK_SECURITY_CONFIG}; found "
@@ -200,12 +225,24 @@ def main() -> int:
     parser.add_argument("--network-security-config", required=True, type=Path)
     parser.add_argument("--full-backup-rules", required=True, type=Path)
     parser.add_argument("--data-extraction-rules", required=True, type=Path)
+    parser.add_argument("--compiled-resource-table", type=Path)
     args = parser.parse_args()
+
+    resource_table: str | None = None
+    if args.compiled_resource_table is not None:
+        try:
+            resource_table = args.compiled_resource_table.read_text(encoding="utf-8")
+        except OSError as exc:
+            print(
+                f"cannot read resource table {args.compiled_resource_table}: {exc}",
+                file=sys.stderr,
+            )
+            return 1
 
     failures = {
         str(path): errors
         for path in args.manifests
-        if (errors := validate_manifest(path))
+        if (errors := validate_manifest(path, resource_table))
     }
     network_errors = validate_network_security_config(args.network_security_config)
     if network_errors:
