@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 P0 governance baseline
-> Last reviewed: 2026-08-28  
-> No production implementation exists in the current workspace.
+> Status: Phase 1 Android bootstrap in review
+> Last reviewed: 2026-08-29
+> The Android module is a zero-capability build skeleton; no phone tool is implemented.
 
 ## 1. Decision
 
@@ -97,6 +97,13 @@ Transport must be authenticated, encrypted and replay-resistant. Development-onl
 | Audit | Link intent, plan, calls, states, permissions, errors and result | Persist raw sensitive content by default |
 | Android Capability Layer | Accessibility, screenshot, notifications, Intent/native APIs | Decide business permissions or planning |
 | Android PEP | Validate device/session/action authorization immediately before execution | Trust a tool name without a policy decision |
+
+The physical Android project now lives in `apps/mobile-bridge-android/`.
+HMR-101 intentionally contains only a launcher and build/test controls. It
+requests no Android permissions, exposes no capability service and provides no
+transport endpoint. This preserves the ADR-0003 rule that device authority is
+introduced only behind an Android PEP; the launcher is not a PEP or a command
+channel.
 
 ## 7. Action lifecycle
 

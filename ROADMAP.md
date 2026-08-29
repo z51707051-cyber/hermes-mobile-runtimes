@@ -1,7 +1,7 @@
 # Hermes Mobile Runtime Roadmap
 
-> Status: Phase 1 governance in progress; product implementation not started
-> Last updated: 2026-08-28
+> Status: Phase 1 foundation in progress; Android bootstrap in review
+> Last updated: 2026-08-29
 
 ## 1. Delivery policy
 
@@ -49,13 +49,13 @@ Repository prerequisites now have the following status:
 | HMR-003 | Threat model and data classification | Complete; abuse cases, trust boundaries and retention merged |
 | HMR-004 | ADR: Mobile Agent Protocol V0.1 | Complete; ADR-0002 accepted |
 | HMR-005 | ADR: executor-enforced Permission Gate | Complete; ADR-0003 accepted |
-| HMR-006 | Android device/API compatibility matrix | In review; API 30/33/35/36 blocking, API 37 canary, Pixel + Samsung release gates |
+| HMR-006 | Android device/API compatibility matrix | Complete; API 30/33/35/36 blocking, API 37 canary, Pixel + Samsung release gates |
 
 ### P0 Phase 1 foundation
 
 | ID | Task | Result |
 |---|---|---|
-| HMR-101 | Bootstrap Android bridge with upstream provenance | Minimal-permission reproducible APK |
+| HMR-101 | Bootstrap Android bridge with upstream provenance | In review; zero-permission skeleton, pinned build and CI evidence lane |
 | HMR-102 | TLS-only enrollment, device identity and replay defense | Secure transport baseline |
 | HMR-103 | Protocol codec and compatibility negotiation | Python/Kotlin golden contract tests |
 | HMR-104 | Capability Registry and Tool Router | Only authorized execution path |
