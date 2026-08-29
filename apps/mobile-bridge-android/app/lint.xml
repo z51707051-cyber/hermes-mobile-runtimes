@@ -6,7 +6,7 @@
       review promotes it.
     -->
     <issue id="OldTargetApi">
-        <ignore regexp="targetSdk" />
+        <ignore path="build.gradle.kts" />
     </issue>
     <issue id="GradleDependency">
         <ignore regexp="compileSdk" />
@@ -17,4 +17,3 @@
         <ignore regexp="Gradle than 9\.5\.0" />
     </issue>
 </lint>
-
