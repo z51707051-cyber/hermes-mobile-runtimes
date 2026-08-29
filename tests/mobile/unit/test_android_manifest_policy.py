@@ -38,6 +38,43 @@ def test_accepts_current_transport_manifest_and_network_policy() -> None:
     )
 
 
+def test_accepts_compiled_network_security_reference_only_when_table_matches(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_xml(
+        tmp_path,
+        "AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <uses-permission android:name="android.permission.INTERNET" />
+          <application android:allowBackup="false"
+              android:usesCleartextTraffic="false"
+              android:networkSecurityConfig="@ref/0x7f030002">
+            <activity android:name=".MainActivity" android:exported="true">
+              <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+              </intent-filter>
+            </activity>
+          </application>
+        </manifest>
+        """,
+    )
+    matching_table = (
+        "resource 0x7f030002 ai.hermes.mobile.runtime.bridge:"
+        "xml/network_security_config:\n"
+    )
+
+    assert VERIFIER.validate_manifest(manifest, matching_table) == []
+    assert VERIFIER.validate_manifest(
+        manifest,
+        "resource 0x7f030002 ai.hermes.mobile.runtime.bridge:xml/backup_rules:\n",
+    ) == [
+        "application android:networkSecurityConfig must reference "
+        "@xml/network_security_config; found @ref/0x7f030002"
+    ]
+
+
 def test_rejects_any_permission_beyond_internet(tmp_path: Path) -> None:
     manifest = _write_xml(
         tmp_path,
@@ -91,7 +128,8 @@ def test_rejects_exported_service_and_insecure_application_defaults(
     assert VERIFIER.validate_manifest(manifest) == [
         "application android:allowBackup must be false",
         "application android:usesCleartextTraffic must be false",
-        "application android:networkSecurityConfig must reference @xml/network_security_config",
+        "application android:networkSecurityConfig must reference "
+        "@xml/network_security_config; found <none>",
         "non-launcher components are forbidden in HMR-102: service",
         "only the launcher activity may be exported",
     ]
