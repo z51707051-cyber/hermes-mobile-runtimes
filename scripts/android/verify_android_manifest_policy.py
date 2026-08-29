@@ -16,7 +16,7 @@ COMPONENT_TAGS = ("activity", "activity-alias", "service", "receiver", "provider
 PERMISSION_TAGS = ("uses-permission", "uses-permission-sdk-23")
 ALLOWED_PERMISSIONS = {"android.permission.INTERNET"}
 NETWORK_SECURITY_CONFIG = "@xml/network_security_config"
-COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\\Z")
+COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
 
 
@@ -34,9 +34,9 @@ def _compiled_reference_matches(
     if match is None:
         return False
     resource_id = re.escape(match.group(1).lower())
-    resource_name = r"(?:[^\\s:]+:)?xml/network_security_config"
+    resource_name = r"(?:[^\s:]+:)?xml/network_security_config"
     return re.search(
-        rf"(?im)^\\s*resource\\s+{resource_id}\\s+{resource_name}(?::|\\s|$)",
+        rf"(?im)^\s*resource\s+{resource_id}\s+{resource_name}(?::|\s|$)",
         resource_table,
     ) is not None
 
