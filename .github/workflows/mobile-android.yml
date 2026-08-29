@@ -161,6 +161,7 @@ jobs:
             .bomFormat == "CycloneDX" and
             .metadata.component.type == "application" and
             .metadata.component.name == "hermes-mobile-runtime-android" and
+            .metadata.licenses[0].license.name == "MIT" and
             (.components | type == "array")
           ' "$report_dir/apk-bom.json" >/dev/null
 
