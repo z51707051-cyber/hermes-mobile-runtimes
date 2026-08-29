@@ -1,3 +1,8 @@
+import org.cyclonedx.gradle.CyclonedxDirectTask
+import org.cyclonedx.model.Component
+import org.cyclonedx.model.License
+import org.cyclonedx.model.LicenseChoice
+
 plugins {
     id("com.android.application")
 }
@@ -49,4 +54,22 @@ android {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+}
+
+tasks.named<CyclonedxDirectTask>("cyclonedxDirectBom") {
+    componentGroup = "ai.hermes.mobile"
+    componentName = "hermes-mobile-runtime-android"
+    componentVersion = "0.1.0-dev"
+    projectType = Component.Type.APPLICATION
+    includeConfigs = listOf("debugRuntimeClasspath")
+    testConfigs = emptyList()
+    licenseChoice =
+        LicenseChoice().apply {
+            addLicense(
+                License().apply {
+                    name = "MIT"
+                    url = "https://opensource.org/license/mit"
+                },
+            )
+        }
 }

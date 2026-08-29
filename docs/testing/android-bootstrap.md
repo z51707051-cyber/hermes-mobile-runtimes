@@ -41,7 +41,8 @@ The `Mobile Android bootstrap` workflow performs:
 6. source and final merged manifest policy checks;
 7. APK packaged-file inventory and secret-like filename rejection;
 8. strict Gradle dependency verification and dependency locking;
-9. CycloneDX JSON/XML SBOM generation and minimal structure validation;
+9. direct APK and build-wide CycloneDX JSON/XML SBOM generation, with the APK
+   SBOM restricted to `debugRuntimeClasspath` and validated as an application;
 10. upload of APK, checksum, manifest, file inventory and SBOM.
 
 Dependency verification metadata and lockfiles are generated once by CI,
@@ -70,4 +71,3 @@ so a local APK build is not claimed. Local checks cover the manifest policy,
 test behavior, repository diff and workflow syntax. GitHub-hosted CI is the
 authoritative HMR-101 build/lint/unit/SBOM lane. Its run and artifact links are
 recorded in the Pull Request before merge.
-

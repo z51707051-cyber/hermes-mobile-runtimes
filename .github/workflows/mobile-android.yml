@@ -146,13 +146,23 @@ jobs:
         run: |
           set -euo pipefail
           report_dir="build/reports/hmr/sbom"
-          source_dir="build/reports/cyclonedx"
+          build_source="build/reports/cyclonedx"
+          apk_source="app/build/reports/cyclonedx-direct"
           mkdir -p "$report_dir"
-          test -f "$source_dir/bom.json"
-          test -f "$source_dir/bom.xml"
-          cp "$source_dir/bom.json" "$source_dir/bom.xml" "$report_dir/"
-          json_sbom="$report_dir/bom.json"
-          jq -e '.bomFormat == "CycloneDX" and (.components | type == "array")' "$json_sbom" >/dev/null
+          test -f "$build_source/bom.json"
+          test -f "$build_source/bom.xml"
+          test -f "$apk_source/bom.json"
+          test -f "$apk_source/bom.xml"
+          cp "$build_source/bom.json" "$report_dir/build-bom.json"
+          cp "$build_source/bom.xml" "$report_dir/build-bom.xml"
+          cp "$apk_source/bom.json" "$report_dir/apk-bom.json"
+          cp "$apk_source/bom.xml" "$report_dir/apk-bom.xml"
+          jq -e '
+            .bomFormat == "CycloneDX" and
+            .metadata.component.type == "application" and
+            .metadata.component.name == "hermes-mobile-runtime-android" and
+            (.components | type == "array")
+          ' "$report_dir/apk-bom.json" >/dev/null
 
       - name: Upload dependency bootstrap metadata
         if: always() && steps.metadata.outputs.bootstrap == 'true'
