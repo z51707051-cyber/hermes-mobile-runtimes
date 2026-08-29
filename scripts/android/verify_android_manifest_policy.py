@@ -51,10 +51,12 @@ def validate_manifest(path: Path) -> list[str]:
         errors.append("application android:allowBackup must be false")
     if _android(application, "usesCleartextTraffic") != "false":
         errors.append("application android:usesCleartextTraffic must be false")
-    if _android(application, "networkSecurityConfig") != NETWORK_SECURITY_CONFIG:
+    network_security_config = _android(application, "networkSecurityConfig")
+    if network_security_config != NETWORK_SECURITY_CONFIG:
         errors.append(
             "application android:networkSecurityConfig must reference "
-            f"{NETWORK_SECURITY_CONFIG}"
+            f"{NETWORK_SECURITY_CONFIG}; found "
+            f"{network_security_config or '<none>'}"
         )
     if _android(application, "permission"):
         errors.append("application-level Android permission is forbidden")
