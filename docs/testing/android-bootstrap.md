@@ -67,12 +67,12 @@ merging.
 ## CI evidence
 
 The strict dependency-verification run for commit
-`b48e874642aadeac2db74f8ee3a8482de4e20ccf` passed all Android steps:
+`de2df0e853ff3a9ff55e38f438c3bfe48bc3d93d` passed all Android steps:
 
-- [GitHub Actions run 33233353447](https://github.com/z51707051-cyber/hermes-mobile-runtimes/actions/runs/33233353447)
-- evidence artifact ID: `9709191348`
-- evidence ZIP SHA-256: `a0350ec5923b5a9eb303e2c20c01207fda974bf40fe9c7763ccf6abc000016e9`
-- debug APK SHA-256: `561d98316ffef3c3a81b0eabad68ee12085145aac9b761746a633e740fc5654c`
+- [GitHub Actions run 33233568214](https://github.com/z51707051-cyber/hermes-mobile-runtimes/actions/runs/33233568214)
+- evidence artifact ID: `9709251346`
+- evidence ZIP SHA-256: `4a449b98ec873b107512733b5b8e44c3036a1def1f44ecfb35530a5b3ed4d0ca`
+- debug APK SHA-256: `d9696b442c0df8e43e0cd0aff3049910e65767fa8efaffe13c96ff9f9040ff70`
 - debug APK size: 2,519,625 bytes
 
 The decoded APK manifest contains `minSdk=30`, `compileSdk=36`, `targetSdk=36`,
@@ -82,8 +82,11 @@ artifact as an application, declares the project MIT license and contains two
 runtime dependencies (`kotlin-stdlib` and JetBrains `annotations`), both with
 license metadata. A separate build-wide SBOM is included for build provenance.
 
-This evidence predates only the CI assertion that the already-present MIT SBOM
-metadata must remain present; the Pull Request's latest run is the merge gate.
+`Reproducible` here means the pinned source, toolchain, dependencies and build
+procedure reproduce a valid equivalent debug APK. GitHub runners create an
+ephemeral debug signing key, so separate runs are not claimed to be
+bit-for-bit identical; every produced APK is instead bound to its own recorded
+SHA-256 and evidence artifact. Release-signing provenance is outside HMR-101.
 
 ## Local environment result
 
