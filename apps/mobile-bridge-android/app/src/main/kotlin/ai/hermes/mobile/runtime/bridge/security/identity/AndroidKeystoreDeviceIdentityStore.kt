@@ -1,6 +1,6 @@
 package ai.hermes.mobile.runtime.bridge.security.identity
 
-import android.annotation.RequiresApi
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
@@ -124,7 +124,7 @@ internal class AndroidKeystoreDeviceIdentityStore(
             IdentitySecurityLevel.SOFTWARE
         }
 
-    @RequiresApi(Build.VERSION_CODES.S)
+    @SuppressLint("NewApi") // Caller is guarded by SDK_INT >= API 31.
     private fun KeyInfo.toApi31SecurityLevel(): IdentitySecurityLevel =
         when (securityLevel) {
             KeyProperties.SECURITY_LEVEL_STRONGBOX -> IdentitySecurityLevel.STRONGBOX
