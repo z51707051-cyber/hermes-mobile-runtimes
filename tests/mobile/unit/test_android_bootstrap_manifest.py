@@ -19,15 +19,23 @@ def _write_manifest(tmp_path: Path, body: str) -> Path:
     return path
 
 
-def test_accepts_the_zero_permission_bootstrap_manifest() -> None:
-    manifest = (
-        REPO_ROOT
-        / "apps"
-        / "mobile-bridge-android"
-        / "app"
-        / "src"
-        / "main"
-        / "AndroidManifest.xml"
+def test_accepts_the_historical_zero_permission_bootstrap_profile(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_manifest(
+        tmp_path,
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <application android:allowBackup="false" android:usesCleartextTraffic="false">
+            <activity android:name=".MainActivity" android:exported="true">
+              <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+              </intent-filter>
+            </activity>
+          </application>
+        </manifest>
+        """,
     )
 
     assert VERIFIER.validate_manifest(manifest) == []

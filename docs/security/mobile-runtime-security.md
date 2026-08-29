@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Security
 
 > Status: Phase 1 security baseline
-> Last reviewed: 2026-08-28  
-> Security-sensitive implementation must not proceed without ADR-0003 and a reviewed threat model.
+> Last reviewed: 2026-08-29
+> Security-sensitive implementation follows ADR-0003, ADR-0005 and the reviewed threat model.
 
 ## 1. Security objective
 
@@ -111,6 +111,9 @@ If verification cannot complete, the action is denied. A bridge reconnect cannot
 Before a coordinate/accessibility action, Observer should identify the target semantics when possible. If a generic tap resolves to Send/Delete/Pay/Install/Allow, risk is upgraded and the action returns `CONFIRMATION_REQUIRED`. Unknown critical targets fail closed.
 
 ## 6. Transport and device identity
+
+The normative algorithm, enrollment, replay, rotation and revocation profile is
+[`ADR-0005`](../adr/0005-device-identity-transport-and-key-rotation.md).
 
 - Use TLS/WSS by default; validate host identity.
 - Enroll each device with a long-lived device key stored in Android Keystore.

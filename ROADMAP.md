@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Roadmap
 
-> Status: Phase 1 foundation in progress; Android bootstrap in review
+> Status: Phase 1 foundation in progress; device-security kernel in review
 > Last updated: 2026-08-29
 
 ## 1. Delivery policy
@@ -55,8 +55,8 @@ Repository prerequisites now have the following status:
 
 | ID | Task | Result |
 |---|---|---|
-| HMR-101 | Bootstrap Android bridge with upstream provenance | In review; zero-permission skeleton, pinned build and CI evidence lane |
-| HMR-102 | TLS-only enrollment, device identity and replay defense | Secure transport baseline |
+| HMR-101 | Bootstrap Android bridge with upstream provenance | Complete; zero-permission skeleton, pinned build and CI evidence lane |
+| HMR-102 | TLS-only enrollment, device identity and replay defense | In review; ADR-0005, Keystore identity, TLS policy and persistent replay ledger |
 | HMR-103 | Protocol codec and compatibility negotiation | Python/Kotlin golden contract tests |
 | HMR-104 | Capability Registry and Tool Router | Only authorized execution path |
 | HMR-105 | `phone.current_app` vertical slice | Gate + state + audit + Android result |

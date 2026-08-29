@@ -1,8 +1,12 @@
 # HMR-101 Android Bootstrap Verification
 
 > Phase: 1 / HMR-101
-> Status: review evidence complete
+> Status: complete; historical HMR-101 evidence
 > Last updated: 2026-08-29
+
+The current Android authority policy is HMR-102 and is verified by
+[`hmr-102-device-security.md`](hmr-102-device-security.md). This document keeps
+the immutable zero-permission bootstrap evidence for HMR-101.
 
 ## Scope
 

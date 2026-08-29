@@ -1,4 +1,4 @@
-name: Mobile Android bootstrap
+name: Mobile Android security kernel
 
 on:
   pull_request:
@@ -8,6 +8,8 @@ on:
       - "tests/mobile/**"
       - "third_party/**"
       - "docs/testing/android-bootstrap.md"
+      - "docs/testing/hmr-102-device-security.md"
+      - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
       - ".github/workflows/mobile-android.yml"
   push:
     branches: [main]
@@ -17,6 +19,8 @@ on:
       - "tests/mobile/**"
       - "third_party/**"
       - "docs/testing/android-bootstrap.md"
+      - "docs/testing/hmr-102-device-security.md"
+      - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
       - ".github/workflows/mobile-android.yml"
 
 permissions:
@@ -28,7 +32,7 @@ concurrency:
 
 jobs:
   bootstrap:
-    name: Build, test and inspect minimal APK
+    name: Build, test and inspect security-kernel APK
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
@@ -69,7 +73,12 @@ jobs:
           ./gradlew --version
 
       - name: Verify source manifest policy
-        run: python3 ../../scripts/android/verify_android_bootstrap.py app/src/main/AndroidManifest.xml
+        run: |
+          python3 ../../scripts/android/verify_android_manifest_policy.py \
+            --network-security-config app/src/main/res/xml/network_security_config.xml \
+            --full-backup-rules app/src/main/res/xml/backup_rules.xml \
+            --data-extraction-rules app/src/main/res/xml/data_extraction_rules.xml \
+            app/src/main/AndroidManifest.xml
 
       - name: Detect dependency metadata bootstrap
         id: metadata
@@ -135,7 +144,11 @@ jobs:
           apkanalyzer manifest print "$apk" > "$report_dir/AndroidManifest.xml"
           apkanalyzer files list "$apk" | LC_ALL=C sort > "$report_dir/packaged-files.txt"
           sha256sum "$apk" > "$report_dir/app-debug.apk.sha256"
-          python3 ../../scripts/android/verify_android_bootstrap.py "$report_dir/AndroidManifest.xml"
+          python3 ../../scripts/android/verify_android_manifest_policy.py \
+            --network-security-config app/src/main/res/xml/network_security_config.xml \
+            --full-backup-rules app/src/main/res/xml/backup_rules.xml \
+            --data-extraction-rules app/src/main/res/xml/data_extraction_rules.xml \
+            "$report_dir/AndroidManifest.xml"
           if grep -Ei '(secret|credential|\.pem$|\.key$|\.p12$|\.jks$|\.keystore$)' "$report_dir/packaged-files.txt"; then
             echo "forbidden secret-like file name found in APK" >&2
             exit 1
@@ -169,7 +182,7 @@ jobs:
         if: always() && steps.metadata.outputs.bootstrap == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: hmr-101-gradle-metadata
+          name: hmr-102-gradle-metadata
           path: apps/mobile-bridge-android/build/reports/hmr/dependency-metadata
           if-no-files-found: error
           retention-days: 7
@@ -184,7 +197,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: hmr-101-android-evidence
+          name: hmr-102-android-evidence
           path: |
             apps/mobile-bridge-android/app/build/outputs/apk/debug/app-debug.apk
             apps/mobile-bridge-android/build/reports/hmr/apk
