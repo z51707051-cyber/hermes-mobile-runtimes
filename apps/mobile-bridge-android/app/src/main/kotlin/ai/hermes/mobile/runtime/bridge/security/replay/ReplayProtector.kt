@@ -141,7 +141,8 @@ internal class ReplayProtector(
         origin: Long,
         maximumDelta: Long,
     ): Boolean {
-        if (maximumDelta < 0 || value < origin) return true
+        if (maximumDelta < 0) return true
+        if (value <= origin) return false
         val maximumValue =
             if (origin > Long.MAX_VALUE - maximumDelta) Long.MAX_VALUE else origin + maximumDelta
         return value > maximumValue
