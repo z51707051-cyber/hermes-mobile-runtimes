@@ -32,6 +32,8 @@ internal object ProtocolCodec {
     private val digest = Regex("sha256:[0-9a-f]{64}")
     private val packageName = Regex("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+")
 
+    fun canonicalToolNames(): Set<String> = canonicalTools.toSet()
+
     fun decode(payload: ByteArray): Map<String, Any?> {
         val message =
             try {
