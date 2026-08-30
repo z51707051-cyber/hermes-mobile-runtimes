@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.device_state.schema.json",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "array",
+      "items": {"enum": ["BATTERY", "CHARGING", "WIFI", "BLUETOOTH", "NETWORK", "SCREEN", "LOCALE"]},
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 7
+    }
+  },
+  "additionalProperties": false
+}

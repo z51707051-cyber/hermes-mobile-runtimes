@@ -1,0 +1,87 @@
+{
+  "bundle_digest": "sha256:d1b6b926c323d6581b2691e7cf1dcd102528cafad2e9ddf76f13cf8223a293ba",
+  "digest_algorithm": "SHA-256",
+  "files": [
+    {
+      "digest": "sha256:a906bf010e14a01b1e62144e07899a8e1bee0d4bdf6592c240f0248745bab8a9",
+      "path": "common/definitions.schema.json"
+    },
+    {
+      "digest": "sha256:cef42f29d3257c60bdf9553899a20541ecd9c69dbc5e56149bff66f826173ec6",
+      "path": "events/mobile-event.schema.json"
+    },
+    {
+      "digest": "sha256:95ad674fba9e7fa81ad9195fb5eeb6d21f4ab641433b9323309e157006233111",
+      "path": "requests/authorized-action.schema.json"
+    },
+    {
+      "digest": "sha256:6d6da27166639d9fba0d1ff3a25abeca4dccbbfb15b3958745d4f36075bec4f7",
+      "path": "requests/compatibility-offer.schema.json"
+    },
+    {
+      "digest": "sha256:a98fd3cff7db0e4e920dd0b35e3068bbe99bd474d9ee386bf93db59ada082b71",
+      "path": "requests/compatibility-selection.schema.json"
+    },
+    {
+      "digest": "sha256:9b1ad98f7e66881e7c6027033389f10a347e52e631377b39fdafe88649fa3b0d",
+      "path": "requests/tool-execution-request.schema.json"
+    },
+    {
+      "digest": "sha256:6e580e6968f9c16ae5478bd49b7ea1315d9f2071cf937c0e37735a830012569d",
+      "path": "results/tool-execution-result.schema.json"
+    },
+    {
+      "digest": "sha256:bbb16cd0cae2b84c370fa93d70637d16c2f2cbb9b19d1964745ca11c80e4d5a7",
+      "path": "tools/phone.back.schema.json"
+    },
+    {
+      "digest": "sha256:e963fd126873c0bd547b1168ccea9d1f51bf95bea8b48eea264d438e0fa91597",
+      "path": "tools/phone.current_app.schema.json"
+    },
+    {
+      "digest": "sha256:daeaa826f19acd541a521dce6da472b449e1c6fa3c3cbebb95bd865249b60083",
+      "path": "tools/phone.device_state.schema.json"
+    },
+    {
+      "digest": "sha256:be1d1ba37b8ecb88efa85065272423d52ee9de639a19d4e58cb7c89d88277fca",
+      "path": "tools/phone.home.schema.json"
+    },
+    {
+      "digest": "sha256:f62ad2454dda0a613a48a250146ae6f17c1c0f6dc8a8f46535fc779d078fa612",
+      "path": "tools/phone.long_press.schema.json"
+    },
+    {
+      "digest": "sha256:7af1d15c9828fa304d75fdb502b14864c80e7bf1f289886c71963e5a1570fb7b",
+      "path": "tools/phone.notifications.schema.json"
+    },
+    {
+      "digest": "sha256:624ab06e2e05a266c036d180543fb23ff22cb7785f507b3f8ac42719197d00a8",
+      "path": "tools/phone.open_app.schema.json"
+    },
+    {
+      "digest": "sha256:a7fea4454b17d833f7266283da99c6bfdff00a6ad693a099951da6557012da11",
+      "path": "tools/phone.read_screen.schema.json"
+    },
+    {
+      "digest": "sha256:60a8b302e5e29c4c218168622d9da9a952f2ce246cdc4cc20478bee9e8437b1c",
+      "path": "tools/phone.screenshot.schema.json"
+    },
+    {
+      "digest": "sha256:5c73a452a9cb41813dd65bc4538cab41ccf748d16af1a4a0b96347219250c22d",
+      "path": "tools/phone.swipe.schema.json"
+    },
+    {
+      "digest": "sha256:ad56d0d6c37fbf79c5f533bb09e3cb3515c61bed0795f6b8bfca4a7958d0f346",
+      "path": "tools/phone.tap.schema.json"
+    },
+    {
+      "digest": "sha256:39311e1aec376e4e80774cbe509ed43c417b0ca9ce60bcab4aec3869d2e0a00a",
+      "path": "tools/phone.type.schema.json"
+    },
+    {
+      "digest": "sha256:87176d5d9d4e650544aa1eb55f16adaaab406cc3c95cf43c5fbe387c39eb943a",
+      "path": "tools/phone.wait.schema.json"
+    }
+  ],
+  "protocol_version": "0.1.0"
+}

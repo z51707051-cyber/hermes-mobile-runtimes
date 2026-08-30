@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.swipe.schema.json",
+  "type": "object",
+  "required": ["start", "end", "duration_ms"],
+  "properties": {
+    "start": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/point"},
+    "end": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/point"},
+    "duration_ms": {"type": "integer", "minimum": 100, "maximum": 5000}
+  },
+  "additionalProperties": false
+}

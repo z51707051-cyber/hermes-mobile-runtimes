@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/requests/tool-execution-request.schema.json",
+  "title": "ToolExecutionRequest",
+  "type": "object",
+  "required": ["message_type", "protocol_version", "request_id", "task_id", "span_id", "device_id", "tool", "parameters", "state_precondition", "verification", "idempotency_key", "attempt", "requested_at", "deadline"],
+  "properties": {
+    "message_type": {"const": "tool.execution_request"},
+    "protocol_version": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/protocol_version"},
+    "request_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "task_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "span_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "device_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "tool": {
+      "enum": ["phone.read_screen", "phone.screenshot", "phone.tap", "phone.long_press", "phone.type", "phone.swipe", "phone.back", "phone.home", "phone.open_app", "phone.wait", "phone.notifications", "phone.current_app", "phone.device_state"]
+    },
+    "parameters": {"type": "object"},
+    "state_precondition": {
+      "oneOf": [
+        {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/state_precondition"},
+        {"type": "null"}
+      ]
+    },
+    "verification": {
+      "oneOf": [
+        {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/verification_request"},
+        {"type": "null"}
+      ]
+    },
+    "idempotency_key": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "attempt": {"type": "integer", "minimum": 1, "maximum": 32},
+    "requested_at": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/timestamp"},
+    "deadline": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/timestamp"},
+    "extensions": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/extensions"}
+  },
+  "oneOf": [
+    {"properties": {"tool": {"const": "phone.read_screen"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.read_screen.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.screenshot"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.screenshot.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.tap"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.tap.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.long_press"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.long_press.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.type"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.type.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.swipe"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.swipe.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.back"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.back.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.home"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.home.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.open_app"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.open_app.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.wait"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.wait.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.notifications"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.notifications.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.current_app"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.current_app.schema.json"}}},
+    {"properties": {"tool": {"const": "phone.device_state"}, "parameters": {"$ref": "https://hermesmobile.dev/schemas/v0.1/tools/phone.device_state.schema.json"}}}
+  ],
+  "additionalProperties": false
+}

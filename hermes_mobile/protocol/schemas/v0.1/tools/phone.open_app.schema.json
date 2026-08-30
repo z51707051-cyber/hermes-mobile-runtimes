@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.open_app.schema.json",
+  "type": "object",
+  "required": ["package"],
+  "properties": {
+    "package": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
+      "maxLength": 255
+    }
+  },
+  "additionalProperties": false
+}

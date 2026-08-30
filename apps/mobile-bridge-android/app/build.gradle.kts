@@ -53,6 +53,7 @@ android {
 }
 
 dependencies {
+    implementation("com.squareup.moshi:moshi:1.15.2")
     testImplementation("junit:junit:4.13.2")
 }
 

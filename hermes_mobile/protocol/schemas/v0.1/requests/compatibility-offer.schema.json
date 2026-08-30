@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/requests/compatibility-offer.schema.json",
+  "title": "CompatibilityOffer",
+  "type": "object",
+  "required": ["message_type", "protocol_min", "protocol_max", "schema_bundle_digest", "tool_schema_digests", "features", "required_features"],
+  "properties": {
+    "message_type": {"const": "compatibility.offer"},
+    "protocol_min": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/protocol_version"},
+    "protocol_max": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/protocol_version"},
+    "schema_bundle_digest": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/sha256_digest"},
+    "tool_schema_digests": {
+      "type": "object",
+      "minProperties": 13,
+      "maxProperties": 13,
+      "propertyNames": {"pattern": "^phone\\.[a-z_]+$"},
+      "additionalProperties": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/sha256_digest"}
+    },
+    "features": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,63}$"},
+      "uniqueItems": true,
+      "maxItems": 64
+    },
+    "required_features": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,63}$"},
+      "uniqueItems": true,
+      "maxItems": 64
+    },
+    "extensions": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/extensions"}
+  },
+  "additionalProperties": false
+}

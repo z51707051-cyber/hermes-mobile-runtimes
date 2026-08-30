@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.notifications.schema.json",
+  "type": "object",
+  "properties": {
+    "cursor": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+    "source_packages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
+        "maxLength": 255
+      },
+      "uniqueItems": true,
+      "maxItems": 20
+    }
+  },
+  "additionalProperties": false
+}

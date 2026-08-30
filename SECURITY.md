@@ -4,6 +4,15 @@ Hermes Mobile Runtime adds Android-device control, observation, notification and
 
 The upstream Hermes Agent security policy remains applicable and is preserved below. Mobile implementation work must satisfy both policies. If they conflict, the more restrictive requirement applies.
 
+HMR-103 adds a fail-closed protocol boundary. Runtime and Android reject
+duplicate JSON keys, invalid UTF-8, unbounded documents, unknown fields,
+unsafe integers, unsupported versions, missing required features and any
+schema or Tool digest mismatch before dispatch. Compatibility negotiation is
+not authorization, and successful decoding does not grant a phone capability.
+The only accepted authorization digest representation is the reviewed
+integer-only canonical JSON profile in
+[`docs/protocol/v0.1.md`](docs/protocol/v0.1.md).
+
 ---
 
 # Hermes Agent Security Policy

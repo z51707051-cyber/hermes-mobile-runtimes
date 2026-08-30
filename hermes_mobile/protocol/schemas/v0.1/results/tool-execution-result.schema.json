@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/results/tool-execution-result.schema.json",
+  "title": "ToolExecutionResult",
+  "type": "object",
+  "required": ["message_type", "protocol_version", "request_id", "task_id", "span_id", "device_id", "tool", "parameters", "execution_status", "before_state", "after_state", "duration", "error", "recoverable", "timestamp", "attempt", "idempotency_key", "parameter_digest", "permission_decision_id", "verification", "artifacts", "redactions"],
+  "properties": {
+    "message_type": {"const": "tool.execution_result"},
+    "protocol_version": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/protocol_version"},
+    "request_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "task_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "span_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "device_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "tool": {"type": "string", "pattern": "^phone\\.[a-z_]+$"},
+    "parameters": {"type": "object"},
+    "execution_status": {"enum": ["NOT_STARTED", "AWAITING_CONFIRMATION", "SUCCEEDED", "FAILED", "DENIED", "CANCELLED", "TIMED_OUT", "UNKNOWN_OUTCOME"]},
+    "before_state": {"oneOf": [{"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/phone_state_ref"}, {"type": "null"}]},
+    "after_state": {"oneOf": [{"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/phone_state_ref"}, {"type": "null"}]},
+    "duration": {"type": "integer", "minimum": 0, "maximum": 86400000},
+    "error": {"oneOf": [{"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/protocol_error"}, {"type": "null"}]},
+    "recoverable": {"type": "boolean"},
+    "timestamp": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/timestamp"},
+    "attempt": {"type": "integer", "minimum": 1, "maximum": 32},
+    "idempotency_key": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "parameter_digest": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/sha256_digest"},
+    "permission_decision_id": {"type": ["string", "null"], "maxLength": 128},
+    "verification": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/verification_result"},
+    "artifacts": {"type": "array", "items": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/artifact_ref"}, "maxItems": 16},
+    "redactions": {"type": "array", "items": {"type": "string", "maxLength": 128}, "uniqueItems": true, "maxItems": 32},
+    "extensions": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/extensions"}
+  },
+  "additionalProperties": false
+}

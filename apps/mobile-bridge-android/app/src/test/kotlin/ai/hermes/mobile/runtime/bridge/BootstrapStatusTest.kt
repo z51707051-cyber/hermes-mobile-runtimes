@@ -9,7 +9,7 @@ class BootstrapStatusTest {
     fun bootstrapExposesNoDeviceCapabilities() {
         val status = BootstrapStatusProvider.current()
 
-        assertEquals("HMR-102", status.phase)
+        assertEquals("HMR-103", status.phase)
         assertTrue(status.enabledCapabilities.isEmpty())
     }
 }

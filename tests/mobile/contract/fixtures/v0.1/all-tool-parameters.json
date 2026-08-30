@@ -1,0 +1,15 @@
+{
+  "phone.read_screen": {"valid": {"scope": "ACTIVE_WINDOW", "max_nodes": 100}, "invalid": {"scope": "ALL_WINDOWS"}},
+  "phone.screenshot": {"valid": {"format": "PNG", "display_id": 0}, "invalid": {"format": "JPEG"}},
+  "phone.tap": {"valid": {"target": {"state_id": "state-1", "node_id": "node-1"}}, "invalid": {"target": {"node_id": "node-1"}}},
+  "phone.long_press": {"valid": {"target": {"state_id": "state-1", "x_px": 20, "y_px": 30}, "duration_ms": 500}, "invalid": {"target": {"state_id": "state-1", "x_px": 20, "y_px": 30}, "duration_ms": 20}},
+  "phone.type": {"valid": {"text": "hello", "mode": "REPLACE"}, "invalid": {"text": "", "mode": "REPLACE"}},
+  "phone.swipe": {"valid": {"start": {"state_id": "state-1", "x_px": 20, "y_px": 200}, "end": {"state_id": "state-1", "x_px": 20, "y_px": 20}, "duration_ms": 300}, "invalid": {"start": {"state_id": "state-1", "x_px": 20, "y_px": 200}, "duration_ms": 300}},
+  "phone.back": {"valid": {}, "invalid": {"force": true}},
+  "phone.home": {"valid": {}, "invalid": {"force": true}},
+  "phone.open_app": {"valid": {"package": "com.spotify.music"}, "invalid": {"package": "Spotify"}},
+  "phone.wait": {"valid": {"timeout_ms": 1000, "condition": {"kind": "STATE_CHANGED"}}, "invalid": {"timeout_ms": 60000}},
+  "phone.notifications": {"valid": {"limit": 20, "source_packages": ["com.example.chat"]}, "invalid": {"limit": 0}},
+  "phone.current_app": {"valid": {}, "invalid": {"details": true}},
+  "phone.device_state": {"valid": {"fields": ["BATTERY", "WIFI"]}, "invalid": {"fields": ["GPS"]}}
+}
