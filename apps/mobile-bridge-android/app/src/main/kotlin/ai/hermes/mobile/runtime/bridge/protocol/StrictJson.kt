@@ -41,6 +41,7 @@ internal object StrictJson {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun decodeObject(payload: ByteArray): Map<String, Any?> =
         decode(payload) as? Map<String, Any?>
             ?: fail("protocol message must be a JSON object")
