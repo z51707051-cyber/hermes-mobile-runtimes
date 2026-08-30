@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 device-security kernel in review
-> Last reviewed: 2026-08-29
-> The Android module is a zero-capability build skeleton; no phone tool is implemented.
+> Status: Phase 1 protocol kernel in review
+> Last reviewed: 2026-08-30
+> The Android module can validate protocol messages but no phone tool is implemented.
 
 ## 1. Decision
 
@@ -102,9 +102,11 @@ Transport must be authenticated, encrypted and replay-resistant. Development-onl
 
 The physical Android project now lives in `apps/mobile-bridge-android/`.
 HMR-101 established its reproducible zero-permission build boundary. HMR-102
-adds only the device-security kernel: a non-exportable Keystore identity,
-closed TLS endpoint policy and crash-safe replay ledger. `INTERNET` is the sole
-Android permission. No enrollment listener, raw command route or phone
+added the device-security kernel: a non-exportable Keystore identity, closed
+TLS endpoint policy and crash-safe replay ledger. HMR-103 adds a strict,
+bounded JSON codec, compatibility negotiation and verification of the same
+schema-bundle digest used by Python. `INTERNET` remains the sole Android
+permission. No enrollment listener, raw command route, Tool Router or phone
 capability is exposed, so the launcher is still not a PEP or command channel.
 
 ## 7. Action lifecycle
@@ -172,7 +174,25 @@ timestamp
 
 `before_state` and `after_state` are references and summaries. Full screenshots/UI trees are protected artifacts with retention and access controls.
 
-### 8.1 Result separation
+### 8.1 Implemented protocol kernel
+
+The checked-in Draft 2020-12 schemas under
+`hermes_mobile/protocol/schemas/v0.1/` are normative. Their generated manifest
+binds every file and the complete bundle with SHA-256. Python performs offline
+schema validation; Android verifies the identical manifest and applies a
+closed Kotlin validator before later dispatch code can see a message.
+
+Compatibility offers may span patch versions only. Peers must match the full
+schema-bundle digest and all 13 Tool schema digests, satisfy both required
+feature sets and select a version at or above the configured protocol floor.
+Any mismatch is `PROTOCOL_INCOMPATIBLE`; there is no best-effort downgrade.
+
+Wire JSON is UTF-8, bounded to 1 MiB, rejects duplicate keys, non-finite
+numbers, unsafe integers, excessive nesting and open message fields. Security
+digests use the integer-only canonical JSON profile documented in
+[`docs/protocol/v0.1.md`](docs/protocol/v0.1.md).
+
+### 8.2 Result separation
 
 - `ExecutionResult`: Android accepted/completed the low-level action.
 - `VerificationResult`: the observed postcondition matches the requested action or Skill success condition.
@@ -180,7 +200,7 @@ timestamp
 
 These types must not collapse into one boolean.
 
-### 8.2 Error taxonomy
+### 8.3 Error taxonomy
 
 Initial stable classes:
 

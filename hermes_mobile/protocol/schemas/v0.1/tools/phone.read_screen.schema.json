@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.read_screen.schema.json",
+  "type": "object",
+  "properties": {
+    "scope": {"const": "ACTIVE_WINDOW"},
+    "max_nodes": {"type": "integer", "minimum": 1, "maximum": 500},
+    "max_text_chars": {"type": "integer", "minimum": 1, "maximum": 20000}
+  },
+  "additionalProperties": false
+}

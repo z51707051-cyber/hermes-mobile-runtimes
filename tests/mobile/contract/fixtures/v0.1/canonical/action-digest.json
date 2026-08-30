@@ -1,0 +1,18 @@
+{
+  "input": {
+    "protocol_line": "0.1",
+    "request_id": "req-0001",
+    "task_id": "task-0001",
+    "device_id": "device-0001",
+    "tool": "phone.current_app",
+    "parameters": {},
+    "state_precondition": null,
+    "verification": null,
+    "idempotency_key": "idem-0001",
+    "deadline": "2026-08-30T10:00:30Z",
+    "effective_target": null,
+    "effective_risk": "L0"
+  },
+  "canonical": "{\"deadline\":\"2026-08-30T10:00:30Z\",\"device_id\":\"device-0001\",\"effective_risk\":\"L0\",\"effective_target\":null,\"idempotency_key\":\"idem-0001\",\"parameters\":{},\"protocol_line\":\"0.1\",\"request_id\":\"req-0001\",\"state_precondition\":null,\"task_id\":\"task-0001\",\"tool\":\"phone.current_app\",\"verification\":null}",
+  "digest": "sha256:8a915c4cd0115c97796ead9adfbc69a45310d3036992213b14f06c0d1eed8069"
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.type.schema.json",
+  "type": "object",
+  "required": ["text", "mode"],
+  "properties": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 10000},
+    "mode": {"enum": ["APPEND", "REPLACE"]},
+    "target": {
+      "type": "object",
+      "required": ["state_id", "node_id"],
+      "properties": {
+        "state_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+        "node_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

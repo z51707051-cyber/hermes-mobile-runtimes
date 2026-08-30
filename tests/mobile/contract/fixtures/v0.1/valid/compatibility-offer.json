@@ -1,0 +1,23 @@
+{
+  "message_type": "compatibility.offer",
+  "protocol_min": "0.1.0",
+  "protocol_max": "0.1.0",
+  "schema_bundle_digest": "sha256:d1b6b926c323d6581b2691e7cf1dcd102528cafad2e9ddf76f13cf8223a293ba",
+  "tool_schema_digests": {
+    "phone.back": "sha256:bbb16cd0cae2b84c370fa93d70637d16c2f2cbb9b19d1964745ca11c80e4d5a7",
+    "phone.current_app": "sha256:e963fd126873c0bd547b1168ccea9d1f51bf95bea8b48eea264d438e0fa91597",
+    "phone.device_state": "sha256:daeaa826f19acd541a521dce6da472b449e1c6fa3c3cbebb95bd865249b60083",
+    "phone.home": "sha256:be1d1ba37b8ecb88efa85065272423d52ee9de639a19d4e58cb7c89d88277fca",
+    "phone.long_press": "sha256:f62ad2454dda0a613a48a250146ae6f17c1c0f6dc8a8f46535fc779d078fa612",
+    "phone.notifications": "sha256:7af1d15c9828fa304d75fdb502b14864c80e7bf1f289886c71963e5a1570fb7b",
+    "phone.open_app": "sha256:624ab06e2e05a266c036d180543fb23ff22cb7785f507b3f8ac42719197d00a8",
+    "phone.read_screen": "sha256:a7fea4454b17d833f7266283da99c6bfdff00a6ad693a099951da6557012da11",
+    "phone.screenshot": "sha256:60a8b302e5e29c4c218168622d9da9a952f2ce246cdc4cc20478bee9e8437b1c",
+    "phone.swipe": "sha256:5c73a452a9cb41813dd65bc4538cab41ccf748d16af1a4a0b96347219250c22d",
+    "phone.tap": "sha256:ad56d0d6c37fbf79c5f533bb09e3cb3515c61bed0795f6b8bfca4a7958d0f346",
+    "phone.type": "sha256:39311e1aec376e4e80774cbe509ed43c417b0ca9ce60bcab4aec3869d2e0a00a",
+    "phone.wait": "sha256:87176d5d9d4e650544aa1eb55f16adaaab406cc3c95cf43c5fbe387c39eb943a"
+  },
+  "features": ["closed-schema", "strict-json"],
+  "required_features": ["closed-schema"]
+}

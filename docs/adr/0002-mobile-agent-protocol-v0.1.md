@@ -316,7 +316,7 @@ hermes_mobile/protocol/schemas/v0.1/
   results/
   tools/
   events/
-apps/mobile-bridge-android/.../generated/protocol/
+apps/mobile-bridge-android/.../bridge/protocol/
 tests/mobile/contract/fixtures/v0.1/{valid,invalid,canonical}/
 ```
 
@@ -324,6 +324,27 @@ Each schema has a stable `$id`. The schema bundle manifest contains every file
 digest. Golden fixtures include Python encode → Kotlin decode, Kotlin encode →
 Python decode, unknown-field rejection, version downgrade, parameter mutation,
 canonical digest and duplicate/replay cases.
+
+### 14.1 HMR-103 implementation profile
+
+- `manifest.json` is generated from sorted schema paths and per-file SHA-256
+  digests. Both languages recompute it before accepting the bundle.
+- Python uses Draft 2020-12 validation with a fully offline schema registry.
+  Android uses a closed Kotlin validator and verifies the same normative
+  bundle; it does not fetch schemas at runtime.
+- Protocol documents are at most 1 MiB, 64 levels deep and 4,096 items per
+  container. Duplicate keys, invalid UTF-8, non-finite values and integers
+  outside the interoperable ±(2^53−1) range are rejected.
+- The V0.1 authorization digest domain forbids floating-point values. Within
+  this deliberately smaller domain, Python and Kotlin canonicalization is
+  compatible with RFC 8785 and locked by shared fixtures.
+- The exact logical digest fields are `protocol_line`, `request_id`, `task_id`,
+  `device_id`, `tool`, `parameters`, `state_precondition`, `verification`,
+  `idempotency_key`, `deadline`, `effective_target` and `effective_risk`.
+  Replay, expiry, attempt and signature metadata remain separately signed.
+- Compatibility ranges are limited to one major/minor line. The selected patch
+  is the highest common version above the configured minimum; bundle, Tool
+  digest or required-feature mismatches fail closed.
 
 ## Rejected alternatives
 

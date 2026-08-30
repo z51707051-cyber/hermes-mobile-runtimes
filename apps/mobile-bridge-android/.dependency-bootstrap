@@ -1,0 +1,3 @@
+HMR-103 adds the pinned Moshi 1.15.2 JSON codec dependency.
+CI must generate dependency locks and SHA-256 verification metadata for review.
+Delete this marker only after those generated files are committed.

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.tap.schema.json",
+  "type": "object",
+  "required": ["target"],
+  "properties": {
+    "target": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/semantic_target"}
+  },
+  "additionalProperties": false
+}

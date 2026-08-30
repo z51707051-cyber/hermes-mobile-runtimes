@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.wait.schema.json",
+  "type": "object",
+  "required": ["timeout_ms"],
+  "properties": {
+    "timeout_ms": {"type": "integer", "minimum": 1, "maximum": 30000},
+    "condition": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["STATE_CHANGED", "FOREGROUND_APP_IS", "TEXT_PRESENT"]},
+        "expected": {"type": "string", "maxLength": 4096}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"enum": ["FOREGROUND_APP_IS", "TEXT_PRESENT"]}}},
+          "then": {"required": ["expected"]}
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

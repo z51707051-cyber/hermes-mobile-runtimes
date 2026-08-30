@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json",
+  "title": "Hermes Mobile Protocol V0.1 common definitions",
+  "$defs": {
+    "protocol_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "maxLength": 32
+    },
+    "opaque_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 40
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9]*(?:\\.[a-z][a-z0-9_-]*)+$"
+      },
+      "maxProperties": 32
+    },
+    "semantic_target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["state_id", "node_id"],
+          "properties": {
+            "state_id": {"$ref": "#/$defs/opaque_id"},
+            "node_id": {"$ref": "#/$defs/opaque_id"}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["state_id", "x_px", "y_px"],
+          "properties": {
+            "state_id": {"$ref": "#/$defs/opaque_id"},
+            "x_px": {"type": "integer", "minimum": 0, "maximum": 32767},
+            "y_px": {"type": "integer", "minimum": 0, "maximum": 32767}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "point": {
+      "type": "object",
+      "required": ["state_id", "x_px", "y_px"],
+      "properties": {
+        "state_id": {"$ref": "#/$defs/opaque_id"},
+        "x_px": {"type": "integer", "minimum": 0, "maximum": 32767},
+        "y_px": {"type": "integer", "minimum": 0, "maximum": 32767}
+      },
+      "additionalProperties": false
+    },
+    "state_precondition": {
+      "type": "object",
+      "required": ["state_id", "maximum_age_ms"],
+      "properties": {
+        "state_id": {"$ref": "#/$defs/opaque_id"},
+        "maximum_age_ms": {"type": "integer", "minimum": 1, "maximum": 5000},
+        "foreground_package": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
+          "maxLength": 255
+        }
+      },
+      "additionalProperties": false
+    },
+    "verification_request": {
+      "type": "object",
+      "required": ["condition"],
+      "properties": {
+        "condition": {
+          "enum": ["STATE_CHANGED", "FOREGROUND_APP_IS", "TEXT_PRESENT", "TEXT_ABSENT"]
+        },
+        "expected": {"type": "string", "maxLength": 4096}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"condition": {"enum": ["FOREGROUND_APP_IS", "TEXT_PRESENT", "TEXT_ABSENT"]}}
+          },
+          "then": {"required": ["expected"]}
+        }
+      ],
+      "additionalProperties": false
+    },
+    "artifact_ref": {
+      "type": "object",
+      "required": ["artifact_id", "media_type", "size_bytes", "digest", "sensitivity", "redaction_status", "retention_class", "expires_at"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/opaque_id"},
+        "media_type": {"type": "string", "maxLength": 127},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 67108864},
+        "digest": {"$ref": "#/$defs/sha256_digest"},
+        "sensitivity": {"enum": ["D0", "D1", "D2", "D3", "D4"]},
+        "redaction_status": {"enum": ["NONE", "REDACTED", "WITHHELD"]},
+        "retention_class": {"enum": ["EPHEMERAL", "TASK", "AUDIT"]},
+        "expires_at": {"$ref": "#/$defs/timestamp"}
+      },
+      "additionalProperties": false
+    },
+    "phone_state_ref": {
+      "type": "object",
+      "required": ["state_id", "captured_at", "freshness_ms", "device_id", "foreground_package", "transition"],
+      "properties": {
+        "state_id": {"$ref": "#/$defs/opaque_id"},
+        "captured_at": {"$ref": "#/$defs/timestamp"},
+        "freshness_ms": {"type": "integer", "minimum": 0, "maximum": 60000},
+        "device_id": {"$ref": "#/$defs/opaque_id"},
+        "foreground_package": {"type": ["string", "null"], "maxLength": 255},
+        "transition": {"enum": ["NONE", "CHANGED", "UNKNOWN"]},
+        "artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/artifact_ref"},
+          "maxItems": 16
+        }
+      },
+      "additionalProperties": false
+    },
+    "verification_result": {
+      "type": "object",
+      "required": ["status", "observed_state_ids", "evaluator", "explanation"],
+      "properties": {
+        "status": {"enum": ["NOT_APPLICABLE", "PENDING", "PASSED", "FAILED", "INCONCLUSIVE"]},
+        "observed_state_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/opaque_id"},
+          "uniqueItems": true,
+          "maxItems": 8
+        },
+        "evaluator": {"type": "string", "maxLength": 128},
+        "explanation": {"type": "string", "maxLength": 1024},
+        "evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/artifact_ref"},
+          "maxItems": 16
+        }
+      },
+      "additionalProperties": false
+    },
+    "protocol_error": {
+      "type": "object",
+      "required": ["code", "category", "owner", "message", "retry_disposition"],
+      "properties": {
+        "code": {
+          "enum": ["TRANSPORT_UNAVAILABLE", "AUTHENTICATION_FAILED", "PROTOCOL_INCOMPATIBLE", "PERMISSION_DENIED", "CONFIRMATION_REQUIRED", "CAPABILITY_UNAVAILABLE", "APP_NOT_FOUND", "NODE_NOT_FOUND", "ACTION_REJECTED", "ACTION_TIMEOUT", "STATE_UNCHANGED", "UNEXPECTED_TRANSITION", "APP_CRASHED", "NETWORK_UNAVAILABLE", "VERIFICATION_FAILED", "AUTHORIZATION_INVALID", "AUTHORIZATION_EXPIRED", "REPLAY_DETECTED", "DEVICE_REVOKED", "DEVICE_IDENTITY_UNAVAILABLE", "REPLAY_STATE_UNAVAILABLE", "TLS_POLICY_VIOLATION"]
+        },
+        "category": {"enum": ["VALIDATION", "AUTHENTICATION", "POLICY", "TRANSPORT", "EXECUTION", "OBSERVATION", "VERIFICATION"]},
+        "owner": {"enum": ["HERMES_ADAPTER", "RUNTIME", "POLICY", "TRANSPORT", "ANDROID_PEP", "CAPABILITY", "OBSERVER", "VERIFIER"]},
+        "message": {"type": "string", "maxLength": 512},
+        "retry_disposition": {"enum": ["NEVER", "REOBSERVE", "RETRY_SAME_ACTION", "REPLAN", "ASK_USER"]},
+        "details": {"type": "object", "maxProperties": 16},
+        "cause_request_id": {"$ref": "#/$defs/opaque_id"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

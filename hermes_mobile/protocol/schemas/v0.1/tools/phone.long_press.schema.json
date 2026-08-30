@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.long_press.schema.json",
+  "type": "object",
+  "required": ["target", "duration_ms"],
+  "properties": {
+    "target": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/semantic_target"},
+    "duration_ms": {"type": "integer", "minimum": 300, "maximum": 5000}
+  },
+  "additionalProperties": false
+}

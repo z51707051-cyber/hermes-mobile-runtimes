@@ -2,10 +2,10 @@
 
 This directory is the Android execution-plane boundary defined by
 [`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provided the reproducible
-build foundation. HMR-102 adds the reviewed device-security kernel. It is not
-an Android agent yet.
+build foundation, HMR-102 added the reviewed device-security kernel and
+HMR-103 adds the closed protocol codec. It is not an Android agent yet.
 
-## HMR-102 security boundary
+## HMR-103 protocol and security boundary
 
 The debug APK deliberately has:
 
@@ -14,11 +14,20 @@ The debug APK deliberately has:
 - a P-256 device identity whose private key remains in Android Keystore;
 - a strict TLS 1.3/1.2 policy and closed `/v0/enroll` HTTPS endpoint parser;
 - a crash-safe, no-backup sequence/nonce replay ledger;
+- strict bounded JSON parsing with duplicate-key rejection;
+- fail-closed compatibility negotiation and canonical action digests;
+- verification of the normative Python schema-bundle manifest;
 - no Accessibility or Notification Listener service;
 - no receiver, provider or background service;
 - no enrollment listener, protocol command route or raw device endpoint;
 - one exported launcher activity that displays bootstrap status;
 - no code copied or adapted from `hermes-android`.
+
+The Kotlin codec depends on the pinned stable Moshi `1.15.2` release. Normative
+schemas and cross-language fixtures remain in the repository root; Android
+does not maintain a divergent generated copy. The codec validates data only:
+it contains no registry, dispatcher, Accessibility implementation or Android
+capability adapter.
 
 Device capabilities must not be added here until their protocol contract,
 Runtime authorization path and Android Policy Enforcement Point checks are

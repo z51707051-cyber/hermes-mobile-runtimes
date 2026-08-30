@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/requests/compatibility-selection.schema.json",
+  "title": "CompatibilitySelection",
+  "type": "object",
+  "required": ["message_type", "selected_version", "schema_bundle_digest", "accepted_features"],
+  "properties": {
+    "message_type": {"const": "compatibility.selection"},
+    "selected_version": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/protocol_version"},
+    "schema_bundle_digest": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/sha256_digest"},
+    "accepted_features": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,63}$"},
+      "uniqueItems": true,
+      "maxItems": 64
+    },
+    "extensions": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/extensions"}
+  },
+  "additionalProperties": false
+}

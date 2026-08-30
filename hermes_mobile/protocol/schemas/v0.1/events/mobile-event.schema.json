@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/events/mobile-event.schema.json",
+  "title": "MobileEvent",
+  "type": "object",
+  "required": ["message_type", "protocol_version", "id", "type", "source", "device_id", "timestamp", "cursor", "payload", "sensitivity", "deduplication_key", "redactions"],
+  "properties": {
+    "message_type": {"const": "mobile.event"},
+    "protocol_version": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/protocol_version"},
+    "id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "type": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$", "maxLength": 128},
+    "source": {"type": "string", "maxLength": 128},
+    "device_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "timestamp": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/timestamp"},
+    "cursor": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "payload": {"type": "object", "maxProperties": 64},
+    "sensitivity": {"enum": ["D0", "D1", "D2", "D3", "D4"]},
+    "deduplication_key": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
+    "redactions": {"type": "array", "items": {"type": "string", "maxLength": 128}, "uniqueItems": true, "maxItems": 32},
+    "extensions": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/extensions"}
+  },
+  "additionalProperties": false
+}
