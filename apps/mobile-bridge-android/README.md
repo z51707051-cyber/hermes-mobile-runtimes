@@ -1,17 +1,22 @@
 # Hermes Mobile Android Bridge
 
 This directory is the Android execution-plane boundary defined by
-[`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provides a reproducible,
-minimal-permission build foundation only. It is not an Android agent yet.
+[`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provided the reproducible
+build foundation. HMR-102 adds the reviewed device-security kernel. It is not
+an Android agent yet.
 
-## HMR-101 security boundary
+## HMR-102 security boundary
 
 The debug APK deliberately has:
 
-- no Android permissions;
+- `INTERNET` as its only Android permission;
+- cleartext disabled in the manifest and network-security configuration;
+- a P-256 device identity whose private key remains in Android Keystore;
+- a strict TLS 1.3/1.2 policy and closed `/v0/enroll` HTTPS endpoint parser;
+- a crash-safe, no-backup sequence/nonce replay ledger;
 - no Accessibility or Notification Listener service;
 - no receiver, provider or background service;
-- no network, enrollment, protocol or raw command endpoint;
+- no enrollment listener, protocol command route or raw device endpoint;
 - one exported launcher activity that displays bootstrap status;
 - no code copied or adapted from `hermes-android`.
 
@@ -44,7 +49,10 @@ Install JDK 17, Android platform 36 and build tools 36.0.0, then run:
 cd apps/mobile-bridge-android
 ./gradlew --dependency-verification=strict \
   :app:testDebugUnitTest :app:lintDebug :app:assembleDebug cyclonedxBom
-python3 ../../scripts/android/verify_android_bootstrap.py \
+python3 ../../scripts/android/verify_android_manifest_policy.py \
+  --network-security-config app/src/main/res/xml/network_security_config.xml \
+  --full-backup-rules app/src/main/res/xml/backup_rules.xml \
+  --data-extraction-rules app/src/main/res/xml/data_extraction_rules.xml \
   app/src/main/AndroidManifest.xml
 ```
 

@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 Android bootstrap in review
+> Status: Phase 1 device-security kernel in review
 > Last reviewed: 2026-08-29
 > The Android module is a zero-capability build skeleton; no phone tool is implemented.
 
@@ -15,7 +15,9 @@ Security inputs for implementation are maintained in
 [`docs/security/supply-chain-and-sbom.md`](docs/security/supply-chain-and-sbom.md).
 The accepted wire boundary and non-bypassable enforcement design are in
 [`ADR-0002`](docs/adr/0002-mobile-agent-protocol-v0.1.md) and
-[`ADR-0003`](docs/adr/0003-permission-gate-enforcement.md).
+[`ADR-0003`](docs/adr/0003-permission-gate-enforcement.md). Device identity,
+TLS enrollment, replay defense and key rotation are fixed by
+[`ADR-0005`](docs/adr/0005-device-identity-transport-and-key-rotation.md).
 
 This decision separates two responsibilities:
 
@@ -99,11 +101,11 @@ Transport must be authenticated, encrypted and replay-resistant. Development-onl
 | Android PEP | Validate device/session/action authorization immediately before execution | Trust a tool name without a policy decision |
 
 The physical Android project now lives in `apps/mobile-bridge-android/`.
-HMR-101 intentionally contains only a launcher and build/test controls. It
-requests no Android permissions, exposes no capability service and provides no
-transport endpoint. This preserves the ADR-0003 rule that device authority is
-introduced only behind an Android PEP; the launcher is not a PEP or a command
-channel.
+HMR-101 established its reproducible zero-permission build boundary. HMR-102
+adds only the device-security kernel: a non-exportable Keystore identity,
+closed TLS endpoint policy and crash-safe replay ledger. `INTERNET` is the sole
+Android permission. No enrollment listener, raw command route or phone
+capability is exposed, so the launcher is still not a PEP or command channel.
 
 ## 7. Action lifecycle
 
@@ -286,7 +288,8 @@ non-blocking preview canary until explicitly promoted.
 - ADR-0002: Mobile Agent Protocol V0.1 — accepted.
 - ADR-0003: Permission Gate enforcement — accepted.
 - ADR-0004: PhoneState consistency and artifact storage.
-- ADR-0005: Device identity, transport and key rotation.
+- ADR-0005: Device identity, transport and key rotation — accepted.
 - ADR-0006: Error taxonomy and bounded recovery policy.
 
-Phase 1 may bootstrap only enough code to validate ADR-0001–0003 and the `phone.current_app` vertical slice. See [`ROADMAP.md`](ROADMAP.md).
+Phase 1 expands only through the reviewed HMR-101–HMR-107 foundation and the
+`phone.current_app` vertical slice. See [`ROADMAP.md`](ROADMAP.md).

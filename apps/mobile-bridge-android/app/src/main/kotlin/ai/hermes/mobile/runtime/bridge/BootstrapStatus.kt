@@ -9,9 +9,8 @@ internal data class BootstrapStatus(
 internal object BootstrapStatusProvider {
     fun current(): BootstrapStatus =
         BootstrapStatus(
-            phase = "HMR-101",
-            summary = "Android bridge bootstrap only",
+            phase = "HMR-102",
+            summary = "Device security kernel; no phone capabilities",
             enabledCapabilities = emptyList(),
         )
 }
-
