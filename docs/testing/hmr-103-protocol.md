@@ -31,7 +31,14 @@ implementation source text.
 
 ## Dependency bootstrap
 
-Moshi `1.15.2` is a new pinned Android dependency. The first CI pass generates
-Gradle lock and SHA-256 verification metadata and intentionally fails. Review
-and commit that generated metadata, delete `.dependency-bootstrap`, then rerun
-CI in strict mode. HMR-103 is not complete while bootstrap mode remains active.
+Moshi `1.15.2` is a new pinned Android dependency. CI run `33304269813`
+generated the reviewed Gradle lock and SHA-256 verification metadata. The
+normalized diff contains only Moshi `1.15.2`, Okio `3.7.0` and the Kotlin
+JDK-compatibility artifacts selected by that graph. Moshi and Okio are
+Apache-2.0 package-manager dependencies represented by the lockfiles and the
+generated CycloneDX SBOM; they do not require manual entries in
+`third_party/inventory.yaml`.
+
+The bootstrap marker is removed after review. All subsequent runs must execute
+with `--dependency-verification=strict`, must leave every Gradle lockfile clean,
+and must fail on any unreviewed artifact.
