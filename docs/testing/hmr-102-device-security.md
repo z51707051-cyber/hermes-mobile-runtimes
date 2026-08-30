@@ -1,7 +1,7 @@
 # HMR-102 Device Security Verification
 
 > Phase: 1 / HMR-102
-> Status: in review
+> Status: review evidence complete
 > Last updated: 2026-08-29
 
 ## Scope
@@ -56,6 +56,31 @@ scripts/run_tests.sh tests/mobile/unit/test_android_manifest_policy.py -q
 
 CI also decodes the final APK manifest, re-runs the policy against the merged
 manifest, validates the SBOM and publishes the APK digest and review evidence.
+
+## CI evidence
+
+Commit `b63c0c92077e15b0a68cdf9c2866debb009fa8aa` passed the complete Android
+security-kernel lane:
+
+- [GitHub Actions run 33266632036](https://github.com/z51707051-cyber/hermes-mobile-runtimes/actions/runs/33266632036)
+- evidence artifact ID: `9718853251`
+- evidence ZIP SHA-256: `61d73f911075969278a7136ef015d5ee55140b8afe98ed057c0f4e3dd26e08ac`
+- debug APK SHA-256: `e66a6aa0fb17c1c9ff62090da3c15d503883c68c418346f59069fba686445514`
+- debug APK size: 2,581,512 bytes
+
+The strict Gradle build, Android JVM unit tests, lint with warnings as errors,
+APK assembly, decoded-manifest policy, compiled resource binding, packaged-file
+inventory and CycloneDX checks all passed. The decoded APK targets API 36 with
+minimum API 30, requests exactly `android.permission.INTERNET`, exports only
+the launcher activity, disables cleartext and backup, and binds
+`android:networkSecurityConfig` to the packaged
+`xml/network_security_config` resource. The direct APK SBOM is CycloneDX 1.6,
+identifies the artifact as an MIT-licensed application and contains only the
+two expected runtime dependencies.
+
+The evidence ZIP digest reported by GitHub matches a locally recalculated
+SHA-256. Its embedded APK checksum and resource table were also inspected
+before this record was written.
 
 ## Deferred proof
 
