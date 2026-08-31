@@ -183,6 +183,10 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
 - Skill installation/update is reviewed; auto-learned candidates are quarantined.
 - A Skill cannot call a higher-risk primitive than declared.
 - MCP tools enter the same Router/Gate and cannot access raw bridge credentials.
+- Runtime ingress accepts only `ToolExecutionRequest`; Android ingress accepts
+  only `AuthorizedAction`, and provider resolution occurs after the Android PEP.
+- Capability reports change availability, never the stable Tool schema or the
+  Runtime-owned minimum risk classification.
 - Pin upstream source SHAs and dependencies; preserve MIT/Apache notices.
 - Generate SBOMs for Python, Gradle/APK, models and bundled assets separately.
 - Treat Mobilerun Portal APK and model/data licenses as independent artifacts until proven otherwise.

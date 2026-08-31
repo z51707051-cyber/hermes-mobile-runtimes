@@ -3,9 +3,11 @@
 This directory is the Android execution-plane boundary defined by
 [`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provided the reproducible
 build foundation, HMR-102 added the reviewed device-security kernel and
-HMR-103 adds the closed protocol codec. It is not an Android agent yet.
+HMR-103 added the closed protocol codec. HMR-104 adds a fail-closed capability
+catalog and Android Tool Router, but no real capability provider. It is not an
+Android agent yet.
 
-## HMR-103 protocol and security boundary
+## HMR-104 routing and security boundary
 
 The debug APK deliberately has:
 
@@ -17,6 +19,10 @@ The debug APK deliberately has:
 - strict bounded JSON parsing with duplicate-key rejection;
 - fail-closed compatibility negotiation and canonical action digests;
 - verification of the normative Python schema-bundle manifest;
+- a closed 13-tool capability catalog with immutable minimum risk levels;
+- an Android Router that accepts only `AuthorizedAction` and calls its PEP
+  before provider resolution;
+- a deny-all default PEP and an empty production capability registry;
 - no Accessibility or Notification Listener service;
 - no receiver, provider or background service;
 - no enrollment listener, protocol command route or raw device endpoint;
@@ -26,11 +32,11 @@ The debug APK deliberately has:
 The Kotlin codec depends on the pinned stable Moshi `1.15.2` release. Normative
 schemas and cross-language fixtures remain in the repository root; Android
 does not maintain a divergent generated copy. The codec validates data only:
-it contains no registry, dispatcher, Accessibility implementation or Android
-capability adapter.
+it does not dispatch. The separate Router is the only provider invocation
+path, and no transport listener exposes that Router to Hermes or the network.
 
-Device capabilities must not be added here until their protocol contract,
-Runtime authorization path and Android Policy Enforcement Point checks are
+Device capabilities must be registered only behind the Router after their
+protocol contract, Runtime authorization path and Android PEP checks are
 reviewed. In particular, do not add Shell, Shizuku, APK installation,
 arbitrary Intent, SMS, call, microphone or location authority to this module.
 

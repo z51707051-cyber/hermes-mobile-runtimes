@@ -13,6 +13,14 @@ The only accepted authorization digest representation is the reviewed
 integer-only canonical JSON profile in
 [`docs/protocol/v0.1.md`](docs/protocol/v0.1.md).
 
+HMR-104 adds the fail-closed dispatch boundary. The Runtime Router accepts only
+a serialized `ToolExecutionRequest`, obtains authorization from the protected
+Policy Broker, checks the immutable capability risk floor and sends only the
+resulting `AuthorizedAction` to Android. Android rejects ordinary Tool
+requests, calls its PEP before provider resolution, and validates result
+correlation before returning. Both capability registries contain no production
+provider in HMR-104, and no raw bridge endpoint is introduced.
+
 ---
 
 # Hermes Agent Security Policy

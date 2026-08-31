@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 protocol kernel in review
+> Status: Phase 1 routing kernel in review
 > Last reviewed: 2026-08-30
-> The Android module can validate protocol messages but no phone tool is implemented.
+> Runtime and Android have fail-closed routing boundaries, but no phone tool is implemented.
 
 ## 1. Decision
 
@@ -105,9 +105,13 @@ HMR-101 established its reproducible zero-permission build boundary. HMR-102
 added the device-security kernel: a non-exportable Keystore identity, closed
 TLS endpoint policy and crash-safe replay ledger. HMR-103 adds a strict,
 bounded JSON codec, compatibility negotiation and verification of the same
-schema-bundle digest used by Python. `INTERNET` remains the sole Android
-permission. No enrollment listener, raw command route, Tool Router or phone
-capability is exposed, so the launcher is still not a PEP or command channel.
+schema-bundle digest used by Python. HMR-104 adds a closed capability catalog
+and the only host/device routing path: the host accepts only
+`ToolExecutionRequest`, and Android accepts only a broker-issued
+`AuthorizedAction` followed by a PEP allow decision. Both registries start
+without a real provider. `INTERNET` remains the sole Android permission, and
+there is still no enrollment listener, raw command endpoint or phone
+capability, so the launcher is not a command channel.
 
 ## 7. Action lifecycle
 

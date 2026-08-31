@@ -12,6 +12,7 @@ on:
       - "docs/testing/android-bootstrap.md"
       - "docs/testing/hmr-102-device-security.md"
       - "docs/testing/hmr-103-protocol.md"
+      - "docs/testing/hmr-104-capability-router.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "pyproject.toml"
@@ -30,6 +31,7 @@ on:
       - "docs/testing/android-bootstrap.md"
       - "docs/testing/hmr-102-device-security.md"
       - "docs/testing/hmr-103-protocol.md"
+      - "docs/testing/hmr-104-capability-router.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "pyproject.toml"
@@ -46,7 +48,7 @@ concurrency:
 
 jobs:
   protocol-contract:
-    name: Validate Python protocol contract
+    name: Validate Python protocol and routing contract
     runs-on: ubuntu-24.04
     timeout-minutes: 15
 
@@ -75,14 +77,18 @@ jobs:
         run: |
           set -euo pipefail
           uv run python scripts/mobile/generate_protocol_manifest.py --check
-          uv run ruff check hermes_mobile tests/mobile/contract scripts/mobile
-          uv run ruff format --check hermes_mobile tests/mobile/contract scripts/mobile
+          uv run ruff check hermes_mobile tests/mobile/contract \
+            tests/mobile/unit/test_runtime_router.py scripts/mobile
+          uv run ruff format --check hermes_mobile tests/mobile/contract \
+            tests/mobile/unit/test_runtime_router.py scripts/mobile
 
-      - name: Run protocol contract tests
-        run: scripts/run_tests.sh -j 4 tests/mobile/contract -q
+      - name: Run protocol and routing contract tests
+        run: |
+          scripts/run_tests.sh -j 4 tests/mobile/contract \
+            tests/mobile/unit/test_runtime_router.py -q
 
   bootstrap:
-    name: Build, test and inspect protocol-kernel APK
+    name: Build, test and inspect routing-kernel APK
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
