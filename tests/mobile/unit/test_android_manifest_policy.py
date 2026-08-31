@@ -7,7 +7,9 @@ import textwrap
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 VERIFIER_PATH = REPO_ROOT / "scripts" / "android" / "verify_android_manifest_policy.py"
-SPEC = importlib.util.spec_from_file_location("verify_android_manifest_policy", VERIFIER_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "verify_android_manifest_policy", VERIFIER_PATH
+)
 assert SPEC is not None and SPEC.loader is not None
 VERIFIER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(VERIFIER)
@@ -26,6 +28,12 @@ def test_accepts_current_transport_manifest_and_network_policy() -> None:
     assert (
         VERIFIER.validate_network_security_config(
             app_root / "res" / "xml" / "network_security_config.xml"
+        )
+        == []
+    )
+    assert (
+        VERIFIER.validate_accessibility_service_config(
+            app_root / "res" / "xml" / "current_app_accessibility_service.xml"
         )
         == []
     )
@@ -56,6 +64,15 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
                 <category android:name="android.intent.category.LAUNCHER" />
               </intent-filter>
             </activity>
+            <service android:name=".accessibility.CurrentAppAccessibilityService"
+                android:exported="true"
+                android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+              <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+              </intent-filter>
+              <meta-data android:name="android.accessibilityservice"
+                  android:resource="@xml/current_app_accessibility_service" />
+            </service>
           </application>
         </manifest>
         """,
@@ -92,6 +109,15 @@ def test_rejects_any_permission_beyond_internet(tmp_path: Path) -> None:
                 <category android:name="android.intent.category.LAUNCHER" />
               </intent-filter>
             </activity>
+            <service android:name=".accessibility.CurrentAppAccessibilityService"
+                android:exported="true"
+                android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+              <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+              </intent-filter>
+              <meta-data android:name="android.accessibilityservice"
+                  android:resource="@xml/current_app_accessibility_service" />
+            </service>
           </application>
         </manifest>
         """,
@@ -103,7 +129,7 @@ def test_rejects_any_permission_beyond_internet(tmp_path: Path) -> None:
     ]
 
 
-def test_rejects_exported_service_and_insecure_application_defaults(
+def test_rejects_unprotected_service_and_insecure_application_defaults(
     tmp_path: Path,
 ) -> None:
     manifest = _write_xml(
@@ -130,8 +156,32 @@ def test_rejects_exported_service_and_insecure_application_defaults(
         "application android:usesCleartextTraffic must be false",
         "application android:networkSecurityConfig must reference "
         "@xml/network_security_config; found <none>",
-        "non-launcher components are forbidden in HMR-102: service",
-        "only the launcher activity may be exported",
+        "the only service must resolve to CurrentAppAccessibilityService",
+        "the accessibility service must require "
+        "android.permission.BIND_ACCESSIBILITY_SERVICE",
+        "the accessibility service must declare only the system AccessibilityService action",
+        "the accessibility service must contain exactly one accessibility metadata entry",
+    ]
+
+
+def test_rejects_accessibility_service_that_can_read_or_act_on_ui(
+    tmp_path: Path,
+) -> None:
+    config = _write_xml(
+        tmp_path,
+        "current_app_accessibility_service.xml",
+        """
+        <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+            android:accessibilityEventTypes="typeAllMask"
+            android:canPerformGestures="true"
+            android:canRetrieveWindowContent="true" />
+        """,
+    )
+
+    assert VERIFIER.validate_accessibility_service_config(config) == [
+        "current-app observer must listen only for typeWindowStateChanged",
+        "current-app observer must set android:canRetrieveWindowContent=false",
+        "current-app observer must set android:canPerformGestures=false",
     ]
 
 

@@ -5,9 +5,10 @@ The normative V0.1 decisions are in
 execution authorization are defined in
 [ADR-0003](../adr/0003-permission-gate-enforcement.md).
 
-No protocol implementation or Android product code exists yet. HMR-103 will
-add the JSON Schema bundle, Python/Kotlin codecs and bidirectional golden
-fixtures only after both ADRs are accepted.
+HMR-103 delivered the JSON Schema bundle, Python/Kotlin codecs and shared
+golden fixtures. HMR-104 delivered the closed Runtime/Android routing kernel,
+and HMR-105 adds the first protected Android capability consumer. Production
+broker IPC and authenticated device transport are still pending.
 
 ## Stable boundary
 

@@ -3,12 +3,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!--
-      HMR-102 policy: INTERNET is the only Android permission. It supports the
-      TLS-only enrollment boundary and does not grant a phone capability.
-      Accessibility, notifications, location, shell and exported bridge
-      components remain absent.
-    -->
+    <!-- INTERNET remains the only requested Android permission. -->
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -27,6 +22,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".accessibility.CurrentAppAccessibilityService"
+            android:exported="true"
+            android:label="@string/current_app_accessibility_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/current_app_accessibility_service" />
+        </service>
     </application>
 
 </manifest>

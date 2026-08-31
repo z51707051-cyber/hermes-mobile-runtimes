@@ -13,6 +13,7 @@ on:
       - "docs/testing/hmr-102-device-security.md"
       - "docs/testing/hmr-103-protocol.md"
       - "docs/testing/hmr-104-capability-router.md"
+      - "docs/testing/hmr-105-current-app.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "pyproject.toml"
@@ -32,6 +33,7 @@ on:
       - "docs/testing/hmr-102-device-security.md"
       - "docs/testing/hmr-103-protocol.md"
       - "docs/testing/hmr-104-capability-router.md"
+      - "docs/testing/hmr-105-current-app.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "pyproject.toml"
@@ -78,17 +80,22 @@ jobs:
           set -euo pipefail
           uv run python scripts/mobile/generate_protocol_manifest.py --check
           uv run ruff check hermes_mobile tests/mobile/contract \
-            tests/mobile/unit/test_runtime_router.py scripts/mobile
+            tests/mobile/unit/test_runtime_router.py \
+            tests/mobile/unit/test_android_manifest_policy.py \
+            scripts/mobile scripts/android/verify_android_manifest_policy.py
           uv run ruff format --check hermes_mobile tests/mobile/contract \
-            tests/mobile/unit/test_runtime_router.py scripts/mobile
+            tests/mobile/unit/test_runtime_router.py \
+            tests/mobile/unit/test_android_manifest_policy.py \
+            scripts/mobile scripts/android/verify_android_manifest_policy.py
 
       - name: Run protocol and routing contract tests
         run: |
           scripts/run_tests.sh -j 4 tests/mobile/contract \
-            tests/mobile/unit/test_runtime_router.py -q
+            tests/mobile/unit/test_runtime_router.py \
+            tests/mobile/unit/test_android_manifest_policy.py -q
 
   bootstrap:
-    name: Build, test and inspect routing-kernel APK
+    name: Build, test and inspect current-app APK
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
@@ -132,6 +139,7 @@ jobs:
         run: |
           python3 ../../scripts/android/verify_android_manifest_policy.py \
             --network-security-config app/src/main/res/xml/network_security_config.xml \
+            --accessibility-service-config app/src/main/res/xml/current_app_accessibility_service.xml \
             --full-backup-rules app/src/main/res/xml/backup_rules.xml \
             --data-extraction-rules app/src/main/res/xml/data_extraction_rules.xml \
             app/src/main/AndroidManifest.xml
@@ -204,6 +212,7 @@ jobs:
           sha256sum "$apk" > "$report_dir/app-debug.apk.sha256"
           python3 ../../scripts/android/verify_android_manifest_policy.py \
             --network-security-config app/src/main/res/xml/network_security_config.xml \
+            --accessibility-service-config app/src/main/res/xml/current_app_accessibility_service.xml \
             --full-backup-rules app/src/main/res/xml/backup_rules.xml \
             --data-extraction-rules app/src/main/res/xml/data_extraction_rules.xml \
             --compiled-resource-table "$report_dir/resource-table.txt" \

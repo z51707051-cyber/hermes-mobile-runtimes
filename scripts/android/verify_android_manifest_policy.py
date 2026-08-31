@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed when the HMR-102 Android manifest widens authority."""
+"""Fail closed when the Hermes Mobile Android manifest widens authority."""
 
 from __future__ import annotations
 
@@ -16,6 +16,9 @@ COMPONENT_TAGS = ("activity", "activity-alias", "service", "receiver", "provider
 PERMISSION_TAGS = ("uses-permission", "uses-permission-sdk-23")
 ALLOWED_PERMISSIONS = {"android.permission.INTERNET"}
 NETWORK_SECURITY_CONFIG = "@xml/network_security_config"
+ACCESSIBILITY_SERVICE_CONFIG = "@xml/current_app_accessibility_service"
+ACCESSIBILITY_SERVICE_PERMISSION = "android.permission.BIND_ACCESSIBILITY_SERVICE"
+ACCESSIBILITY_SERVICE_ACTION = "android.accessibilityservice.AccessibilityService"
 COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
 
@@ -27,6 +30,7 @@ def _android(element: ET.Element, attribute: str) -> str | None:
 def _compiled_reference_matches(
     value: str | None,
     resource_table: str | None,
+    resource_path: str = "xml/network_security_config",
 ) -> bool:
     if value is None or resource_table is None:
         return False
@@ -34,11 +38,14 @@ def _compiled_reference_matches(
     if match is None:
         return False
     resource_id = re.escape(match.group(1).lower())
-    resource_name = r"(?:[^\s:]+:)?xml/network_security_config"
-    return re.search(
-        rf"(?im)^\s*resource\s+{resource_id}\s+{resource_name}(?::|\s|$)",
-        resource_table,
-    ) is not None
+    resource_name = rf"(?:[^\s:]+:)?{re.escape(resource_path)}"
+    return (
+        re.search(
+            rf"(?im)^\s*resource\s+{resource_id}\s+{resource_name}(?::|\s|$)",
+            resource_table,
+        )
+        is not None
+    )
 
 
 def validate_manifest(
@@ -87,16 +94,20 @@ def validate_manifest(
         errors.append("application-level Android permission is forbidden")
 
     components = [node for tag in COMPONENT_TAGS for node in application.findall(tag)]
-    forbidden = [node.tag for node in components if node.tag != "activity"]
+    forbidden = [
+        node.tag for node in components if node.tag not in {"activity", "service"}
+    ]
     if forbidden:
         errors.append(
-            "non-launcher components are forbidden in HMR-102: "
+            "unexpected Android components are forbidden: "
             f"{', '.join(sorted(forbidden))}"
         )
 
     activities = application.findall("activity")
     if len(activities) != 1:
-        errors.append(f"expected exactly one launcher activity, found {len(activities)}")
+        errors.append(
+            f"expected exactly one launcher activity, found {len(activities)}"
+        )
         return errors
 
     activity = activities[0]
@@ -126,9 +137,77 @@ def validate_manifest(
     if "android.intent.category.LAUNCHER" not in categories:
         errors.append("launcher activity must declare android.intent.category.LAUNCHER")
 
+    services = application.findall("service")
+    if len(services) != 1:
+        errors.append(
+            "expected exactly one protected current-app accessibility service, "
+            f"found {len(services)}"
+        )
+        service = None
+    else:
+        service = services[0]
+
+    if service is not None:
+        service_names = {
+            ".accessibility.CurrentAppAccessibilityService",
+            "ai.hermes.mobile.runtime.bridge.accessibility.CurrentAppAccessibilityService",
+        }
+        if _android(service, "name") not in service_names:
+            errors.append(
+                "the only service must resolve to CurrentAppAccessibilityService"
+            )
+        if _android(service, "exported") != "true":
+            errors.append(
+                "the accessibility service must explicitly set android:exported=true"
+            )
+        if _android(service, "permission") != ACCESSIBILITY_SERVICE_PERMISSION:
+            errors.append(
+                "the accessibility service must require "
+                f"{ACCESSIBILITY_SERVICE_PERMISSION}"
+            )
+
+        service_actions = {
+            _android(node, "name")
+            for intent_filter in service.findall("intent-filter")
+            for node in intent_filter.findall("action")
+        }
+        if service_actions != {ACCESSIBILITY_SERVICE_ACTION}:
+            errors.append(
+                "the accessibility service must declare only the system "
+                "AccessibilityService action"
+            )
+
+        metadata = service.findall("meta-data")
+        matching_metadata = [
+            node
+            for node in metadata
+            if _android(node, "name") == "android.accessibilityservice"
+        ]
+        if len(metadata) != 1 or len(matching_metadata) != 1:
+            errors.append(
+                "the accessibility service must contain exactly one accessibility metadata entry"
+            )
+        else:
+            config = _android(matching_metadata[0], "resource")
+            if (
+                config != ACCESSIBILITY_SERVICE_CONFIG
+                and not _compiled_reference_matches(
+                    config,
+                    resource_table,
+                    "xml/current_app_accessibility_service",
+                )
+            ):
+                errors.append(
+                    "the accessibility service metadata must reference "
+                    f"{ACCESSIBILITY_SERVICE_CONFIG}; found {config or '<none>'}"
+                )
+
     exported = [node for node in components if _android(node, "exported") == "true"]
-    if exported != [activity]:
-        errors.append("only the launcher activity may be exported")
+    expected_exported = {activity} | ({service} if service is not None else set())
+    if set(exported) != expected_exported:
+        errors.append(
+            "only the launcher activity and protected accessibility service may be exported"
+        )
 
     return errors
 
@@ -166,6 +245,47 @@ def validate_network_security_config(path: Path) -> list[str]:
     return errors
 
 
+def validate_accessibility_service_config(path: Path) -> list[str]:
+    """Keep HMR-105 observation narrower than UI-tree or gesture authority."""
+
+    try:
+        root = ET.parse(path).getroot()
+    except (ET.ParseError, OSError) as exc:
+        return [f"cannot parse accessibility service config {path}: {exc}"]
+
+    if root.tag != "accessibility-service":
+        return ["accessibility service config root must be accessibility-service"]
+
+    errors: list[str] = []
+    if _android(root, "accessibilityEventTypes") != "typeWindowStateChanged":
+        errors.append(
+            "current-app observer must listen only for typeWindowStateChanged"
+        )
+    if _android(root, "canRetrieveWindowContent") != "false":
+        errors.append(
+            "current-app observer must set android:canRetrieveWindowContent=false"
+        )
+    if _android(root, "canPerformGestures") != "false":
+        errors.append("current-app observer must set android:canPerformGestures=false")
+
+    allowed_attributes = {
+        f"{ANDROID}accessibilityEventTypes",
+        f"{ANDROID}accessibilityFeedbackType",
+        f"{ANDROID}canPerformGestures",
+        f"{ANDROID}canRetrieveWindowContent",
+        f"{ANDROID}description",
+        f"{ANDROID}notificationTimeout",
+    }
+    unexpected = sorted(set(root.attrib) - allowed_attributes)
+    if unexpected:
+        errors.append(
+            "current-app observer contains unreviewed accessibility attributes"
+        )
+    if list(root):
+        errors.append("current-app observer config must not contain child elements")
+    return errors
+
+
 def _validate_exclude_set(
     parent: ET.Element,
     label: str,
@@ -173,7 +293,9 @@ def _validate_exclude_set(
     errors: list[str] = []
     if parent.findall("include"):
         errors.append(f"{label} must not contain include rules")
-    exclusions = {(node.get("domain"), node.get("path")) for node in parent.findall("exclude")}
+    exclusions = {
+        (node.get("domain"), node.get("path")) for node in parent.findall("exclude")
+    }
     expected = {(domain, ".") for domain in BACKUP_DOMAINS}
     if exclusions != expected:
         errors.append(f"{label} must exclude every app-data domain at path .")
@@ -200,7 +322,9 @@ def validate_backup_rules(
     try:
         data_extraction = ET.parse(data_extraction_path).getroot()
     except (ET.ParseError, OSError) as exc:
-        errors.append(f"cannot parse data extraction rules {data_extraction_path}: {exc}")
+        errors.append(
+            f"cannot parse data extraction rules {data_extraction_path}: {exc}"
+        )
     else:
         if data_extraction.tag != "data-extraction-rules":
             errors.append("data extraction rules root must be data-extraction-rules")
@@ -212,9 +336,13 @@ def validate_backup_rules(
             else:
                 errors.extend(_validate_exclude_set(cloud_backup[0], "cloud backup"))
             if len(device_transfer) != 1:
-                errors.append("data extraction rules require exactly one device-transfer")
+                errors.append(
+                    "data extraction rules require exactly one device-transfer"
+                )
             else:
-                errors.extend(_validate_exclude_set(device_transfer[0], "device transfer"))
+                errors.extend(
+                    _validate_exclude_set(device_transfer[0], "device transfer")
+                )
 
     return errors
 
@@ -223,6 +351,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifests", nargs="+", type=Path)
     parser.add_argument("--network-security-config", required=True, type=Path)
+    parser.add_argument("--accessibility-service-config", required=True, type=Path)
     parser.add_argument("--full-backup-rules", required=True, type=Path)
     parser.add_argument("--data-extraction-rules", required=True, type=Path)
     parser.add_argument("--compiled-resource-table", type=Path)
@@ -247,6 +376,11 @@ def main() -> int:
     network_errors = validate_network_security_config(args.network_security_config)
     if network_errors:
         failures[str(args.network_security_config)] = network_errors
+    accessibility_errors = validate_accessibility_service_config(
+        args.accessibility_service_config
+    )
+    if accessibility_errors:
+        failures[str(args.accessibility_service_config)] = accessibility_errors
     backup_errors = validate_backup_rules(
         args.full_backup_rules,
         args.data_extraction_rules,
@@ -261,8 +395,12 @@ def main() -> int:
         return 1
 
     for path in args.manifests:
-        print(f"verified HMR-102 Android manifest policy: {path}")
+        print(f"verified Hermes Mobile Android manifest policy: {path}")
     print(f"verified TLS-only network policy: {args.network_security_config}")
+    print(
+        "verified current-app-only accessibility policy: "
+        f"{args.accessibility_service_config}"
+    )
     print("verified no-backup/no-transfer policy")
     return 0
 

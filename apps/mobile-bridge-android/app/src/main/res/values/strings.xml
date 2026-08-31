@@ -4,5 +4,7 @@
     <string name="bootstrap_title">%1$s bootstrap</string>
     <string name="bootstrap_status">%1$s</string>
     <string name="capabilities_disabled">No device capabilities are enabled.</string>
+    <string name="capabilities_enabled">Available capability: %1$s</string>
+    <string name="current_app_accessibility_label">Hermes current app observer</string>
+    <string name="current_app_accessibility_description">Reports only the active app and activity to the protected Hermes Mobile Runtime.</string>
 </resources>
-

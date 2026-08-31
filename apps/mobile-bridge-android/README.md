@@ -2,16 +2,16 @@
 
 This directory is the Android execution-plane boundary defined by
 [`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provided the reproducible
-build foundation, HMR-102 added the reviewed device-security kernel and
-HMR-103 added the closed protocol codec. HMR-104 adds a fail-closed capability
-catalog and Android Tool Router, but no real capability provider. It is not an
-Android agent yet.
+build foundation, HMR-102 added the reviewed device-security kernel,
+HMR-103 added the closed protocol codec and HMR-104 added fail-closed routing.
+HMR-105 adds the first read-only provider, `phone.current_app`. It is still not
+a general Android agent.
 
-## HMR-104 routing and security boundary
+## HMR-105 current-app boundary
 
 The debug APK deliberately has:
 
-- `INTERNET` as its only Android permission;
+- `INTERNET` as its only requested Android permission;
 - cleartext disabled in the manifest and network-security configuration;
 - a P-256 device identity whose private key remains in Android Keystore;
 - a strict TLS 1.3/1.2 policy and closed `/v0/enroll` HTTPS endpoint parser;
@@ -22,12 +22,27 @@ The debug APK deliberately has:
 - a closed 13-tool capability catalog with immutable minimum risk levels;
 - an Android Router that accepts only `AuthorizedAction` and calls its PEP
   before provider resolution;
-- a deny-all default PEP and an empty production capability registry;
-- no Accessibility or Notification Listener service;
-- no receiver, provider or background service;
+- a deny-all default authorization PEP and a live capability check immediately
+  before dispatch;
+- one system-bound Accessibility service that listens only for
+  `TYPE_WINDOW_STATE_CHANGED` and retains package/activity identity;
+- `canRetrieveWindowContent=false` and `canPerformGestures=false`, enforced by
+  source and built-APK policy checks;
+- no Notification Listener, receiver, content provider or general background
+  service;
 - no enrollment listener, protocol command route or raw device endpoint;
 - one exported launcher activity that displays bootstrap status;
 - no code copied or adapted from `hermes-android`.
+
+The current-app Provider emits a schema-valid `ToolExecutionResult` with the
+same minimal foreground-package state as `before_state` and `after_state` for
+the read-only observation. Activity identity remains internal until the full
+PhoneState contract is decided in ADR-0004. A disconnected, empty or stale
+observer is a typed unavailable capability, never an empty-success result.
+
+The APK exposes no listener or Binder command surface. The default PEP denies
+every action unless a reviewed authorization verifier is injected by a future
+transport composition.
 
 The Kotlin codec depends on the pinned stable Moshi `1.15.2` release. Normative
 schemas and cross-language fixtures remain in the repository root; Android
@@ -66,6 +81,7 @@ cd apps/mobile-bridge-android
   :app:testDebugUnitTest :app:lintDebug :app:assembleDebug cyclonedxBom
 python3 ../../scripts/android/verify_android_manifest_policy.py \
   --network-security-config app/src/main/res/xml/network_security_config.xml \
+  --accessibility-service-config app/src/main/res/xml/current_app_accessibility_service.xml \
   --full-backup-rules app/src/main/res/xml/backup_rules.xml \
   --data-extraction-rules app/src/main/res/xml/data_extraction_rules.xml \
   app/src/main/AndroidManifest.xml

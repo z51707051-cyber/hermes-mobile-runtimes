@@ -15,6 +15,7 @@ from .capability_registry import (
     CapabilityRegistryError,
     CapabilityUnavailableError,
 )
+from .audit import ExecutionAuditSink, RouteAuditRecord
 
 
 _REQUEST_BINDING_FIELDS = frozenset({
@@ -92,11 +93,13 @@ class ToolRouter:
         capabilities: CapabilityRegistry,
         policy_broker: PolicyBroker,
         device_transport: AuthorizedDeviceTransport,
+        audit_sink: ExecutionAuditSink,
         codec: ProtocolCodec | None = None,
     ) -> None:
         self._capabilities = capabilities
         self._policy_broker = policy_broker
         self._device_transport = device_transport
+        self._audit_sink = audit_sink
         self._codec = codec or ProtocolCodec()
 
     def route(self, payload: bytes | str) -> bytes:
@@ -137,6 +140,7 @@ class ToolRouter:
                     "POLICY",
                     "policy result is missing its decision identifier",
                 )
+            self._audit_result(request, decision)
             return self._codec.encode(decision)
 
         if decision["message_type"] != "action.authorized":
@@ -161,6 +165,7 @@ class ToolRouter:
         except CapabilityUnavailableError as exc:
             raise ToolRouteError(exc.code, "RUNTIME", str(exc)) from exc
 
+        self._audit_authorization(request, decision)
         action_bytes = self._codec.encode(decision)
         result_bytes = self._call_device(action_bytes)
         result = self._decode(result_bytes, owner="ANDROID_PEP")
@@ -173,7 +178,57 @@ class ToolRouter:
         self._validate_result_binding(
             request, result, decision_id=decision["policy_decision_id"]
         )
+        self._audit_result(request, result)
         return self._codec.encode(result)
+
+    def _audit_authorization(self, request: dict, action: dict) -> None:
+        self._append_audit(
+            RouteAuditRecord(
+                stage="AUTHORIZED",
+                protocol_version=request["protocol_version"],
+                request_id=request["request_id"],
+                task_id=request["task_id"],
+                span_id=request["span_id"],
+                device_id=request["device_id"],
+                tool=request["tool"],
+                parameter_digest=sha256_digest(request["parameters"]),
+                permission_decision_id=action["policy_decision_id"],
+                action_digest=action["action_digest"],
+                effective_risk=action["effective_risk"],
+            )
+        )
+
+    def _audit_result(self, request: dict, result: dict) -> None:
+        self._append_audit(
+            RouteAuditRecord(
+                stage="RESULT",
+                protocol_version=request["protocol_version"],
+                request_id=request["request_id"],
+                task_id=request["task_id"],
+                span_id=request["span_id"],
+                device_id=request["device_id"],
+                tool=request["tool"],
+                parameter_digest=result["parameter_digest"],
+                permission_decision_id=result["permission_decision_id"],
+                execution_status=result["execution_status"],
+                before_state_id=self._state_id(result["before_state"]),
+                after_state_id=self._state_id(result["after_state"]),
+            )
+        )
+
+    def _append_audit(self, record: RouteAuditRecord) -> None:
+        try:
+            self._audit_sink.append(record)
+        except Exception as exc:
+            raise ToolRouteError(
+                "AUDIT_UNAVAILABLE",
+                "RUNTIME",
+                "protected execution audit is unavailable",
+            ) from exc
+
+    @staticmethod
+    def _state_id(state: dict | None) -> str | None:
+        return state["state_id"] if state is not None else None
 
     def _decode(self, payload: bytes | str, *, owner: str) -> dict:
         try:

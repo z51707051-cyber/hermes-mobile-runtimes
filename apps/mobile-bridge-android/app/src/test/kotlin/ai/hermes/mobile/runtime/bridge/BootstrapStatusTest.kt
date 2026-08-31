@@ -6,10 +6,10 @@ import org.junit.Test
 
 class BootstrapStatusTest {
     @Test
-    fun bootstrapExposesNoDeviceCapabilities() {
+    fun bootstrapRequiresLiveAccessibilityObservationBeforeAdvertisingCapability() {
         val status = BootstrapStatusProvider.current()
 
-        assertEquals("HMR-103", status.phase)
+        assertEquals("HMR-105", status.phase)
         assertTrue(status.enabledCapabilities.isEmpty())
     }
 }
