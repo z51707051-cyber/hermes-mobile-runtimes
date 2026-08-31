@@ -41,7 +41,7 @@ internal fun interface AndroidPolicyEnforcementPoint {
     fun evaluate(action: AuthorizedAction): PepDecision
 }
 
-/** Safe production default until HMR-105 wires the first real PEP consumer. */
+/** Safe production default until an authenticated broker supplies authorization. */
 internal object DenyAllPolicyEnforcementPoint : AndroidPolicyEnforcementPoint {
     override fun evaluate(action: AuthorizedAction): PepDecision =
         PepDecision.deny("CAPABILITY_UNAVAILABLE")

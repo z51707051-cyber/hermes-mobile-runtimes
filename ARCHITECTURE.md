@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 routing kernel in review
-> Last reviewed: 2026-08-30
-> Runtime and Android have fail-closed routing boundaries, but no phone tool is implemented.
+> Status: Phase 1 `phone.current_app` vertical slice in review
+> Last reviewed: 2026-08-31
+> The first read-only provider exists behind Runtime Audit, policy routing, Android PEP, and live capability checks.
 
 ## 1. Decision
 
@@ -108,10 +108,19 @@ bounded JSON codec, compatibility negotiation and verification of the same
 schema-bundle digest used by Python. HMR-104 adds a closed capability catalog
 and the only host/device routing path: the host accepts only
 `ToolExecutionRequest`, and Android accepts only a broker-issued
-`AuthorizedAction` followed by a PEP allow decision. Both registries start
-without a real provider. `INTERNET` remains the sole Android permission, and
-there is still no enrollment listener, raw command endpoint or phone
-capability, so the launcher is not a command channel.
+`AuthorizedAction` followed by a PEP allow decision. HMR-105 adds the first
+provider: a minimal Accessibility service retains only package/activity
+identity from `TYPE_WINDOW_STATE_CHANGED`. Its reviewed configuration cannot
+retrieve the UI hierarchy or perform gestures. The Provider emits only the
+V0.1 foreground-package `PhoneStateRef`; activity remains device-local until
+ADR-0004 defines the full state contract. Runtime now requires a redacted
+Audit sink before device dispatch and correlates terminal state ids afterward.
+Durable append-only Audit remains HMR-107.
+
+`INTERNET` remains the sole requested Android permission. The production PEP
+still defaults to deny-all, and there is no protocol listener, broker IPC
+client or model-facing Tool registration in the APK. The launcher is not a
+command channel.
 
 ## 7. Action lifecycle
 

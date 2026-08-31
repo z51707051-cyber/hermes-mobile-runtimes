@@ -51,12 +51,17 @@ cd apps/mobile-bridge-android
 ```
 
 CI additionally applies the existing APK manifest/content and SBOM checks.
-The expected APK still has only `INTERNET`, no service/provider/receiver and no
-code path that reads or mutates Android application state.
+At the HMR-104 checkpoint the APK had only `INTERNET`, no
+service/provider/receiver and no code path that read or mutated Android
+application state. HMR-105 deliberately supersedes that component inventory
+with one system-protected, read-only Accessibility service.
 
-## Deferred to HMR-105+
+## Deferred after HMR-104
 
 - real protected-broker IPC and device transport wiring;
 - signature/session/replay/audit enforcement in a production PEP;
-- the first `phone.current_app` provider and model-facing service-gated Tool;
-- PhoneState capture, verification and append-only audit persistence.
+- model-facing Tool registration through that protected client path;
+- full PhoneState capture, verification and append-only audit persistence.
+
+HMR-105 delivers the first `phone.current_app` Provider and a redacted Audit
+interface, but intentionally does not claim the remaining production wiring.

@@ -35,7 +35,15 @@ class MainActivity : Activity() {
         )
         layout.addView(
             TextView(this).apply {
-                text = getString(R.string.capabilities_disabled)
+                text =
+                    if (status.enabledCapabilities.isEmpty()) {
+                        getString(R.string.capabilities_disabled)
+                    } else {
+                        getString(
+                            R.string.capabilities_enabled,
+                            status.enabledCapabilities.joinToString(),
+                        )
+                    }
                 textSize = 14f
                 gravity = Gravity.CENTER
             },
@@ -44,4 +52,3 @@ class MainActivity : Activity() {
         setContentView(layout)
     }
 }
-

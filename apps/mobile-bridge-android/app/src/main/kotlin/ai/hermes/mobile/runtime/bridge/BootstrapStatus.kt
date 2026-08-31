@@ -1,5 +1,7 @@
 package ai.hermes.mobile.runtime.bridge
 
+import ai.hermes.mobile.runtime.bridge.runtime.BridgeRuntime
+
 internal data class BootstrapStatus(
     val phase: String,
     val summary: String,
@@ -9,8 +11,8 @@ internal data class BootstrapStatus(
 internal object BootstrapStatusProvider {
     fun current(): BootstrapStatus =
         BootstrapStatus(
-            phase = "HMR-103",
-            summary = "Protocol codec and security kernel; no phone capabilities",
-            enabledCapabilities = emptyList(),
+            phase = "HMR-105",
+            summary = "Protected current-app observation vertical slice",
+            enabledCapabilities = BridgeRuntime.availableCapabilities(),
         )
 }

@@ -34,7 +34,8 @@ internal class AuthorizedAction internal constructor(
  *
  * It accepts only a codec-validated AuthorizedAction, invokes the PEP before
  * resolving a provider and validates the provider result before returning it.
- * No transport listener or real provider is registered by HMR-104.
+ * HMR-105 registers one read-only provider through a separate composition
+ * root; this class still exposes no transport listener or raw command path.
  */
 internal class AndroidToolRouter(
     private val capabilities: CapabilityRegistry,

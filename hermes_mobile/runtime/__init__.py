@@ -1,10 +1,11 @@
 """Protected Mobile Runtime routing primitives.
 
 The package is deliberately independent from Hermes' model-tool registry.
-HMR-104 defines the only broker/device routing path but registers no real
-Android capability.
+HMR-104 defines the only broker/device routing path; HMR-105 adds the required
+redacted Audit seam used by the first Android read-only provider.
 """
 
+from .audit import ExecutionAuditSink, RouteAuditRecord
 from .capability_registry import (
     CANONICAL_CAPABILITIES,
     CapabilityDefinition,
@@ -28,7 +29,9 @@ __all__ = [
     "CapabilityReport",
     "CapabilityUnavailableError",
     "DeviceCapabilitySnapshot",
+    "ExecutionAuditSink",
     "PolicyBroker",
+    "RouteAuditRecord",
     "ToolRouteError",
     "ToolRouter",
 ]

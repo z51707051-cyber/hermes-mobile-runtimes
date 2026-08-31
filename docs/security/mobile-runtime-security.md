@@ -187,6 +187,9 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
   only `AuthorizedAction`, and provider resolution occurs after the Android PEP.
 - Capability reports change availability, never the stable Tool schema or the
   Runtime-owned minimum risk classification.
+- HMR-105's Accessibility service is restricted to window-state identity: its
+  manifest binding is system-protected, UI-tree retrieval and gestures are
+  disabled, and disconnect/no-state/stale-state conditions fail closed.
 - Pin upstream source SHAs and dependencies; preserve MIT/Apache notices.
 - Generate SBOMs for Python, Gradle/APK, models and bundled assets separately.
 - Treat Mobilerun Portal APK and model/data licenses as independent artifacts until proven otherwise.

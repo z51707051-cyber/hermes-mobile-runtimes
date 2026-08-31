@@ -21,6 +21,17 @@ requests, calls its PEP before provider resolution, and validates result
 correlation before returning. Both capability registries contain no production
 provider in HMR-104, and no raw bridge endpoint is introduced.
 
+HMR-105 adds only the least-authority current-app observation surface. Android
+binds the exported service through the signature-level
+`BIND_ACCESSIBILITY_SERVICE` permission; its static configuration accepts only
+window-state-change events and explicitly disables UI hierarchy retrieval and
+gesture dispatch. The callback stores package/activity identity only and never
+retains an Accessibility event, node, text, bounds or mutable Android object.
+The wire result exposes only the foreground package defined by V0.1. Runtime
+Audit receives normalized digests, decision ids, status and state ids—not raw
+parameters or UI content—and precommit failure prevents device dispatch. The
+default Android PEP remains deny-all and no transport listener is added.
+
 ---
 
 # Hermes Agent Security Policy
