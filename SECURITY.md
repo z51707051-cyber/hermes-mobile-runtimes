@@ -27,10 +27,18 @@ binds the exported service through the signature-level
 window-state-change events and explicitly disables UI hierarchy retrieval and
 gesture dispatch. The callback stores package/activity identity only and never
 retains an Accessibility event, node, text, bounds or mutable Android object.
-The wire result exposes only the foreground package defined by V0.1. Runtime
-Audit receives normalized digests, decision ids, status and state ids—not raw
+The HMR-105 wire result exposed only the foreground package. Runtime Audit
+receives normalized digests, decision ids, status and state ids—not raw
 parameters or UI content—and precommit failure prevents device dispatch. The
 default Android PEP remains deny-all and no transport listener is added.
+
+HMR-106 makes each foreground observation an immutable state generation with a
+new opaque id, predecessor, monotonic freshness, completeness and a
+basis-tagged fingerprint. Disconnect clears the current generation. The
+implemented `WINDOW_IDENTITY` digest covers only package/activity fields that
+are already disclosed in the same state; it is not screenshot or UI-content
+verification. Future D3-derived fingerprints must be keyed as required by
+ADR-0004, and mixed/incoherent state cannot authorize mutation.
 
 ---
 

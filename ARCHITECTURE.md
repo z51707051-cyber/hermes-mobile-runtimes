@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 `phone.current_app` vertical slice in review
-> Last reviewed: 2026-08-31
-> The first read-only provider exists behind Runtime Audit, policy routing, Android PEP, and live capability checks.
+> Status: Phase 1 minimal PhoneState/Observer in review
+> Last reviewed: 2026-09-02
+> The first read-only provider now emits coherent, versioned foreground state generations behind the protected routing path.
 
 ## 1. Decision
 
@@ -18,6 +18,9 @@ The accepted wire boundary and non-bypassable enforcement design are in
 [`ADR-0003`](docs/adr/0003-permission-gate-enforcement.md). Device identity,
 TLS enrollment, replay defense and key rotation are fixed by
 [`ADR-0005`](docs/adr/0005-device-identity-transport-and-key-rotation.md).
+PhoneState consistency, transition semantics and protected artifact boundaries
+are fixed by
+[`ADR-0004`](docs/adr/0004-phone-state-consistency-and-artifact-storage.md).
 
 This decision separates two responsibilities:
 
@@ -116,6 +119,15 @@ V0.1 foreground-package `PhoneStateRef`; activity remains device-local until
 ADR-0004 defines the full state contract. Runtime now requires a redacted
 Audit sink before device dispatch and correlates terminal state ids afterward.
 Durable append-only Audit remains HMR-107.
+
+HMR-106 advances the pre-release protocol patch to `0.1.1`. Each accepted
+window event creates one immutable state generation containing a predecessor,
+foreground package/activity claim, capture completeness and a typed
+`WINDOW_IDENTITY` fingerprint. Transition is derived as `UNKNOWN`, `NONE` or
+`CHANGED`; it is not verification. Service disconnect clears the current
+generation so reconnect cannot revive old state. ADR-0004 reserves coherent
+multi-source capture and protected artifacts for HMR-108/109 without widening
+the current Accessibility authority.
 
 `INTERNET` remains the sole requested Android permission. The production PEP
 still defaults to deny-all, and there is no protocol listener, broker IPC
@@ -254,6 +266,13 @@ capture_errors / redactions
 
 State capture should be as atomic as Android allows. Each field records freshness; callers must not combine a stale tree with a new screenshot without marking the skew.
 
+The implemented HMR-106 foreground profile is intentionally smaller than the
+eventual state above. It atomically publishes package/activity, predecessor,
+capture status/errors and a basis-tagged window-identity fingerprint. It does
+not claim UI-tree or screenshot coverage. Future required components may be
+fused only within ADR-0004's skew limit; incoherent state cannot authorize a
+mutation.
+
 ## 10. Permission architecture
 
 Policy has two enforcement points:
@@ -320,7 +339,7 @@ non-blocking preview canary until explicitly promoted.
 - ADR-0001: Repository composition and upstream boundaries.
 - ADR-0002: Mobile Agent Protocol V0.1 — accepted.
 - ADR-0003: Permission Gate enforcement — accepted.
-- ADR-0004: PhoneState consistency and artifact storage.
+- ADR-0004: PhoneState consistency and artifact storage — accepted.
 - ADR-0005: Device identity, transport and key rotation — accepted.
 - ADR-0006: Error taxonomy and bounded recovery policy.
 

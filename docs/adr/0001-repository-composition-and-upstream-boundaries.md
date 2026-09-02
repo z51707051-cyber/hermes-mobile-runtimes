@@ -164,6 +164,6 @@ Before ADR-0002 implementation begins:
 
 - ADR-0002: Mobile Agent Protocol V0.1.
 - ADR-0003: Permission Gate enforcement.
-- ADR-0004: PhoneState consistency and artifact storage.
+- ADR-0004: PhoneState consistency and artifact storage — accepted.
 - ADR-0005: Device identity, transport and key rotation.
 - ADR-0006: Error taxonomy and bounded recovery.

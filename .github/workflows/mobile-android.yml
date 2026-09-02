@@ -14,8 +14,10 @@ on:
       - "docs/testing/hmr-103-protocol.md"
       - "docs/testing/hmr-104-capability-router.md"
       - "docs/testing/hmr-105-current-app.md"
+      - "docs/testing/hmr-106-phone-state.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
+      - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
       - "pyproject.toml"
       - "uv.lock"
       - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
@@ -34,8 +36,10 @@ on:
       - "docs/testing/hmr-103-protocol.md"
       - "docs/testing/hmr-104-capability-router.md"
       - "docs/testing/hmr-105-current-app.md"
+      - "docs/testing/hmr-106-phone-state.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
+      - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
       - "pyproject.toml"
       - "uv.lock"
       - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
@@ -95,7 +99,7 @@ jobs:
             tests/mobile/unit/test_android_manifest_policy.py -q
 
   bootstrap:
-    name: Build, test and inspect current-app APK
+    name: Build, test and inspect PhoneState APK
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:

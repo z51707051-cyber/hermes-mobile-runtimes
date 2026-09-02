@@ -76,7 +76,7 @@ internal object CompatibilityNegotiator {
     fun negotiate(
         local: CompatibilityOffer,
         remote: CompatibilityOffer,
-        minimumAccepted: String = "0.1.0",
+        minimumAccepted: String = "0.1.1",
     ): CompatibilitySelection {
         val floor = maxOf(local.protocolMin, remote.protocolMin, ProtocolVersion.parse(minimumAccepted))
         val ceiling = minOf(local.protocolMax, remote.protocolMax)

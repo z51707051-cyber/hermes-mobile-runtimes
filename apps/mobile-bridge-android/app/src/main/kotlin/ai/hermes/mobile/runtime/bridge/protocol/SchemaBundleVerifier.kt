@@ -20,7 +20,7 @@ internal object SchemaBundleVerifier {
         )
         if (manifest["digest_algorithm"] != "SHA-256") fail("unsupported digest algorithm")
         val version = manifest["protocol_version"] as? String ?: fail("missing protocol version")
-        if (version != "0.1.0") fail("unexpected protocol version")
+        if (version != "0.1.1") fail("unexpected protocol version")
         val expectedBundle = manifest["bundle_digest"] as? String ?: fail("missing bundle digest")
         if (!DIGEST.matches(expectedBundle)) fail("invalid bundle digest")
         val files = manifest["files"] as? List<*> ?: fail("manifest files must be an array")

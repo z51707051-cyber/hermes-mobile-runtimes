@@ -13,7 +13,7 @@ class SchemaBundleVerifierTest {
             Files.readAllBytes(FixtureFiles.schemaRoot.resolve(relative))
         }
 
-        assertEquals("0.1.0", bundle.protocolVersion)
+        assertEquals("0.1.1", bundle.protocolVersion)
         assertEquals(20, bundle.fileDigests.size)
         assertTrue(bundle.digest.startsWith("sha256:"))
     }
