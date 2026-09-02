@@ -4,10 +4,11 @@ This directory is the Android execution-plane boundary defined by
 [`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provided the reproducible
 build foundation, HMR-102 added the reviewed device-security kernel,
 HMR-103 added the closed protocol codec and HMR-104 added fail-closed routing.
-HMR-105 adds the first read-only provider, `phone.current_app`. It is still not
-a general Android agent.
+HMR-105 adds the first read-only provider, `phone.current_app`; HMR-106 adds
+its coherent minimal PhoneState generation. It is still not a general Android
+agent.
 
-## HMR-105 current-app boundary
+## HMR-106 PhoneState boundary
 
 The debug APK deliberately has:
 
@@ -35,10 +36,13 @@ The debug APK deliberately has:
 - no code copied or adapted from `hermes-android`.
 
 The current-app Provider emits a schema-valid `ToolExecutionResult` with the
-same minimal foreground-package state as `before_state` and `after_state` for
-the read-only observation. Activity identity remains internal until the full
-PhoneState contract is decided in ADR-0004. A disconnected, empty or stale
-observer is a typed unavailable capability, never an empty-success result.
+same coherent foreground state as `before_state` and `after_state` for the
+read-only observation. Protocol `0.1.1` includes package/activity,
+predecessor, capture completeness/errors and a typed window-identity
+fingerprint. The fingerprint detects only package/activity transitions and is
+not screenshot verification. A disconnected, empty or stale observer is a
+typed unavailable capability, never an empty-success result; reconnect also
+requires a new event.
 
 The APK exposes no listener or Binder command surface. The default PEP denies
 every action unless a reviewed authorization verifier is injected by a future

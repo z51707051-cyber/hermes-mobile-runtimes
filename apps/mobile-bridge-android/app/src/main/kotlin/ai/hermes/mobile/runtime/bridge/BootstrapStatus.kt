@@ -11,8 +11,8 @@ internal data class BootstrapStatus(
 internal object BootstrapStatusProvider {
     fun current(): BootstrapStatus =
         BootstrapStatus(
-            phase = "HMR-105",
-            summary = "Protected current-app observation vertical slice",
+            phase = "HMR-106",
+            summary = "Coherent minimal PhoneState observation",
             enabledCapabilities = BridgeRuntime.availableCapabilities(),
         )
 }

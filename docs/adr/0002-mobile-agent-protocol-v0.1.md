@@ -62,7 +62,9 @@ session credential.
 
 ### 3. Version negotiation
 
-The protocol version is a three-component string, initially `0.1.0`:
+The protocol version is a three-component string, initially `0.1.0`. ADR-0004
+advances the current pre-release patch to `0.1.1` for the coherent PhoneState
+reference:
 
 - a major change is incompatible;
 - a minor change may add optional fields, tools or enum values negotiated as
@@ -409,6 +411,6 @@ Before the first Android action is enabled:
 ## Follow-up decisions
 
 - ADR-0003: Permission Gate enforcement and confirmation binding.
-- ADR-0004: PhoneState consistency and artifact storage.
+- ADR-0004: PhoneState consistency and artifact storage — accepted.
 - ADR-0005: Device identity, transport and key rotation.
 - ADR-0006: Error taxonomy and bounded recovery policy.

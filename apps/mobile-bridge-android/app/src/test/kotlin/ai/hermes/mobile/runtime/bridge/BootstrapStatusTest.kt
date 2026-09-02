@@ -9,7 +9,7 @@ class BootstrapStatusTest {
     fun bootstrapRequiresLiveAccessibilityObservationBeforeAdvertisingCapability() {
         val status = BootstrapStatusProvider.current()
 
-        assertEquals("HMR-105", status.phase)
+        assertEquals("HMR-106", status.phase)
         assertTrue(status.enabledCapabilities.isEmpty())
     }
 }

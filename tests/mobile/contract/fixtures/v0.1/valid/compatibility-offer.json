@@ -1,8 +1,8 @@
 {
   "message_type": "compatibility.offer",
-  "protocol_min": "0.1.0",
-  "protocol_max": "0.1.0",
-  "schema_bundle_digest": "sha256:d1b6b926c323d6581b2691e7cf1dcd102528cafad2e9ddf76f13cf8223a293ba",
+  "protocol_min": "0.1.1",
+  "protocol_max": "0.1.1",
+  "schema_bundle_digest": "sha256:df3139480b04d89b133b46b062100ad544d2403a790818aa7399baf426b5d3e1",
   "tool_schema_digests": {
     "phone.back": "sha256:bbb16cd0cae2b84c370fa93d70637d16c2f2cbb9b19d1964745ca11c80e4d5a7",
     "phone.current_app": "sha256:e963fd126873c0bd547b1168ccea9d1f51bf95bea8b48eea264d438e0fa91597",

@@ -1,9 +1,9 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
-import ai.hermes.mobile.runtime.bridge.observer.CurrentAppObservation
-import ai.hermes.mobile.runtime.bridge.observer.CurrentAppSource
-import ai.hermes.mobile.runtime.bridge.observer.CurrentAppTracker
-import ai.hermes.mobile.runtime.bridge.observer.CurrentAppUnavailableException
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSnapshot
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableException
 import ai.hermes.mobile.runtime.bridge.protocol.CanonicalJson
 import ai.hermes.mobile.runtime.bridge.protocol.ProtocolCodec
 import java.time.Instant
@@ -16,10 +16,10 @@ internal fun interface ProviderElapsedClock {
     fun nowMillis(): Long
 }
 
-/** First real Android provider; it emits only the V0.1 foreground-package state. */
+/** Read-only Android provider for the coherent foreground PhoneState projection. */
 internal class CurrentAppProvider(
-    private val source: CurrentAppSource,
-    private val maximumAgeMillis: Long = CurrentAppTracker.DEFAULT_MAXIMUM_AGE_MILLIS,
+    private val source: PhoneStateSource,
+    private val maximumAgeMillis: Long = PhoneStateObserver.DEFAULT_MAXIMUM_AGE_MILLIS,
     private val epochClock: ProviderEpochClock = ProviderEpochClock { System.currentTimeMillis() },
     private val elapsedClock: ProviderElapsedClock = ProviderElapsedClock { System.nanoTime() / 1_000_000 },
 ) : CapabilityProvider {
@@ -30,24 +30,33 @@ internal class CurrentAppProvider(
         return try {
             val observation = source.current(maximumAgeMillis)
             ProtocolCodec.encode(success(action, observation, durationSince(startedAt)))
-        } catch (exc: CurrentAppUnavailableException) {
+        } catch (exc: PhoneStateUnavailableException) {
             ProtocolCodec.encode(unavailable(action, exc, durationSince(startedAt)))
         }
     }
 
     private fun success(
         action: AuthorizedAction,
-        observation: CurrentAppObservation,
+        observation: PhoneStateSnapshot,
         durationMillis: Long,
     ): Map<String, Any?> {
         val state =
             mapOf(
                 "state_id" to observation.stateId,
+                "previous_state_id" to observation.previousStateId,
                 "captured_at" to timestamp(observation.capturedAtEpochMillis),
                 "freshness_ms" to observation.freshnessMillis,
                 "device_id" to action.deviceId,
                 "foreground_package" to observation.packageName,
-                "transition" to "NONE",
+                "foreground_activity" to observation.activityName,
+                "screen_fingerprint" to
+                    mapOf(
+                        "basis" to observation.screenFingerprint.basis.name,
+                        "digest" to observation.screenFingerprint.digest,
+                    ),
+                "capture_status" to observation.captureStatus.name,
+                "capture_errors" to observation.captureErrors,
+                "transition" to observation.transition.name,
             )
         return baseResult(action, durationMillis) +
             mapOf(
@@ -68,7 +77,7 @@ internal class CurrentAppProvider(
 
     private fun unavailable(
         action: AuthorizedAction,
-        exception: CurrentAppUnavailableException,
+        exception: PhoneStateUnavailableException,
         durationMillis: Long,
     ): Map<String, Any?> =
         baseResult(action, durationMillis) +

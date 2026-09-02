@@ -40,11 +40,12 @@ The checked configuration is intentionally narrower than later Phase 1 work:
   access;
 - no retained `AccessibilityEvent` or Android UI object.
 
-The tracker stores a generated state id, package, class name and capture clocks.
-V0.1 sends only the foreground package in `PhoneStateRef`; ADR-0004/HMR-106
-owns the full activity/state model. Disconnected, absent or older-than-five-
-seconds data is unavailable. A disconnect between PEP and Provider returns a
-schema-valid `CAPABILITY_UNAVAILABLE` result.
+The HMR-105 checkpoint stored a generated state id, package, class name and
+capture clocks and sent only the foreground package. HMR-106/ADR-0004
+supersedes that projection with the versioned coherent PhoneState model.
+Disconnected, absent or older-than-five-seconds data remains unavailable. A
+disconnect between PEP and Provider returns a schema-valid
+`CAPABILITY_UNAVAILABLE` result.
 
 ## Audit boundary
 

@@ -190,6 +190,9 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
 - HMR-105's Accessibility service is restricted to window-state identity: its
   manifest binding is system-protected, UI-tree retrieval and gestures are
   disabled, and disconnect/no-state/stale-state conditions fail closed.
+- HMR-106 state generations are immutable and predecessor-linked; reconnect
+  clears old state, transition fingerprints declare their evidence basis, and
+  `PARTIAL`/`INCOHERENT` cannot be silently promoted to complete state.
 - Pin upstream source SHAs and dependencies; preserve MIT/Apache notices.
 - Generate SBOMs for Python, Gradle/APK, models and bundled assets separately.
 - Treat Mobilerun Portal APK and model/data licenses as independent artifacts until proven otherwise.

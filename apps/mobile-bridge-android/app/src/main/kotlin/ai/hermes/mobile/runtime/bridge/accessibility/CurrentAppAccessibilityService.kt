@@ -3,10 +3,10 @@ package ai.hermes.mobile.runtime.bridge.accessibility
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
-import ai.hermes.mobile.runtime.bridge.observer.CurrentAppStateStore
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
 
 /**
- * Least-authority HMR-105 observer.
+ * Least-authority HMR-105/HMR-106 observer.
  *
  * The service consumes window identity only. Its XML configuration forbids UI
  * hierarchy retrieval and gesture dispatch, and this class never reads an
@@ -14,12 +14,12 @@ import ai.hermes.mobile.runtime.bridge.observer.CurrentAppStateStore
  */
 class CurrentAppAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
-        CurrentAppStateStore.markConnected()
+        PhoneStateStore.markConnected()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        CurrentAppStateStore.recordWindow(
+        PhoneStateStore.recordWindow(
             packageName = event.packageName?.toString(),
             activityName = event.className?.toString(),
         )
@@ -28,13 +28,12 @@ class CurrentAppAccessibilityService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     override fun onUnbind(intent: Intent?): Boolean {
-        CurrentAppStateStore.markDisconnected()
+        PhoneStateStore.markDisconnected()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
-        CurrentAppStateStore.markDisconnected()
+        PhoneStateStore.markDisconnected()
         super.onDestroy()
     }
 }
-

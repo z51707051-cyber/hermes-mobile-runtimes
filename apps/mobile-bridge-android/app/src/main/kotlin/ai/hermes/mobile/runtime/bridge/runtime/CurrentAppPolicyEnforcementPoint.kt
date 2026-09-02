@@ -1,13 +1,13 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
-import ai.hermes.mobile.runtime.bridge.observer.CurrentAppSource
-import ai.hermes.mobile.runtime.bridge.observer.CurrentAppTracker
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 
 /** Checks live capability state after authorization and immediately before dispatch. */
 internal class CurrentAppPolicyEnforcementPoint(
     private val authorizationDelegate: AndroidPolicyEnforcementPoint,
-    private val source: CurrentAppSource,
-    private val maximumAgeMillis: Long = CurrentAppTracker.DEFAULT_MAXIMUM_AGE_MILLIS,
+    private val source: PhoneStateSource,
+    private val maximumAgeMillis: Long = PhoneStateObserver.DEFAULT_MAXIMUM_AGE_MILLIS,
 ) : AndroidPolicyEnforcementPoint {
     override fun evaluate(action: AuthorizedAction): PepDecision {
         val authorizationDecision = authorizationDelegate.evaluate(action)

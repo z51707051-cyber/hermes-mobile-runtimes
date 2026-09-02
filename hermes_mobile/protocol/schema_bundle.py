@@ -60,7 +60,7 @@ class SchemaBundle:
             raise SchemaBundleError("schema manifest is not a closed V0.1 manifest")
         if manifest["digest_algorithm"] != "SHA-256":
             raise SchemaBundleError("unsupported schema manifest digest algorithm")
-        if manifest["protocol_version"] != "0.1.0":
+        if manifest["protocol_version"] != "0.1.1":
             raise SchemaBundleError("unexpected schema manifest protocol version")
         files = manifest["files"]
         if not isinstance(files, list) or not files:
