@@ -240,7 +240,7 @@ The following require ADRs before the affected capability is implemented:
 | Decision | Blocking ADR |
 |---|---|
 | Runtime broker/PDP process boundary, signer and authenticated local IPC | ADR-0003 |
-| PhoneState freshness, artifact encryption/storage and deletion semantics | ADR-0004 |
+| PhoneState freshness, artifact encryption/storage and deletion semantics | ADR-0004 accepted; HMR-108/109 implement protected content stores |
 | Enrollment, device identity, mTLS, key rotation and backup exclusion | ADR-0005 |
 | Idempotency, ambiguous completion and bounded recovery | ADR-0006 |
 

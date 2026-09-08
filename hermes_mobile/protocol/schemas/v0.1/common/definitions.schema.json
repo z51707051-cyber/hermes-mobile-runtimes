@@ -109,15 +109,44 @@
       },
       "additionalProperties": false
     },
+    "screen_fingerprint": {
+      "type": "object",
+      "required": ["basis", "digest"],
+      "properties": {
+        "basis": {"enum": ["WINDOW_IDENTITY", "UI_HIERARCHY", "SCREENSHOT", "FUSED"]},
+        "digest": {"$ref": "#/$defs/sha256_digest"}
+      },
+      "additionalProperties": false
+    },
     "phone_state_ref": {
       "type": "object",
-      "required": ["state_id", "captured_at", "freshness_ms", "device_id", "foreground_package", "transition"],
+      "required": ["state_id", "previous_state_id", "captured_at", "freshness_ms", "device_id", "foreground_package", "foreground_activity", "screen_fingerprint", "capture_status", "capture_errors", "transition"],
       "properties": {
         "state_id": {"$ref": "#/$defs/opaque_id"},
+        "previous_state_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/opaque_id"},
+            {"type": "null"}
+          ]
+        },
         "captured_at": {"$ref": "#/$defs/timestamp"},
         "freshness_ms": {"type": "integer", "minimum": 0, "maximum": 60000},
         "device_id": {"$ref": "#/$defs/opaque_id"},
         "foreground_package": {"type": ["string", "null"], "maxLength": 255},
+        "foreground_activity": {"type": ["string", "null"], "maxLength": 512},
+        "screen_fingerprint": {
+          "oneOf": [
+            {"$ref": "#/$defs/screen_fingerprint"},
+            {"type": "null"}
+          ]
+        },
+        "capture_status": {"enum": ["COMPLETE", "PARTIAL", "INCOHERENT"]},
+        "capture_errors": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+          "uniqueItems": true,
+          "maxItems": 16
+        },
         "transition": {"enum": ["NONE", "CHANGED", "UNKNOWN"]},
         "artifacts": {
           "type": "array",

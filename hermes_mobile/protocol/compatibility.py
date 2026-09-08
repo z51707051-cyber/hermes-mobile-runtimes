@@ -83,7 +83,7 @@ def negotiate(
     local: CompatibilityOffer,
     remote: CompatibilityOffer,
     *,
-    minimum_accepted: str = "0.1.0",
+    minimum_accepted: str = "0.1.1",
 ) -> CompatibilitySelection:
     floor = max(
         local.protocol_min, remote.protocol_min, ProtocolVersion.parse(minimum_accepted)

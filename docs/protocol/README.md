@@ -7,8 +7,10 @@ execution authorization are defined in
 
 HMR-103 delivered the JSON Schema bundle, Python/Kotlin codecs and shared
 golden fixtures. HMR-104 delivered the closed Runtime/Android routing kernel,
-and HMR-105 adds the first protected Android capability consumer. Production
-broker IPC and authenticated device transport are still pending.
+HMR-105 adds the first protected Android capability consumer, and HMR-106
+advances the coherent PhoneState reference to protocol patch `0.1.1` under
+ADR-0004. Production broker IPC and authenticated device transport are still
+pending.
 
 ## Stable boundary
 

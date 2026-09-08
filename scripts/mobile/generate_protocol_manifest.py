@@ -31,7 +31,7 @@ def build_manifest(root: Path) -> dict[str, object]:
         for entry in entries
     )
     return {
-        "protocol_version": "0.1.0",
+        "protocol_version": "0.1.1",
         "digest_algorithm": "SHA-256",
         "bundle_digest": _digest(material),
         "files": entries,

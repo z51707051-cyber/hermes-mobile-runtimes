@@ -389,6 +389,6 @@ verify and audit exactly one send.
 
 ## Follow-up decisions
 
-- ADR-0004: PhoneState consistency, target generation and artifact storage.
+- ADR-0004: PhoneState consistency, target generation and artifact storage — accepted.
 - ADR-0005: Device enrollment, transport, algorithms and key rotation.
 - ADR-0006: Error taxonomy, retry budgets and ambiguous-outcome recovery.

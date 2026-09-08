@@ -1,0 +1,44 @@
+{
+  "message_type": "tool.execution_result",
+  "protocol_version": "0.1.1",
+  "request_id": "req-device-mismatch",
+  "task_id": "task-0001",
+  "span_id": "span-0001",
+  "device_id": "device-0001",
+  "tool": "phone.current_app",
+  "parameters": {},
+  "execution_status": "SUCCEEDED",
+  "before_state": null,
+  "after_state": {
+    "state_id": "state-0001",
+    "previous_state_id": null,
+    "captured_at": "2026-08-30T10:00:00Z",
+    "freshness_ms": 25,
+    "device_id": "device-other",
+    "foreground_package": "com.example.music",
+    "foreground_activity": "com.example.music.PlayerActivity",
+    "screen_fingerprint": {
+      "basis": "WINDOW_IDENTITY",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "capture_status": "COMPLETE",
+    "capture_errors": [],
+    "transition": "UNKNOWN"
+  },
+  "duration": 12,
+  "error": null,
+  "recoverable": false,
+  "timestamp": "2026-08-30T10:00:01Z",
+  "attempt": 1,
+  "idempotency_key": "idem-device-mismatch",
+  "parameter_digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "permission_decision_id": "decision-0001",
+  "verification": {
+    "status": "NOT_APPLICABLE",
+    "observed_state_ids": ["state-0001"],
+    "evaluator": "android.accessibility.current_app.v1",
+    "explanation": "invalid cross-device state fixture"
+  },
+  "artifacts": [],
+  "redactions": []
+}

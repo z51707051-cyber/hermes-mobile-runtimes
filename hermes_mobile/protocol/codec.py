@@ -90,6 +90,12 @@ class ProtocolCodec:
             )
             raise ProtocolValidationError(f"{path}: {error.message}")
 
+        if (
+            "protocol_version" in message
+            and message["protocol_version"] != self.bundle.version
+        ):
+            raise ProtocolValidationError("unsupported protocol version")
+
         if message_type in {
             "tool.execution_request",
             "action.authorized",
@@ -148,6 +154,14 @@ class ProtocolCodec:
 
         if message_type == "tool.execution_result":
             _timestamp(message["timestamp"])
+            for field in ("before_state", "after_state"):
+                state = message[field]
+                if state is not None:
+                    self._validate_phone_state(state)
+                    if state["device_id"] != message["device_id"]:
+                        raise ProtocolValidationError(
+                            "PhoneState device must match execution result device"
+                        )
             error = message["error"]
             expected_recoverable = (
                 error is not None
@@ -164,3 +178,43 @@ class ProtocolCodec:
 
         if message_type == "mobile.event":
             _timestamp(message["timestamp"])
+
+    @staticmethod
+    def _validate_phone_state(state: dict[str, Any]) -> None:
+        status = state["capture_status"]
+        errors = state["capture_errors"]
+        previous = state["previous_state_id"]
+        fingerprint = state["screen_fingerprint"]
+        transition = state["transition"]
+
+        if status == "COMPLETE" and errors:
+            raise ProtocolValidationError(
+                "complete PhoneState cannot contain capture errors"
+            )
+        if status != "COMPLETE" and not errors:
+            raise ProtocolValidationError(
+                "incomplete PhoneState requires capture errors"
+            )
+        if state["state_id"] == previous:
+            raise ProtocolValidationError(
+                "PhoneState cannot reference itself as predecessor"
+            )
+        if (
+            state["foreground_package"] is None
+            and state["foreground_activity"] is not None
+        ):
+            raise ProtocolValidationError(
+                "PhoneState activity requires a foreground package"
+            )
+        if status == "COMPLETE" and fingerprint is None:
+            raise ProtocolValidationError(
+                "complete PhoneState requires a screen fingerprint"
+            )
+        if previous is None and transition != "UNKNOWN":
+            raise ProtocolValidationError("first PhoneState transition must be unknown")
+        if transition in {"NONE", "CHANGED"} and (
+            status != "COMPLETE" or fingerprint is None
+        ):
+            raise ProtocolValidationError(
+                "definite PhoneState transition requires complete comparable state"
+            )

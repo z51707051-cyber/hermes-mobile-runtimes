@@ -1,9 +1,9 @@
 {
-  "bundle_digest": "sha256:d1b6b926c323d6581b2691e7cf1dcd102528cafad2e9ddf76f13cf8223a293ba",
+  "bundle_digest": "sha256:df3139480b04d89b133b46b062100ad544d2403a790818aa7399baf426b5d3e1",
   "digest_algorithm": "SHA-256",
   "files": [
     {
-      "digest": "sha256:a906bf010e14a01b1e62144e07899a8e1bee0d4bdf6592c240f0248745bab8a9",
+      "digest": "sha256:44202454f85a498a4fd10e5b6e6fd3ead6ddf4651889b13ebd78250f47a042b8",
       "path": "common/definitions.schema.json"
     },
     {
@@ -83,5 +83,5 @@
       "path": "tools/phone.wait.schema.json"
     }
   ],
-  "protocol_version": "0.1.0"
+  "protocol_version": "0.1.1"
 }

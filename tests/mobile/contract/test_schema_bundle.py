@@ -11,7 +11,7 @@ from hermes_mobile.protocol import SchemaBundle, SchemaBundleError
 def test_builtin_bundle_is_complete_and_meta_valid() -> None:
     bundle = SchemaBundle.builtin()
 
-    assert bundle.version == "0.1.0"
+    assert bundle.version == "0.1.1"
     assert bundle.digest.startswith("sha256:")
     assert len([path for path in bundle.schemas if path.startswith("tools/")]) == 13
     for path in bundle.schemas:

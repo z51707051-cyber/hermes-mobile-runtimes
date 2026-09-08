@@ -282,10 +282,18 @@ def test_result_audit_correlates_before_and_after_state_ids() -> None:
     result = _device_result(request)
     state = {
         "state_id": "state-current",
+        "previous_state_id": "state-previous",
         "captured_at": "2026-08-30T10:00:01Z",
         "freshness_ms": 25,
         "device_id": request["device_id"],
         "foreground_package": "com.example.music",
+        "foreground_activity": "com.example.music.PlayerActivity",
+        "screen_fingerprint": {
+            "basis": "WINDOW_IDENTITY",
+            "digest": "sha256:" + "a" * 64,
+        },
+        "capture_status": "COMPLETE",
+        "capture_errors": [],
         "transition": "NONE",
     }
     result["before_state"] = state

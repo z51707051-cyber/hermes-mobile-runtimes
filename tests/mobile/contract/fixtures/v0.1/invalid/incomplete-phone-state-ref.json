@@ -9,7 +9,18 @@
   "parameters": {},
   "execution_status": "SUCCEEDED",
   "before_state": null,
-  "after_state": null,
+  "after_state": {
+    "state_id": "state-0001",
+    "previous_state_id": null,
+    "captured_at": "2026-08-30T10:00:00Z",
+    "freshness_ms": 25,
+    "device_id": "device-0001",
+    "foreground_package": "com.example.music",
+    "foreground_activity": "com.example.music.PlayerActivity",
+    "screen_fingerprint": null,
+    "capture_errors": [],
+    "transition": "UNKNOWN"
+  },
   "duration": 12,
   "error": null,
   "recoverable": false,
@@ -17,12 +28,12 @@
   "attempt": 1,
   "idempotency_key": "idem-0001",
   "parameter_digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-  "permission_decision_id": null,
+  "permission_decision_id": "decision-0001",
   "verification": {
     "status": "NOT_APPLICABLE",
-    "observed_state_ids": [],
-    "evaluator": "none",
-    "explanation": "read-only query"
+    "observed_state_ids": ["state-0001"],
+    "evaluator": "android.accessibility.current_app.v1",
+    "explanation": "read-only current app observation"
   },
   "artifacts": [],
   "redactions": []

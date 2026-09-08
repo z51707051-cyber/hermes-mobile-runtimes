@@ -81,3 +81,12 @@ def test_authorized_action_digest_binds_normalized_fields(load_fixture) -> None:
 
     with pytest.raises(ProtocolValidationError, match="action_digest"):
         codec.encode(action)
+
+
+def test_message_from_previous_schema_patch_fails_closed(load_fixture) -> None:
+    codec = ProtocolCodec()
+    request = load_fixture("valid/tool-execution-request.json")
+    request["protocol_version"] = "0.1.0"
+
+    with pytest.raises(ProtocolValidationError, match="unsupported protocol version"):
+        codec.encode(request)

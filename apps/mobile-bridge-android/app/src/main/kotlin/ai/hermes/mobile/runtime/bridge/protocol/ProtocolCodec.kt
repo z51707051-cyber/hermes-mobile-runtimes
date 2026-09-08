@@ -192,7 +192,7 @@ internal object ProtocolCodec {
                 "session_id", "sequence", "nonce", "issued_at", "expires_at",
             )
         message.closed(required = if (authorized) base + authorization else base, optional = setOf("extensions"))
-        if (message.string("protocol_version") != "0.1.0") invalid("unsupported protocol version")
+        if (message.string("protocol_version") != "0.1.1") invalid("unsupported protocol version")
         listOf("request_id", "task_id", "span_id", "device_id", "idempotency_key").forEach {
             validateOpaqueId(message.string(it))
         }
@@ -258,7 +258,7 @@ internal object ProtocolCodec {
                 ),
             optional = setOf("extensions"),
         )
-        if (message.string("protocol_version") != "0.1.0") invalid("unsupported protocol version")
+        if (message.string("protocol_version") != "0.1.1") invalid("unsupported protocol version")
         listOf("request_id", "task_id", "span_id", "device_id", "idempotency_key").forEach {
             validateOpaqueId(message.string(it))
         }
@@ -266,8 +266,18 @@ internal object ProtocolCodec {
         validateToolParameters(tool, message.objectValue("parameters"))
         val statuses = setOf("NOT_STARTED", "AWAITING_CONFIRMATION", "SUCCEEDED", "FAILED", "DENIED", "CANCELLED", "TIMED_OUT", "UNKNOWN_OUTCOME")
         val status = message.string("execution_status").also { it.requireEnum(statuses, "execution_status") }
-        message.optionalObject("before_state")?.let(::validatePhoneStateRef)
-        message.optionalObject("after_state")?.let(::validatePhoneStateRef)
+        message.optionalObject("before_state")?.let {
+            validatePhoneStateRef(it)
+            if (it.string("device_id") != message.string("device_id")) {
+                invalid("PhoneState device must match execution result device")
+            }
+        }
+        message.optionalObject("after_state")?.let {
+            validatePhoneStateRef(it)
+            if (it.string("device_id") != message.string("device_id")) {
+                invalid("PhoneState device must match execution result device")
+            }
+        }
         message.long("duration").requireRange(0, 86_400_000, "duration")
         val recoverable = message["recoverable"] as? Boolean ?: invalid("recoverable must be boolean")
         parseTimestamp(message.string("timestamp"))
@@ -290,7 +300,7 @@ internal object ProtocolCodec {
             required = setOf("message_type", "protocol_version", "id", "type", "source", "device_id", "timestamp", "cursor", "payload", "sensitivity", "deduplication_key", "redactions"),
             optional = setOf("extensions"),
         )
-        if (message.string("protocol_version") != "0.1.0") invalid("unsupported protocol version")
+        if (message.string("protocol_version") != "0.1.1") invalid("unsupported protocol version")
         listOf("id", "device_id", "cursor", "deduplication_key").forEach { validateOpaqueId(message.string(it)) }
         if (!Regex("[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+").matches(message.string("type"))) invalid("invalid event type")
         message.string("source").requireLength(0, 128, "source")
@@ -333,20 +343,74 @@ internal object ProtocolCodec {
         value.closed(
             required =
                 setOf(
-                    "state_id", "captured_at", "freshness_ms", "device_id",
-                    "foreground_package", "transition",
+                    "state_id", "previous_state_id", "captured_at", "freshness_ms", "device_id",
+                    "foreground_package", "foreground_activity", "screen_fingerprint",
+                    "capture_status", "capture_errors", "transition",
                 ),
             optional = setOf("artifacts"),
         )
-        validateOpaqueId(value.string("state_id"))
+        val stateId = value.string("state_id").also(::validateOpaqueId)
+        val previousStateId = value.optionalString("previous_state_id")?.also(::validateOpaqueId)
+        if (stateId == previousStateId) invalid("PhoneState cannot reference itself as predecessor")
         parseTimestamp(value.string("captured_at"))
         value.long("freshness_ms").requireRange(0, 60_000, "freshness_ms")
         validateOpaqueId(value.string("device_id"))
-        value.optionalString("foreground_package")?.let {
+        val foregroundPackage = value.optionalString("foreground_package")
+        foregroundPackage?.let {
             if (it.length > 255) invalid("foreground_package is too long")
         }
-        value.string("transition").requireEnum(setOf("NONE", "CHANGED", "UNKNOWN"), "transition")
+        val foregroundActivity = value.optionalString("foreground_activity")
+        foregroundActivity?.let {
+            if (it.length > 512) invalid("foreground_activity is too long")
+        }
+        if (foregroundPackage == null && foregroundActivity != null) {
+            invalid("PhoneState activity requires a foreground package")
+        }
+        val screenFingerprint = value.optionalObject("screen_fingerprint")
+        screenFingerprint?.let(::validateScreenFingerprint)
+        val captureStatus =
+            value.string("capture_status").also {
+                it.requireEnum(setOf("COMPLETE", "PARTIAL", "INCOHERENT"), "capture_status")
+            }
+        val captureErrors = value.list("capture_errors")
+        validateStringArray(captureErrors, 16, 64, "capture_errors")
+        captureErrors.forEach {
+            if (it !is String || !Regex("[A-Z][A-Z0-9_]{0,63}").matches(it)) {
+                invalid("capture_errors contains an invalid code")
+            }
+        }
+        if (captureStatus == "COMPLETE" && captureErrors.isNotEmpty()) {
+            invalid("complete PhoneState cannot contain capture errors")
+        }
+        if (captureStatus != "COMPLETE" && captureErrors.isEmpty()) {
+            invalid("incomplete PhoneState requires capture errors")
+        }
+        if (captureStatus == "COMPLETE" && screenFingerprint == null) {
+            invalid("complete PhoneState requires a screen fingerprint")
+        }
+        val transition =
+            value.string("transition").also {
+                it.requireEnum(setOf("NONE", "CHANGED", "UNKNOWN"), "transition")
+            }
+        if (previousStateId == null && transition != "UNKNOWN") {
+            invalid("first PhoneState transition must be unknown")
+        }
+        if (transition in setOf("NONE", "CHANGED") &&
+            (captureStatus != "COMPLETE" || screenFingerprint == null)
+        ) {
+            invalid("definite PhoneState transition requires complete comparable state")
+        }
         value.optionalList("artifacts")?.let(::validateArtifacts)
+    }
+
+    private fun validateScreenFingerprint(value: Map<String, Any?>) {
+        value.closed(required = setOf("basis", "digest"))
+        value.string("basis")
+            .requireEnum(
+                setOf("WINDOW_IDENTITY", "UI_HIERARCHY", "SCREENSHOT", "FUSED"),
+                "screen_fingerprint.basis",
+            )
+        if (!digest.matches(value.string("digest"))) invalid("invalid screen fingerprint digest")
     }
 
     private fun validateProtocolError(value: Map<String, Any?>): String {
