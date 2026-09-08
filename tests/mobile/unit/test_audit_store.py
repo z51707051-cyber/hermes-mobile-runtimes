@@ -239,19 +239,15 @@ def test_key_rotation_preserves_historical_verification(tmp_path: Path) -> None:
 
 def test_record_shape_rejects_untrusted_or_inconsistent_metadata() -> None:
     with pytest.raises(AuditRecordError, match="stage"):
-        RouteAuditRecord(
-            **{
-                **_authorized().as_dict(),
-                "stage": "RAW_PARAMETERS",
-            }
-        )
+        RouteAuditRecord(**{
+            **_authorized().as_dict(),
+            "stage": "RAW_PARAMETERS",
+        })
     with pytest.raises(AuditRecordError, match="inconsistent"):
-        RouteAuditRecord(
-            **{
-                **_authorized().as_dict(),
-                "execution_status": "SUCCEEDED",
-            }
-        )
+        RouteAuditRecord(**{
+            **_authorized().as_dict(),
+            "execution_status": "SUCCEEDED",
+        })
     with pytest.raises(ValueError, match="256 bits"):
         HmacSha256AuditAuthenticator(
             {"weak": b"short"},

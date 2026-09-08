@@ -35,40 +35,36 @@ _DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 _ERROR_CODE = re.compile(r"[A-Z][A-Z0-9_]{0,63}")
 _STAGES = frozenset({"AUTHORIZED", "RESULT"})
 _RISKS = frozenset({f"L{level}" for level in range(6)})
-_EXECUTION_STATUSES = frozenset(
-    {
-        "NOT_STARTED",
-        "AWAITING_CONFIRMATION",
-        "SUCCEEDED",
-        "FAILED",
-        "DENIED",
-        "CANCELLED",
-        "TIMED_OUT",
-        "UNKNOWN_OUTCOME",
-    }
-)
-_RECORD_FIELDS = frozenset(
-    {
-        "stage",
-        "protocol_version",
-        "request_id",
-        "task_id",
-        "span_id",
-        "device_id",
-        "tool",
-        "attempt",
-        "parameter_digest",
-        "permission_decision_id",
-        "action_digest",
-        "effective_risk",
-        "execution_status",
-        "outcome_code",
-        "precondition_state_id",
-        "before_state_id",
-        "after_state_id",
-        "redaction_profile",
-    }
-)
+_EXECUTION_STATUSES = frozenset({
+    "NOT_STARTED",
+    "AWAITING_CONFIRMATION",
+    "SUCCEEDED",
+    "FAILED",
+    "DENIED",
+    "CANCELLED",
+    "TIMED_OUT",
+    "UNKNOWN_OUTCOME",
+})
+_RECORD_FIELDS = frozenset({
+    "stage",
+    "protocol_version",
+    "request_id",
+    "task_id",
+    "span_id",
+    "device_id",
+    "tool",
+    "attempt",
+    "parameter_digest",
+    "permission_decision_id",
+    "action_digest",
+    "effective_risk",
+    "execution_status",
+    "outcome_code",
+    "precondition_state_id",
+    "before_state_id",
+    "after_state_id",
+    "redaction_profile",
+})
 
 
 class AuditError(RuntimeError):
@@ -490,9 +486,7 @@ class SQLiteAuditStore:
         destination_dir = Path(directory)
         _prepare_directory(destination_dir)
         filename = (
-            f"{task_id}.json"
-            if task_id.startswith("task-")
-            else f"task-{task_id}.json"
+            f"{task_id}.json" if task_id.startswith("task-") else f"task-{task_id}.json"
         )
         destination = destination_dir / filename
         document = {
@@ -664,14 +658,12 @@ class SQLiteAuditStore:
             row["record_digest"]
         ):
             raise AuditIntegrityError("audit record digest is invalid")
-        if (
-            not isinstance(row["integrity_key_id"], str)
-            or not _OPAQUE_ID.fullmatch(row["integrity_key_id"])
+        if not isinstance(row["integrity_key_id"], str) or not _OPAQUE_ID.fullmatch(
+            row["integrity_key_id"]
         ):
             raise AuditIntegrityError("audit integrity key id is invalid")
-        if (
-            not isinstance(row["encryption_key_id"], str)
-            or not _OPAQUE_ID.fullmatch(row["encryption_key_id"])
+        if not isinstance(row["encryption_key_id"], str) or not _OPAQUE_ID.fullmatch(
+            row["encryption_key_id"]
         ):
             raise AuditIntegrityError("audit encryption key id is invalid")
         nonce = _require_blob(row["nonce"], "nonce")
@@ -802,8 +794,11 @@ def _event_identity(record: RouteAuditRecord) -> tuple[str, int, str]:
 def _utc_timestamp(value: datetime) -> str:
     if value.tzinfo is None or value.utcoffset() != timezone.utc.utcoffset(value):
         raise AuditRecordError("audit clock must return UTC")
-    return value.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace(
-        "+00:00", "Z"
+    return (
+        value
+        .astimezone(timezone.utc)
+        .isoformat(timespec="milliseconds")
+        .replace("+00:00", "Z")
     )
 
 
@@ -819,13 +814,11 @@ def _validate_stored_timestamp(value: object) -> None:
 
 
 def _signature_material(record_digest: str, key_id: str) -> bytes:
-    return canonical_json(
-        {
-            "algorithm": AUDIT_INTEGRITY_ALGORITHM,
-            "key_id": key_id,
-            "record_digest": record_digest,
-        }
-    )
+    return canonical_json({
+        "algorithm": AUDIT_INTEGRITY_ALGORITHM,
+        "key_id": key_id,
+        "record_digest": record_digest,
+    })
 
 
 def _encryption_context(
@@ -835,16 +828,14 @@ def _encryption_context(
     previous_digest: str | None,
     key_id: str,
 ) -> bytes:
-    return canonical_json(
-        {
-            "schema_version": AUDIT_SCHEMA_VERSION,
-            "sequence": sequence,
-            "recorded_at": recorded_at,
-            "previous_digest": previous_digest,
-            "algorithm": AUDIT_ENCRYPTION_ALGORITHM,
-            "key_id": key_id,
-        }
-    )
+    return canonical_json({
+        "schema_version": AUDIT_SCHEMA_VERSION,
+        "sequence": sequence,
+        "recorded_at": recorded_at,
+        "previous_digest": previous_digest,
+        "algorithm": AUDIT_ENCRYPTION_ALGORITHM,
+        "key_id": key_id,
+    })
 
 
 def _bytes_digest(value: bytes) -> str:
