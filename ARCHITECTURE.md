@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 minimal PhoneState/Observer in review
-> Last reviewed: 2026-09-02
-> The first read-only provider now emits coherent, versioned foreground state generations behind the protected routing path.
+> Status: Phase 1 durable execution Audit in review
+> Last reviewed: 2026-09-08
+> The protected route now has encrypted, restart-safe and tamper-evident execution Audit.
 
 ## 1. Decision
 
@@ -21,6 +21,8 @@ TLS enrollment, replay defense and key rotation are fixed by
 PhoneState consistency, transition semantics and protected artifact boundaries
 are fixed by
 [`ADR-0004`](docs/adr/0004-phone-state-consistency-and-artifact-storage.md).
+Durable Audit storage, redaction and integrity are fixed by
+[`ADR-0007`](docs/adr/0007-encrypted-append-only-audit-ledger.md).
 
 This decision separates two responsibilities:
 
@@ -114,11 +116,8 @@ and the only host/device routing path: the host accepts only
 `AuthorizedAction` followed by a PEP allow decision. HMR-105 adds the first
 provider: a minimal Accessibility service retains only package/activity
 identity from `TYPE_WINDOW_STATE_CHANGED`. Its reviewed configuration cannot
-retrieve the UI hierarchy or perform gestures. The Provider emits only the
-V0.1 foreground-package `PhoneStateRef`; activity remains device-local until
-ADR-0004 defines the full state contract. Runtime now requires a redacted
+retrieve the UI hierarchy or perform gestures. Runtime requires a redacted
 Audit sink before device dispatch and correlates terminal state ids afterward.
-Durable append-only Audit remains HMR-107.
 
 HMR-106 advances the pre-release protocol patch to `0.1.1`. Each accepted
 window event creates one immutable state generation containing a predecessor,
@@ -128,6 +127,14 @@ foreground package/activity claim, capture completeness and a typed
 generation so reconnect cannot revive old state. ADR-0004 reserves coherent
 multi-source capture and protected artifacts for HMR-108/109 without widening
 the current Accessibility authority.
+
+HMR-107 implements the protected route's durable Audit seam. Closed
+`AUTHORIZED` and `RESULT` payloads are encrypted with AES-256-GCM, linked by
+an authenticated append-only chain and committed atomically to SQLite before
+they can be read or exported. Integrity uses a separate injected HMAC-SHA256
+keyring, exact retries are idempotent, conflicting history fails closed, and
+raw parameters, UI and notification content cannot fit the record schema.
+Whole-database rollback protection still requires an external signed head.
 
 `INTERNET` remains the sole requested Android permission. The production PEP
 still defaults to deny-all, and there is no protocol listener, broker IPC
@@ -342,6 +349,7 @@ non-blocking preview canary until explicitly promoted.
 - ADR-0004: PhoneState consistency and artifact storage — accepted.
 - ADR-0005: Device identity, transport and key rotation — accepted.
 - ADR-0006: Error taxonomy and bounded recovery policy.
+- ADR-0007: Encrypted append-only Audit ledger — accepted.
 
 Phase 1 expands only through the reviewed HMR-101–HMR-107 foundation and the
 `phone.current_app` vertical slice. See [`ROADMAP.md`](ROADMAP.md).

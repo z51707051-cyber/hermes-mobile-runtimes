@@ -53,7 +53,7 @@ Runtime requires an `ExecutionAuditSink`. Before device dispatch it records
 request/task/span/device correlation, parameter digest, policy decision,
 action digest and L0 risk. After a terminal result it records execution status
 and before/after state ids. Raw parameters, screen data and activity text are
-not part of this record. HMR-107 will implement durable append-only storage,
+not part of this record. HMR-107 implements durable append-only storage,
 integrity chaining, retention and export.
 
 Audit precommit failure returns `AUDIT_UNAVAILABLE` and prevents device

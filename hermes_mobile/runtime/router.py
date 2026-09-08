@@ -191,10 +191,12 @@ class ToolRouter:
                 span_id=request["span_id"],
                 device_id=request["device_id"],
                 tool=request["tool"],
+                attempt=request["attempt"],
                 parameter_digest=sha256_digest(request["parameters"]),
                 permission_decision_id=action["policy_decision_id"],
                 action_digest=action["action_digest"],
                 effective_risk=action["effective_risk"],
+                precondition_state_id=self._state_id(request["state_precondition"]),
             )
         )
 
@@ -208,9 +210,14 @@ class ToolRouter:
                 span_id=request["span_id"],
                 device_id=request["device_id"],
                 tool=request["tool"],
+                attempt=request["attempt"],
                 parameter_digest=result["parameter_digest"],
                 permission_decision_id=result["permission_decision_id"],
                 execution_status=result["execution_status"],
+                outcome_code=(
+                    result["error"]["code"] if result["error"] is not None else None
+                ),
+                precondition_state_id=self._state_id(request["state_precondition"]),
                 before_state_id=self._state_id(result["before_state"]),
                 after_state_id=self._state_id(result["after_state"]),
             )

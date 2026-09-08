@@ -1,11 +1,28 @@
 """Protected Mobile Runtime routing primitives.
 
 The package is deliberately independent from Hermes' model-tool registry.
-HMR-104 defines the only broker/device routing path; HMR-105 adds the required
-redacted Audit seam used by the first Android read-only provider.
+HMR-104 defines the only broker/device routing path; HMR-107 provides its
+durable, redacted, integrity-chained Audit implementation.
 """
 
-from .audit import ExecutionAuditSink, RouteAuditRecord
+from .audit import (
+    AUDIT_ENCRYPTION_ALGORITHM,
+    AUDIT_REDACTION_PROFILE,
+    Aes256GcmAuditCipher,
+    AuditAuthenticator,
+    AuditCipher,
+    AuditConflictError,
+    AuditEnvelope,
+    AuditError,
+    AuditIntegrityError,
+    AuditRecordError,
+    AuditStoreUnavailableError,
+    AuditVerificationResult,
+    ExecutionAuditSink,
+    HmacSha256AuditAuthenticator,
+    RouteAuditRecord,
+    SQLiteAuditStore,
+)
 from .capability_registry import (
     CANONICAL_CAPABILITIES,
     CapabilityDefinition,
@@ -22,7 +39,19 @@ from .router import (
 )
 
 __all__ = [
+    "AUDIT_ENCRYPTION_ALGORITHM",
+    "AUDIT_REDACTION_PROFILE",
     "CANONICAL_CAPABILITIES",
+    "Aes256GcmAuditCipher",
+    "AuditAuthenticator",
+    "AuditCipher",
+    "AuditConflictError",
+    "AuditEnvelope",
+    "AuditError",
+    "AuditIntegrityError",
+    "AuditRecordError",
+    "AuditStoreUnavailableError",
+    "AuditVerificationResult",
     "AuthorizedDeviceTransport",
     "CapabilityDefinition",
     "CapabilityRegistry",
@@ -30,8 +59,10 @@ __all__ = [
     "CapabilityUnavailableError",
     "DeviceCapabilitySnapshot",
     "ExecutionAuditSink",
+    "HmacSha256AuditAuthenticator",
     "PolicyBroker",
     "RouteAuditRecord",
+    "SQLiteAuditStore",
     "ToolRouteError",
     "ToolRouter",
 ]

@@ -15,12 +15,14 @@ on:
       - "docs/testing/hmr-104-capability-router.md"
       - "docs/testing/hmr-105-current-app.md"
       - "docs/testing/hmr-106-phone-state.md"
+      - "docs/testing/hmr-107-durable-audit.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
       - "pyproject.toml"
       - "uv.lock"
       - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
+      - "docs/adr/0007-encrypted-append-only-audit-ledger.md"
       - ".github/workflows/mobile-android.yml"
   push:
     branches: [main]
@@ -37,12 +39,14 @@ on:
       - "docs/testing/hmr-104-capability-router.md"
       - "docs/testing/hmr-105-current-app.md"
       - "docs/testing/hmr-106-phone-state.md"
+      - "docs/testing/hmr-107-durable-audit.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
       - "pyproject.toml"
       - "uv.lock"
       - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
+      - "docs/adr/0007-encrypted-append-only-audit-ledger.md"
       - ".github/workflows/mobile-android.yml"
 
 permissions:
@@ -84,10 +88,12 @@ jobs:
           set -euo pipefail
           uv run python scripts/mobile/generate_protocol_manifest.py --check
           uv run ruff check hermes_mobile tests/mobile/contract \
+            tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py \
             scripts/mobile scripts/android/verify_android_manifest_policy.py
           uv run ruff format --check hermes_mobile tests/mobile/contract \
+            tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py \
             scripts/mobile scripts/android/verify_android_manifest_policy.py
@@ -95,6 +101,7 @@ jobs:
       - name: Run protocol and routing contract tests
         run: |
           scripts/run_tests.sh -j 4 tests/mobile/contract \
+            tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py -q
 
