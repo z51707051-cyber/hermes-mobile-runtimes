@@ -193,6 +193,10 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
 - HMR-106 state generations are immutable and predecessor-linked; reconnect
   clears old state, transition fingerprints declare their evidence basis, and
   `PARTIAL`/`INCOHERENT` cannot be silently promoted to complete state.
+- HMR-107 encrypts closed route metadata at rest, authenticates its append-only
+  chain with a separate key authority, verifies before append/read/export and
+  fails closed on corruption or storage loss. Raw parameters and device content
+  cannot enter this ledger; whole-store rollback needs an external head anchor.
 - Pin upstream source SHAs and dependencies; preserve MIT/Apache notices.
 - Generate SBOMs for Python, Gradle/APK, models and bundled assets separately.
 - Treat Mobilerun Portal APK and model/data licenses as independent artifacts until proven otherwise.
@@ -210,7 +214,10 @@ Each material operation records:
 - timestamps, durations, device/runtime versions and correlation ids;
 - artifact references and redaction metadata.
 
-Audit is append-only. L3–L5 execution fails closed when required audit cannot be committed. The user must be able to answer what happened, why, which permission was used, when, and whether verification succeeded.
+Audit is append-only. The implemented protected route fails closed at every
+risk level when its required authorization precommit cannot be committed. The
+user must be able to answer what happened, why, which permission was used,
+when, and whether verification succeeded.
 
 ## 13. Recovery safety
 

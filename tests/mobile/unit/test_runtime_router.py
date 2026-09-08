@@ -217,6 +217,8 @@ def test_policy_terminal_result_never_reaches_device() -> None:
     assert device.calls == []
     assert [record.stage for record in audit.records] == ["RESULT"]
     assert audit.records[0].execution_status == "DENIED"
+    assert audit.records[0].outcome_code == "PERMISSION_DENIED"
+    assert audit.records[0].attempt == request["attempt"]
 
 
 def test_broker_cannot_mutate_request_or_undercut_baseline_risk() -> None:
@@ -307,3 +309,4 @@ def test_result_audit_correlates_before_and_after_state_ids() -> None:
     assert completed.before_state_id == state["state_id"]
     assert completed.after_state_id == state["state_id"]
     assert completed.parameter_digest == sha256_digest(request["parameters"])
+    assert completed.attempt == request["attempt"]

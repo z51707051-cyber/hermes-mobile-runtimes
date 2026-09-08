@@ -40,6 +40,15 @@ are already disclosed in the same state; it is not screenshot or UI-content
 verification. Future D3-derived fingerprints must be keyed as required by
 ADR-0004, and mixed/incoherent state cannot authorize mutation.
 
+HMR-107 makes protected execution Audit durable without adding a plaintext
+history surface. Closed route metadata is encrypted with AES-256-GCM and
+committed to a predecessor-linked ledger authenticated by a separately keyed
+HMAC-SHA256 writer. Every append, read and export verifies the full chain;
+tampering, missing historical keys, invalid filesystem permissions and storage
+failure fail closed. Raw parameters, UI and notification content have no
+record field. The ledger is tamper-evident, but whole-database rollback needs
+an external signed head before it can be described as rollback-proof.
+
 ---
 
 # Hermes Agent Security Policy
