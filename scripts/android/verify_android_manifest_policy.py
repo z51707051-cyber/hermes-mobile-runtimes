@@ -21,6 +21,8 @@ ACCESSIBILITY_SERVICE_PERMISSION = "android.permission.BIND_ACCESSIBILITY_SERVIC
 ACCESSIBILITY_SERVICE_ACTION = "android.accessibilityservice.AccessibilityService"
 COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
+LAUNCHER_QUERY_ACTION = "android.intent.action.MAIN"
+LAUNCHER_QUERY_CATEGORY = "android.intent.category.LAUNCHER"
 
 
 def _android(element: ET.Element, attribute: str) -> str | None:
@@ -71,6 +73,55 @@ def validate_manifest(
             f"{', '.join(sorted(ALLOWED_PERMISSIONS))}; found "
             f"{', '.join(sorted(permission_names)) or '<none>'}"
         )
+
+    queries = root.findall("queries")
+    if len(queries) != 1:
+        errors.append("manifest must contain exactly one launcher visibility query")
+    else:
+        query = queries[0]
+        intents = query.findall("intent")
+        actions = [
+            _android(node, "name")
+            for intent in intents
+            for node in intent.findall("action")
+        ]
+        categories = [
+            _android(node, "name")
+            for intent in intents
+            for node in intent.findall("category")
+        ]
+        expected_children = {
+            child
+            for intent in intents
+            for child in intent.findall("action") + intent.findall("category")
+        }
+        unexpected_children = {
+            child
+            for intent in intents
+            for child in intent
+            if child not in expected_children
+        }
+        unexpected_query_children = {child for child in query if child not in intents}
+        query_attributes_are_exact = not query.attrib
+        intent_attributes_are_exact = all(not intent.attrib for intent in intents)
+        child_attributes_are_exact = all(
+            set(child.attrib) == {f"{ANDROID}name"} for child in expected_children
+        )
+        if (
+            len(intents) != 1
+            or actions != [LAUNCHER_QUERY_ACTION]
+            or categories != [LAUNCHER_QUERY_CATEGORY]
+            or query.findall("package")
+            or query.findall("provider")
+            or unexpected_query_children
+            or unexpected_children
+            or not query_attributes_are_exact
+            or not intent_attributes_are_exact
+            or not child_attributes_are_exact
+        ):
+            errors.append(
+                "package visibility must be exactly one MAIN/LAUNCHER intent query"
+            )
 
     application = root.find("application")
     if application is None:
@@ -246,7 +297,7 @@ def validate_network_security_config(path: Path) -> list[str]:
 
 
 def validate_accessibility_service_config(path: Path) -> list[str]:
-    """Allow bounded active-window/screenshot reads while forbidding gestures."""
+    """Allow the reviewed observer/navigation Accessibility profile only."""
 
     try:
         root = ET.parse(path).getroot()
@@ -261,8 +312,8 @@ def validate_accessibility_service_config(path: Path) -> list[str]:
         errors.append("screen observer must listen only for typeWindowStateChanged")
     if _android(root, "canRetrieveWindowContent") != "true":
         errors.append("screen observer must set android:canRetrieveWindowContent=true")
-    if _android(root, "canPerformGestures") != "false":
-        errors.append("screen observer must set android:canPerformGestures=false")
+    if _android(root, "canPerformGestures") != "true":
+        errors.append("mobile runtime must set android:canPerformGestures=true")
     if _android(root, "canTakeScreenshot") != "true":
         errors.append("screen observer must set android:canTakeScreenshot=true")
     if _android(root, "accessibilityFlags") != "flagReportViewIds":
@@ -398,7 +449,7 @@ def main() -> int:
         print(f"verified Hermes Mobile Android manifest policy: {path}")
     print(f"verified TLS-only network policy: {args.network_security_config}")
     print(
-        "verified bounded read-only accessibility policy: "
+        "verified bounded observer/navigation accessibility policy: "
         f"{args.accessibility_service_config}"
     )
     print("verified no-backup/no-transfer policy")

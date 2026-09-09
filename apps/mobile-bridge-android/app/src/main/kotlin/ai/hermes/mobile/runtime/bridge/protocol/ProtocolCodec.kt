@@ -215,6 +215,18 @@ internal object ProtocolCodec {
                 invalid("swipe points must bind to the precondition state")
             }
         }
+        if (tool in setOf("phone.tap", "phone.long_press")) {
+            val stateId = precondition?.string("state_id") ?: invalid("action requires state precondition")
+            if (parameters.objectValue("target").string("state_id") != stateId) {
+                invalid("action target must bind to the precondition state")
+            }
+        }
+        if (tool == "phone.type") {
+            val stateId = precondition?.string("state_id") ?: invalid("type requires state precondition")
+            if (parameters.optionalObject("target")?.string("state_id")?.let { it != stateId } == true) {
+                invalid("action target must bind to the precondition state")
+            }
+        }
         if (authorized) validateAuthorization(message, deadline)
         validateExtensions(message)
     }

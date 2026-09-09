@@ -5,6 +5,10 @@
 - Decision owners: Hermes Mobile Runtime maintainers
 - Phase: 1 / HMR-109
 
+> Gesture-disablement in this historical screenshot decision is superseded by
+> ADR-0010's guarded HMR-110 navigation path. Its screenshot authority and
+> artifact limits remain authoritative.
+
 ## Context
 
 Semantic Accessibility trees do not describe canvas, video, custom rendering

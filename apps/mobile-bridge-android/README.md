@@ -5,10 +5,11 @@ This directory is the Android execution-plane boundary defined by
 build foundation, HMR-102 added the reviewed device-security kernel,
 HMR-103 added the closed protocol codec and HMR-104 added fail-closed routing.
 HMR-105 adds `phone.current_app`, HMR-106 adds coherent PhoneState, HMR-108
-adds bounded `phone.read_screen`, and HMR-109 adds protected screenshot
-capture. It is still not a general Android agent.
+adds bounded `phone.read_screen`, HMR-109 adds protected screenshot capture,
+and HMR-110 adds state-bound navigation with post-action verification. It is
+still not a general Android agent.
 
-## HMR-109 protected observation boundary
+## HMR-110 protected navigation boundary
 
 The debug APK deliberately has:
 
@@ -27,8 +28,7 @@ The debug APK deliberately has:
   before dispatch;
 - one system-bound Accessibility service that listens only for
   `TYPE_WINDOW_STATE_CHANGED`, retaining package/activity/window identity;
-- active-window content retrieval with only `flagReportViewIds`, while
-  `canPerformGestures=false` remains enforced by source and APK checks;
+- active-window content retrieval with only `flagReportViewIds`;
 - on-demand normalized semantic capture bounded to 500 nodes, 20,000 text
   characters, depth 64 and one active window;
 - mandatory password-content withholding and encrypted five-minute D3
@@ -37,6 +37,13 @@ The debug APK deliberately has:
   callback time and 16 MiB encoded output;
 - exact foreground-state correlation and typed secure-window, permission,
   timeout, rate-limit, oversize and transition failures;
+- state-bound semantic tap, long press and type with HMAC descriptor
+  re-resolution before policy and execution;
+- fixed Back/Home actions, bounded long-press/swipe gestures, and explicit
+  exact-package launcher Intents;
+- MAIN/LAUNCHER package visibility only, with no `QUERY_ALL_PACKAGES`;
+- device-side risk upgrade, unconditional L4/L5 denial, and bounded
+  post-action semantic verification;
 - no Notification Listener, receiver, content provider or general background
   service;
 - no enrollment listener, protocol command route or raw device endpoint;
@@ -59,10 +66,17 @@ Authorized and audited retrieval will be composed with the production bridge
 transport rather than exposed as an in-process bypass.
 
 The screenshot Provider likewise returns only a protected `ArtifactRef` and a
-new `SCREENSHOT` PhoneState fingerprint. The Accessibility service declares
-screenshot authority but still has no gesture, MediaProjection, storage or
-raw retrieval channel. A live active root revalidates package/window identity;
-if the state changes while capture is pending, the artifact is deleted.
+new `SCREENSHOT` PhoneState fingerprint. A live active root revalidates
+package/window identity; if the state changes while capture is pending, the
+artifact is deleted.
+
+Navigation is not a raw gesture channel. The service enables gestures only so
+the closed providers can perform schema-bounded long presses and swipes after
+Router/PEP authorization. Semantic targets are short-lived, re-resolved from a
+fresh complete tree and classified on device. Coordinate taps, arbitrary
+Accessibility action ids, caller-controlled Intent fields and L4/L5 actions
+remain unavailable. Every accepted mutation observes again; observation
+failure becomes `UNKNOWN_OUTCOME` rather than an automatic retry.
 
 The APK exposes no listener or Binder command surface. The default PEP denies
 every action unless a reviewed authorization verifier is injected by a future
