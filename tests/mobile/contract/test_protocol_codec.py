@@ -59,6 +59,13 @@ def test_state_binding_deadline_and_recoverability_are_semantic_contracts(
     with pytest.raises(ProtocolValidationError, match="state_precondition"):
         codec.encode(request)
 
+    request["state_precondition"] = {
+        "state_id": "state-2",
+        "maximum_age_ms": 1000,
+    }
+    with pytest.raises(ProtocolValidationError, match="target must bind"):
+        codec.encode(request)
+
     result = load_fixture("valid/tool-execution-result.json")
     result["execution_status"] = "FAILED"
     result["recoverable"] = False

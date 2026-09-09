@@ -25,7 +25,7 @@ class SemanticUiTreeBuilderTest {
             0,
         )
 
-        val tree = builder.build("com.example.app", 1_788_150_000_000L)
+        val tree = builder.build("com.example.app")
         val document = StrictJson.decodeObject(tree.payload)
         val nodes = document["nodes"] as List<*>
         val button = nodes[0] as Map<*, *>
@@ -37,6 +37,9 @@ class SemanticUiTreeBuilderTest {
         assertNull(password["text"])
         assertNull(password["content_description"])
         assertEquals(listOf("PASSWORD_CONTENT_WITHHELD"), tree.redactions)
+        assertEquals("node-1", tree.actionTargets[0].nodeId)
+        assertEquals("Sign in", tree.actionTargets[0].text)
+        assertNull(tree.actionTargets[1].text)
         assertTrue(tree.captureErrors.isEmpty())
         assertFalse(document["truncated"] as Boolean)
     }
@@ -48,12 +51,13 @@ class SemanticUiTreeBuilderTest {
         builder.add(node(text = "z"), first!!.nodeId, 1, 0)
         assertNull(builder.add(node(text = "overflow"), first.nodeId, 1, 1))
 
-        val tree = builder.build("com.example.app", 1_788_150_000_000L)
+        val tree = builder.build("com.example.app")
         val document = StrictJson.decodeObject(tree.payload)
         val nodes = document["nodes"] as List<*>
 
         assertEquals("abcd", (nodes[0] as Map<*, *>)["text"])
         assertEquals("z", (nodes[1] as Map<*, *>)["text"])
+        assertEquals("abcd😀", tree.actionTargets[0].text)
         assertEquals(listOf("NODE_LIMIT_REACHED", "TEXT_LIMIT_REACHED"), tree.captureErrors)
         assertTrue(document["truncated"] as Boolean)
     }
@@ -64,9 +68,21 @@ class SemanticUiTreeBuilderTest {
 
         assertNull(builder.add(node(), parentId = "node-1", depth = 65, childIndex = 0))
 
-        val tree = builder.build("com.example.app", 1_788_150_000_000L)
+        val tree = builder.build("com.example.app")
         assertEquals(listOf("DEPTH_LIMIT_REACHED"), tree.captureErrors)
         assertEquals(0, tree.nodeCount)
+    }
+
+    @Test
+    fun equivalentSemanticTreesHaveStableFingerprintContent() {
+        fun build(): ByteArray {
+            val builder = SemanticUiTreeBuilder(SemanticUiLimits(maxNodes = 2, maxTextChars = 20))
+            builder.add(node(text = "Play"), null, 0, 0)
+            return builder.build("com.example.app").payload
+        }
+
+        assertTrue(build().contentEquals(build()))
+        assertFalse(StrictJson.decodeObject(build()).containsKey("captured_at_epoch_ms"))
     }
 
     private fun node(

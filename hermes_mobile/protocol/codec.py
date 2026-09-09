@@ -135,6 +135,23 @@ class ProtocolCodec:
                     raise ProtocolValidationError(
                         "swipe points must bind to the precondition state"
                     )
+            if message["tool"] in {"phone.tap", "phone.long_press"}:
+                if (
+                    message["parameters"]["target"]["state_id"]
+                    != message["state_precondition"]["state_id"]
+                ):
+                    raise ProtocolValidationError(
+                        "action target must bind to the precondition state"
+                    )
+            if message["tool"] == "phone.type":
+                target = message["parameters"].get("target")
+                if (
+                    target is not None
+                    and target["state_id"] != message["state_precondition"]["state_id"]
+                ):
+                    raise ProtocolValidationError(
+                        "action target must bind to the precondition state"
+                    )
 
         if message_type == "action.authorized":
             if message["action_digest"] != action_digest(message):

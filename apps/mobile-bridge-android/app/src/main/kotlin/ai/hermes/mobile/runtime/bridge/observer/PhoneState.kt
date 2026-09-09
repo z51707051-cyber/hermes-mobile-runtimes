@@ -115,6 +115,12 @@ internal class PhoneStateObserver(
         latest = null
     }
 
+    /** Fails closed after a dependent artifact/index commit cannot complete. */
+    @Synchronized
+    fun invalidateCurrent() {
+        latest = null
+    }
+
     @Synchronized
     fun recordWindow(
         packageName: String?,
@@ -394,6 +400,8 @@ internal object PhoneStateStore : PhoneStateSource {
     fun markConnected() = tracker.markConnected()
 
     fun markDisconnected() = tracker.markDisconnected()
+
+    fun invalidateCurrent() = tracker.invalidateCurrent()
 
     fun recordWindow(
         packageName: String?,

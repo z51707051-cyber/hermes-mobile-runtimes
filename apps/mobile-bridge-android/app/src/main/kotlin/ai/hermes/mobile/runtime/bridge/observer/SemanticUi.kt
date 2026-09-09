@@ -45,17 +45,35 @@ internal data class SemanticNodeAdmission(
     val descend: Boolean,
 )
 
+/** Primitive-only execution binding retained briefly for semantic target re-resolution. */
+internal data class SemanticActionTargetDescriptor(
+    val nodeId: String,
+    val className: String?,
+    val resourceId: String?,
+    val text: String?,
+    val contentDescription: String?,
+    val bounds: UiBounds,
+    val clickable: Boolean,
+    val longClickable: Boolean,
+    val editable: Boolean,
+    val enabled: Boolean,
+    val visibleToUser: Boolean,
+    val password: Boolean,
+)
+
 internal data class NormalizedSemanticUiTree(
     val payload: ByteArray,
     val nodeCount: Int,
     val captureErrors: List<String>,
     val redactions: List<String>,
+    val actionTargets: List<SemanticActionTargetDescriptor>,
 )
 
 internal data class SemanticUiCapture(
     val state: PhoneStateSnapshot,
     val artifact: ArtifactReference,
     val redactions: List<String>,
+    val visibleText: List<String> = emptyList(),
 )
 
 internal interface SemanticUiCaptureSource {
@@ -71,6 +89,7 @@ internal class SemanticUiTreeBuilder(
     private val nodes = mutableListOf<Map<String, Any?>>()
     private val captureErrors = linkedSetOf<String>()
     private val redactions = linkedSetOf<String>()
+    private val actionTargets = mutableListOf<SemanticActionTargetDescriptor>()
     private var remainingTextChars = limits.maxTextChars
 
     fun add(
@@ -90,6 +109,23 @@ internal class SemanticUiTreeBuilder(
         val nodeId = "node-${nodes.size + 1}"
         val text = protectedText(input.text, input.password)
         val description = protectedText(input.contentDescription, input.password)
+        val targetText = protectedTargetText(input.text, input.password)
+        val targetDescription = protectedTargetText(input.contentDescription, input.password)
+        actionTargets +=
+            SemanticActionTargetDescriptor(
+                nodeId = nodeId,
+                className = boundedMetadata(input.className),
+                resourceId = boundedMetadata(input.resourceId),
+                text = targetText,
+                contentDescription = targetDescription,
+                bounds = input.bounds,
+                clickable = input.clickable,
+                longClickable = input.longClickable,
+                editable = input.editable,
+                enabled = input.enabled,
+                visibleToUser = input.visibleToUser,
+                password = input.password,
+            )
         nodes +=
             linkedMapOf(
                 "node_id" to nodeId,
@@ -138,15 +174,11 @@ internal class SemanticUiTreeBuilder(
         captureErrors += DEPTH_LIMIT_REACHED
     }
 
-    fun build(
-        packageName: String,
-        capturedAtEpochMillis: Long,
-    ): NormalizedSemanticUiTree {
+    fun build(packageName: String): NormalizedSemanticUiTree {
         val document =
             mapOf(
                 "schema_version" to 1,
                 "foreground_package" to packageName,
-                "captured_at_epoch_ms" to capturedAtEpochMillis,
                 "node_count" to nodes.size,
                 "truncated" to captureErrors.isNotEmpty(),
                 "capture_errors" to captureErrors.sorted(),
@@ -158,6 +190,7 @@ internal class SemanticUiTreeBuilder(
             nodeCount = nodes.size,
             captureErrors = captureErrors.sorted(),
             redactions = redactions.sorted(),
+            actionTargets = actionTargets.toList(),
         )
     }
 
@@ -186,6 +219,16 @@ internal class SemanticUiTreeBuilder(
 
     private fun boundedMetadata(value: String?): String? =
         normalizeText(value)?.let { unicodeSafeTake(it, MAX_METADATA_CHARS) }
+
+    private fun protectedTargetText(
+        value: String?,
+        password: Boolean,
+    ): String? =
+        if (password) {
+            null
+        } else {
+            normalizeText(value)?.let { unicodeSafeTake(it, MAX_TEXT_FIELD_CHARS) }
+        }
 
     private fun unicodeSafeTake(
         value: String,

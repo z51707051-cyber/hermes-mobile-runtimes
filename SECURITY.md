@@ -69,6 +69,21 @@ results. Secure-window and revoked-access failures do not auto-retry. There is
 still no gesture, MediaProjection, shared-file, raw retrieval or additional
 Android permission surface.
 
+HMR-110 enables Accessibility mutation only behind the existing Router and
+Android PEP. Semantic target descriptors are retained for at most five minutes
+as keyed signatures and risk floors; Android node objects and raw target text
+are not retained. The PEP checks an exact fresh `COMPLETE` state, signed
+effective target and newly resolved device risk before dispatch, and the
+provider re-resolves again before acting. Coordinate taps and L4/L5 targets
+fail closed. Long press and swipe use bounded gestures; tap/type use fixed
+Accessibility actions; Back/Home use fixed global actions. Open-app accepts
+only the signed package and rebuilds an explicit MAIN/LAUNCHER Intent. Android
+package visibility is limited to launcher activities and never requests
+`QUERY_ALL_PACKAGES`. Every accepted mutation performs bounded post-action
+observation; inability to verify is an `UNKNOWN_OUTCOME` and must not trigger a
+blind retry. The production PEP remains deny-all until authenticated broker
+transport is composed.
+
 ---
 
 # Hermes Agent Security Policy

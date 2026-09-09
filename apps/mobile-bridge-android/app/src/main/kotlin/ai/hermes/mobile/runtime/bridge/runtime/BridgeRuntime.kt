@@ -2,6 +2,7 @@ package ai.hermes.mobile.runtime.bridge.runtime
 
 import ai.hermes.mobile.runtime.bridge.accessibility.SemanticUiCaptureGateway
 import ai.hermes.mobile.runtime.bridge.accessibility.ScreenshotCaptureGateway
+import ai.hermes.mobile.runtime.bridge.accessibility.NavigationActionGateway
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 
@@ -10,8 +11,20 @@ internal object BridgeRuntime {
     private val currentAppProvider = CurrentAppProvider(PhoneStateStore)
     private val readScreenProvider = ReadScreenProvider(SemanticUiCaptureGateway)
     private val screenshotProvider = ScreenshotProvider(ScreenshotCaptureGateway)
+    private val navigationProviders =
+        listOf(
+            "phone.tap",
+            "phone.long_press",
+            "phone.type",
+            "phone.swipe",
+            "phone.back",
+            "phone.home",
+            "phone.open_app",
+        ).map { tool -> NavigationProvider(tool, NavigationActionGateway) }
     private val capabilities =
-        CapabilityRegistry(listOf(currentAppProvider, readScreenProvider, screenshotProvider))
+        CapabilityRegistry(
+            listOf(currentAppProvider, readScreenProvider, screenshotProvider) + navigationProviders,
+        )
 
     fun router(
         authorizationPep: AndroidPolicyEnforcementPoint = DenyAllPolicyEnforcementPoint,
@@ -24,6 +37,7 @@ internal object BridgeRuntime {
                     source = PhoneStateStore,
                     semanticUiSource = SemanticUiCaptureGateway,
                     screenshotSource = ScreenshotCaptureGateway,
+                    navigationSource = NavigationActionGateway,
                 ),
         )
 
@@ -38,6 +52,9 @@ internal object BridgeRuntime {
                 }
                 if (ScreenshotCaptureGateway.availability() == null) {
                     add(screenshotProvider.descriptor.tool)
+                }
+                if (NavigationActionGateway.availability() == null) {
+                    addAll(navigationProviders.map { it.descriptor.tool })
                 }
             }
         } else {

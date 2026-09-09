@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 protected screenshot capture in review
+> Status: Phase 1 state-bound navigation in review
 > Last reviewed: 2026-09-09
-> The protected route now captures bounded semantic and pixel observations into encrypted ephemeral artifacts.
+> The protected route now performs bounded navigation only against fresh semantic observations and verifies every accepted action.
 
 ## 1. Decision
 
@@ -27,6 +27,9 @@ Semantic UI capture and its least-authority Accessibility profile are fixed by
 [`ADR-0008`](docs/adr/0008-bounded-semantic-ui-capture.md).
 Protected screenshot capture, visual fingerprinting and image bounds are fixed
 by [`ADR-0009`](docs/adr/0009-protected-screenshot-capture.md).
+State-bound navigation, device-side semantic risk upgrade and post-action
+verification are fixed by
+[`ADR-0010`](docs/adr/0010-state-bound-navigation-actions.md).
 
 This decision separates two responsibilities:
 
@@ -159,6 +162,19 @@ closed typed failures. Screenshot authority adds no permission, gesture,
 MediaProjection, public file or new exported component.
 The protocol reserves secondary display ids, but this adapter currently fails
 them closed until PhoneState becomes display-scoped.
+
+HMR-110 adds providers for tap, long press, type, swipe, back, home and open
+app without exposing raw Accessibility actions or arbitrary Intents. Tap,
+long-press and type re-resolve short-lived semantic targets against the exact
+PhoneState generation twice: during the Android PEP decision and immediately
+before execution. A device-side classifier raises communication/destructive
+controls above primitive tool baselines; L4/L5 and coordinate taps remain
+blocked. Gesture dispatch is enabled only for bounded long-press/swipe paths.
+Open-app reconstructs an explicit launcher Intent for the signed package, and
+the manifest grants only MAIN/LAUNCHER package visibility—not
+`QUERY_ALL_PACKAGES`. Every accepted mutation obtains a bounded fresh semantic
+observation and returns execution and verification separately; missing
+post-state is `UNKNOWN_OUTCOME`, never permission to repeat blindly.
 
 `INTERNET` remains the sole requested Android permission. The production PEP
 still defaults to deny-all, and there is no protocol listener, broker IPC

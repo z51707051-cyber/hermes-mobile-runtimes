@@ -5,6 +5,10 @@
 - Decision owners: Hermes Mobile Runtime maintainers
 - Phase: 1 / HMR-108
 
+> Gesture-disablement in this historical read-only decision is superseded by
+> ADR-0010's guarded HMR-110 navigation path. Its capture and retention limits
+> remain authoritative.
+
 ## Context
 
 HMR-105/106 intentionally limited Accessibility to foreground package and
@@ -39,7 +43,9 @@ does not combine fields from different windows.
 
 A successful capture creates a new immutable PhoneState generation linked to
 its predecessor. Its fingerprint basis is `UI_HIERARCHY`; the digest is keyed
-and is also bound to the protected artifact. A first comparison against a
+and is also bound to the protected artifact. Canonical fingerprint content
+omits capture time—PhoneState carries observation time separately—so identical
+UI trees remain comparable across observations. A first comparison against a
 window-identity fingerprint is `UNKNOWN`, not a false navigation result.
 
 ### 3. Closed normalized tree

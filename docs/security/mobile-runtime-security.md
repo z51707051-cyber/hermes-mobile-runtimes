@@ -195,9 +195,9 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
   only `AuthorizedAction`, and provider resolution occurs after the Android PEP.
 - Capability reports change availability, never the stable Tool schema or the
   Runtime-owned minimum risk classification.
-- HMR-105's Accessibility service is restricted to window-state identity: its
-  manifest binding is system-protected, UI-tree retrieval and gestures are
-  disabled, and disconnect/no-state/stale-state conditions fail closed.
+- HMR-105's Accessibility service began with window-state identity only; its
+  manifest binding remains system-protected and
+  disconnect/no-state/stale-state conditions fail closed.
 - HMR-106 state generations are immutable and predecessor-linked; reconnect
   clears old state, transition fingerprints declare their evidence basis, and
   `PARTIAL`/`INCOHERENT` cannot be silently promoted to complete state.
@@ -206,9 +206,16 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
   fails closed on corruption or storage loss. Raw parameters and device content
   cannot enter this ledger; whole-store rollback needs an external head anchor.
 - HMR-108 permits active-window hierarchy reads only after Android PEP allow.
-  It keeps gestures/all-window capture disabled, bounds traversal, withholds
-  password content and stores normalized D3 content only as an encrypted
-  five-minute artifact. Result/Audit data carries references, not the tree.
+  It keeps all-window capture disabled, bounds traversal, withholds password
+  content and stores normalized D3 content only as an encrypted five-minute
+  artifact. Result/Audit data carries references, not the tree.
+- HMR-110 enables gestures only for closed, bounded long-press/swipe providers.
+  Tap/type targets are short-lived state-bound semantic references, re-resolved
+  before policy and execution. The device upgrades semantic risk and blocks
+  L4/L5 and coordinate taps. Open-app reconstructs an explicit launcher Intent
+  and package visibility is exactly MAIN/LAUNCHER, never all packages. Every
+  accepted mutation performs a bounded post-observation; unavailable evidence
+  is `UNKNOWN_OUTCOME` and cannot authorize a blind retry.
 - Pin upstream source SHAs and dependencies; preserve MIT/Apache notices.
 - Generate SBOMs for Python, Gradle/APK, models and bundled assets separately.
 - Treat Mobilerun Portal APK and model/data licenses as independent artifacts until proven otherwise.

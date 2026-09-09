@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Roadmap
 
-> Status: Phase 1 capability implementation in progress; protected screenshot capture in review
+> Status: Phase 1 capability implementation in progress; state-bound navigation in review
 > Last updated: 2026-09-09
 
 ## 1. Delivery policy
@@ -68,8 +68,8 @@ Repository prerequisites now have the following status:
 | ID | Task | Result |
 |---|---|---|
 | HMR-108 | `phone.read_screen` semantic nodes | Complete; bounded active-window tree and encrypted ephemeral artifact |
-| HMR-109 | Protected `phone.screenshot` artifact | In review; bounded image, keyed fingerprint and encrypted ephemeral artifact |
-| HMR-110 | Navigation action set | Execution/verification split |
+| HMR-109 | Protected `phone.screenshot` artifact | Complete; bounded image, keyed fingerprint and encrypted ephemeral artifact |
+| HMR-110 | Navigation action set | In review; state-bound semantic actions with device risk upgrade and post-observation |
 | HMR-111 | Notifications and device state | Cursor, dedupe, sensitivity and state |
 | HMR-112 | Bounded wait/transition policy | Deadline, cancellation and retry limit |
 | HMR-113 | Emulator contract-test harness | Dialog/keyboard/slow/UI-change fixtures |

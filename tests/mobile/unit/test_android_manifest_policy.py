@@ -55,6 +55,10 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
         """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
+          <queries><intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+          </intent></queries>
           <application android:allowBackup="false"
               android:usesCleartextTraffic="false"
               android:networkSecurityConfig="@ref/0x7f030002">
@@ -100,6 +104,10 @@ def test_rejects_any_permission_beyond_internet(tmp_path: Path) -> None:
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
           <uses-permission android:name="android.permission.RECORD_AUDIO" />
+          <queries><intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+          </intent></queries>
           <application android:allowBackup="false"
               android:usesCleartextTraffic="false"
               android:networkSecurityConfig="@xml/network_security_config">
@@ -138,6 +146,10 @@ def test_rejects_unprotected_service_and_insecure_application_defaults(
         """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
+          <queries><intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+          </intent></queries>
           <application android:allowBackup="true" android:usesCleartextTraffic="true">
             <activity android:name=".MainActivity" android:exported="true">
               <intent-filter>
@@ -164,6 +176,42 @@ def test_rejects_unprotected_service_and_insecure_application_defaults(
     ]
 
 
+def test_rejects_broad_package_visibility(tmp_path: Path) -> None:
+    manifest = _write_xml(
+        tmp_path,
+        "AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <uses-permission android:name="android.permission.INTERNET" />
+          <queries><package android:name="com.example.target" /></queries>
+          <application android:allowBackup="false"
+              android:usesCleartextTraffic="false"
+              android:networkSecurityConfig="@xml/network_security_config">
+            <activity android:name=".MainActivity" android:exported="true">
+              <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+              </intent-filter>
+            </activity>
+            <service android:name=".accessibility.CurrentAppAccessibilityService"
+                android:exported="true"
+                android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+              <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+              </intent-filter>
+              <meta-data android:name="android.accessibilityservice"
+                  android:resource="@xml/current_app_accessibility_service" />
+            </service>
+          </application>
+        </manifest>
+        """,
+    )
+
+    assert VERIFIER.validate_manifest(manifest) == [
+        "package visibility must be exactly one MAIN/LAUNCHER intent query"
+    ]
+
+
 def test_rejects_accessibility_service_that_widens_beyond_active_window_read(
     tmp_path: Path,
 ) -> None:
@@ -173,7 +221,7 @@ def test_rejects_accessibility_service_that_widens_beyond_active_window_read(
         """
         <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
             android:accessibilityEventTypes="typeAllMask"
-            android:canPerformGestures="true"
+            android:canPerformGestures="false"
             android:canRetrieveWindowContent="true"
             android:canTakeScreenshot="false" />
         """,
@@ -181,7 +229,7 @@ def test_rejects_accessibility_service_that_widens_beyond_active_window_read(
 
     assert VERIFIER.validate_accessibility_service_config(config) == [
         "screen observer must listen only for typeWindowStateChanged",
-        "screen observer must set android:canPerformGestures=false",
+        "mobile runtime must set android:canPerformGestures=true",
         "screen observer must set android:canTakeScreenshot=true",
         "screen observer must declare only flagReportViewIds",
     ]

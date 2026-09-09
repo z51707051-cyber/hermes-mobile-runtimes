@@ -55,4 +55,23 @@ class ProtocolCodecTest {
             ProtocolCodec.encode(changed)
         }
     }
+
+    @Test
+    fun stateBoundTargetMustMatchThePreconditionGeneration() {
+        val request =
+            ProtocolCodec.decode(FixtureFiles.bytes("valid/tool-execution-request.json")) +
+                mapOf(
+                    "tool" to "phone.tap",
+                    "parameters" to
+                        mapOf(
+                            "target" to mapOf("state_id" to "state-target", "node_id" to "node-1"),
+                        ),
+                    "state_precondition" to
+                        mapOf("state_id" to "state-other", "maximum_age_ms" to 1_000),
+                )
+
+        assertThrows(ProtocolValidationException::class.java) {
+            ProtocolCodec.encode(request)
+        }
+    }
 }

@@ -10,6 +10,25 @@ import org.junit.Test
 
 class PhoneStateObserverTest {
     @Test
+    fun invalidatingDependentStateKeepsServiceConnectedButRequiresANewObservation() {
+        var stateSequence = 0
+        val tracker =
+            PhoneStateObserver(
+                elapsedClock = ElapsedRealtimeClock { 100L },
+                epochClock = EpochClock { 1_788_150_000_000L },
+                stateIds = StateIdGenerator { "state-${++stateSequence}" },
+            )
+        tracker.markConnected()
+        assertTrue(tracker.recordWindow("com.example.app", "com.example.app.MainActivity", 1))
+
+        tracker.invalidateCurrent()
+
+        assertEquals(PhoneStateUnavailableReason.NO_WINDOW_STATE, tracker.availability(1_000))
+        assertTrue(tracker.recordWindow("com.example.app", "com.example.app.MainActivity", 1))
+        assertNull(tracker.availability(1_000))
+    }
+
+    @Test
     fun trackerRequiresConnectedFreshWindowIdentity() {
         var elapsed = 1_000L
         val epoch = 1_788_150_000_000L
