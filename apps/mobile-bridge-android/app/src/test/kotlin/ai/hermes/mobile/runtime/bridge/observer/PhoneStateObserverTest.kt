@@ -147,12 +147,96 @@ class PhoneStateObserverTest {
         assertEquals("state-2", tracker.current(5_000).stateId)
     }
 
+    @Test
+    fun screenshotCaptureIsBoundToExactStateAndUsesComparableFingerprints() {
+        var stateSequence = 0
+        val tracker =
+            PhoneStateObserver(
+                elapsedClock = ElapsedRealtimeClock { 100L },
+                epochClock = EpochClock { 1_788_150_000_000L },
+                stateIds = StateIdGenerator { "state-${++stateSequence}" },
+            )
+        tracker.markConnected()
+        tracker.recordWindow("com.example.music", "com.example.music.PlayerActivity", 42)
+
+        val first =
+            tracker.recordScreenshot(
+                expectedStateId = "state-1",
+                fingerprintDigest = "sha256:" + "c".repeat(64),
+                artifact = screenshotArtifact("artifact-shot-1", "c"),
+            )
+        assertEquals(ScreenFingerprintBasis.SCREENSHOT, first.screenFingerprint.basis)
+        assertEquals(ScreenTransition.UNKNOWN, first.transition)
+
+        val same =
+            tracker.recordScreenshot(
+                expectedStateId = "state-2",
+                fingerprintDigest = "sha256:" + "c".repeat(64),
+                artifact = screenshotArtifact("artifact-shot-2", "c"),
+            )
+        assertEquals(ScreenTransition.NONE, same.transition)
+
+        tracker.recordWindow("com.example.maps", "com.example.maps.MapActivity", 7)
+        val mismatch =
+            assertThrows(PhoneStateUnavailableException::class.java) {
+                tracker.recordScreenshot(
+                    expectedStateId = "state-3",
+                    fingerprintDigest = "sha256:" + "d".repeat(64),
+                    artifact = screenshotArtifact("artifact-shot-3", "d"),
+                )
+            }
+        assertEquals(PhoneStateUnavailableReason.SCREENSHOT_WINDOW_CHANGED, mismatch.reason)
+    }
+
+    @Test
+    fun liveRootCanAnchorReadCaptureWithoutMakingStaleStateMutationSafe() {
+        var elapsed = 100L
+        val tracker =
+            PhoneStateObserver(
+                elapsedClock = ElapsedRealtimeClock { elapsed },
+                epochClock = EpochClock { 1_788_150_000_000L },
+                stateIds = StateIdGenerator { "state-anchor" },
+            )
+        tracker.markConnected()
+        tracker.recordWindow("com.example.music", "com.example.music.PlayerActivity", 42)
+        elapsed += 5_001
+
+        assertEquals(
+            PhoneStateUnavailableReason.STALE_WINDOW_STATE,
+            tracker.availability(5_000),
+        )
+        assertEquals(
+            "state-anchor",
+            tracker.visualCaptureAnchor("com.example.music", 42).stateId,
+        )
+        val mismatch =
+            assertThrows(PhoneStateUnavailableException::class.java) {
+                tracker.visualCaptureAnchor("com.example.other", 42)
+            }
+        assertEquals(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH, mismatch.reason)
+    }
+
     private fun artifact(): ArtifactReference =
         ArtifactReference(
             artifactId = "artifact-tree",
             mediaType = "application/vnd.hermes.ui-tree+json",
             sizeBytes = 100,
             digest = "sha256:" + "b".repeat(64),
+            sensitivity = "D3",
+            redactionStatus = "NONE",
+            retentionClass = "EPHEMERAL",
+            expiresAtEpochMillis = 1_788_150_300_000L,
+        )
+
+    private fun screenshotArtifact(
+        id: String,
+        digestCharacter: String,
+    ): ArtifactReference =
+        ArtifactReference(
+            artifactId = id,
+            mediaType = "image/png",
+            sizeBytes = 1_024,
+            digest = "sha256:" + digestCharacter.repeat(64),
             sensitivity = "D3",
             redactionStatus = "NONE",
             retentionClass = "EPHEMERAL",

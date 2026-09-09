@@ -11,8 +11,8 @@ internal data class BootstrapStatus(
 internal object BootstrapStatusProvider {
     fun current(): BootstrapStatus =
         BootstrapStatus(
-            phase = "HMR-108",
-            summary = "Bounded semantic active-window observation",
+            phase = "HMR-109",
+            summary = "Protected semantic and screenshot observation",
             enabledCapabilities = BridgeRuntime.availableCapabilities(),
         )
 }

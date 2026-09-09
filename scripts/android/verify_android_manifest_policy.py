@@ -246,7 +246,7 @@ def validate_network_security_config(path: Path) -> list[str]:
 
 
 def validate_accessibility_service_config(path: Path) -> list[str]:
-    """Allow bounded active-window reads while continuing to forbid gestures."""
+    """Allow bounded active-window/screenshot reads while forbidding gestures."""
 
     try:
         root = ET.parse(path).getroot()
@@ -263,6 +263,8 @@ def validate_accessibility_service_config(path: Path) -> list[str]:
         errors.append("screen observer must set android:canRetrieveWindowContent=true")
     if _android(root, "canPerformGestures") != "false":
         errors.append("screen observer must set android:canPerformGestures=false")
+    if _android(root, "canTakeScreenshot") != "true":
+        errors.append("screen observer must set android:canTakeScreenshot=true")
     if _android(root, "accessibilityFlags") != "flagReportViewIds":
         errors.append("screen observer must declare only flagReportViewIds")
 
@@ -272,6 +274,7 @@ def validate_accessibility_service_config(path: Path) -> list[str]:
         f"{ANDROID}accessibilityFlags",
         f"{ANDROID}canPerformGestures",
         f"{ANDROID}canRetrieveWindowContent",
+        f"{ANDROID}canTakeScreenshot",
         f"{ANDROID}description",
         f"{ANDROID}notificationTimeout",
     }

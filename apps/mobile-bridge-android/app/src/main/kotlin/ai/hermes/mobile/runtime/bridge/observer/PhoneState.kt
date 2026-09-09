@@ -12,6 +12,7 @@ internal enum class PhoneStateUnavailableReason {
     ACTIVE_WINDOW_UNAVAILABLE,
     UI_WINDOW_MISMATCH,
     UI_CAPTURE_FAILED,
+    SCREENSHOT_WINDOW_CHANGED,
 }
 
 internal class PhoneStateUnavailableException(
@@ -228,6 +229,89 @@ internal class PhoneStateObserver(
     }
 
     @Synchronized
+    fun recordScreenshot(
+        expectedStateId: String,
+        fingerprintDigest: String,
+        artifact: ArtifactReference,
+    ): PhoneStateSnapshot {
+        if (!connected) {
+            throw PhoneStateUnavailableException(PhoneStateUnavailableReason.SERVICE_DISCONNECTED)
+        }
+        val previous =
+            latest
+                ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.NO_WINDOW_STATE)
+        if (previous.stateId != expectedStateId) {
+            throw PhoneStateUnavailableException(
+                PhoneStateUnavailableReason.SCREENSHOT_WINDOW_CHANGED,
+            )
+        }
+        require(DIGEST.matches(fingerprintDigest)) { "screenshot fingerprint is invalid" }
+        require(artifact.digest == fingerprintDigest) { "screenshot artifact fingerprint mismatch" }
+        require(
+            artifact.mediaType in SCREENSHOT_MEDIA_TYPES &&
+                artifact.sensitivity == "D3" &&
+                artifact.redactionStatus == "NONE" &&
+                artifact.retentionClass == "EPHEMERAL"
+        ) {
+            "screenshot artifact policy is invalid"
+        }
+        val fingerprint =
+            ScreenFingerprint(
+                basis = ScreenFingerprintBasis.SCREENSHOT,
+                digest = fingerprintDigest,
+            )
+        val observation =
+            StoredObservation(
+                stateId = stateIds.next(),
+                previousStateId = previous.stateId,
+                packageName = previous.packageName,
+                activityName = previous.activityName,
+                windowId = previous.windowId,
+                screenFingerprint = fingerprint,
+                captureStatus = PhoneStateCaptureStatus.COMPLETE,
+                captureErrors = emptyList(),
+                transition =
+                    if (previous.captureStatus == PhoneStateCaptureStatus.COMPLETE &&
+                        previous.screenFingerprint.basis == ScreenFingerprintBasis.SCREENSHOT
+                    ) {
+                        if (previous.screenFingerprint == fingerprint) {
+                            ScreenTransition.NONE
+                        } else {
+                            ScreenTransition.CHANGED
+                        }
+                    } else {
+                        ScreenTransition.UNKNOWN
+                    },
+                capturedAtEpochMillis = epochClock.nowMillis(),
+                capturedAtElapsedMillis = elapsedClock.nowMillis(),
+                artifacts = listOf(artifact),
+            )
+        latest = observation
+        return snapshot(observation)
+    }
+
+    /**
+     * Revalidates a possibly stale identity against a live active-window root.
+     * This is read-only capture preparation, never a mutation precondition.
+     */
+    @Synchronized
+    fun visualCaptureAnchor(
+        packageName: String,
+        windowId: Int,
+    ): PhoneStateSnapshot {
+        if (!connected) {
+            throw PhoneStateUnavailableException(PhoneStateUnavailableReason.SERVICE_DISCONNECTED)
+        }
+        val observation =
+            latest
+                ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.NO_WINDOW_STATE)
+        if (observation.packageName != packageName || observation.windowId != windowId) {
+            throw PhoneStateUnavailableException(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH)
+        }
+        return snapshot(observation)
+    }
+
+    @Synchronized
     override fun availability(maximumAgeMillis: Long): PhoneStateUnavailableReason? {
         require(maximumAgeMillis in 1..MAXIMUM_FRESHNESS_MILLIS) {
             "maximum current-app age must be within 1..$MAXIMUM_FRESHNESS_MILLIS ms"
@@ -295,6 +379,7 @@ internal class PhoneStateObserver(
         private const val MAXIMUM_FRESHNESS_MILLIS = 5_000L
         private const val MAX_CAPTURE_ERRORS = 16
         private const val UI_TREE_MEDIA_TYPE = "application/vnd.hermes.ui-tree+json"
+        private val SCREENSHOT_MEDIA_TYPES = setOf("image/png", "image/webp")
         private val PACKAGE_NAME =
             Regex("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+")
         private val ACTIVITY_NAME = Regex("[A-Za-z_$][A-Za-z0-9_.$]{0,511}")
@@ -330,6 +415,22 @@ internal object PhoneStateStore : PhoneStateSource {
             captureErrors,
             artifact,
         )
+
+    fun recordScreenshot(
+        expectedStateId: String,
+        fingerprintDigest: String,
+        artifact: ArtifactReference,
+    ): PhoneStateSnapshot =
+        tracker.recordScreenshot(
+            expectedStateId,
+            fingerprintDigest,
+            artifact,
+        )
+
+    fun visualCaptureAnchor(
+        packageName: String,
+        windowId: Int,
+    ): PhoneStateSnapshot = tracker.visualCaptureAnchor(packageName, windowId)
 
     override fun availability(maximumAgeMillis: Long): PhoneStateUnavailableReason? =
         tracker.availability(maximumAgeMillis)

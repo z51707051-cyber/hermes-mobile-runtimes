@@ -1,6 +1,7 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
 import ai.hermes.mobile.runtime.bridge.accessibility.SemanticUiCaptureGateway
+import ai.hermes.mobile.runtime.bridge.accessibility.ScreenshotCaptureGateway
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 
@@ -8,7 +9,9 @@ import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 internal object BridgeRuntime {
     private val currentAppProvider = CurrentAppProvider(PhoneStateStore)
     private val readScreenProvider = ReadScreenProvider(SemanticUiCaptureGateway)
-    private val capabilities = CapabilityRegistry(listOf(currentAppProvider, readScreenProvider))
+    private val screenshotProvider = ScreenshotProvider(ScreenshotCaptureGateway)
+    private val capabilities =
+        CapabilityRegistry(listOf(currentAppProvider, readScreenProvider, screenshotProvider))
 
     fun router(
         authorizationPep: AndroidPolicyEnforcementPoint = DenyAllPolicyEnforcementPoint,
@@ -20,6 +23,7 @@ internal object BridgeRuntime {
                     authorizationDelegate = authorizationPep,
                     source = PhoneStateStore,
                     semanticUiSource = SemanticUiCaptureGateway,
+                    screenshotSource = ScreenshotCaptureGateway,
                 ),
         )
 
@@ -31,6 +35,9 @@ internal object BridgeRuntime {
                 add(currentAppProvider.descriptor.tool)
                 if (SemanticUiCaptureGateway.availability() == null) {
                     add(readScreenProvider.descriptor.tool)
+                }
+                if (ScreenshotCaptureGateway.availability() == null) {
+                    add(screenshotProvider.descriptor.tool)
                 }
             }
         } else {

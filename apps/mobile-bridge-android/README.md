@@ -4,11 +4,11 @@ This directory is the Android execution-plane boundary defined by
 [`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provided the reproducible
 build foundation, HMR-102 added the reviewed device-security kernel,
 HMR-103 added the closed protocol codec and HMR-104 added fail-closed routing.
-HMR-105 adds `phone.current_app`, HMR-106 adds coherent PhoneState, and HMR-108
-adds bounded `phone.read_screen` semantic capture. It is still not a general
-Android agent.
+HMR-105 adds `phone.current_app`, HMR-106 adds coherent PhoneState, HMR-108
+adds bounded `phone.read_screen`, and HMR-109 adds protected screenshot
+capture. It is still not a general Android agent.
 
-## HMR-108 semantic observation boundary
+## HMR-109 protected observation boundary
 
 The debug APK deliberately has:
 
@@ -33,6 +33,10 @@ The debug APK deliberately has:
   characters, depth 64 and one active window;
 - mandatory password-content withholding and encrypted five-minute D3
   in-memory artifacts with a separately keyed digest;
+- on-demand PNG/lossless-WebP screenshot capture with bounded crop, pixels,
+  callback time and 16 MiB encoded output;
+- exact foreground-state correlation and typed secure-window, permission,
+  timeout, rate-limit, oversize and transition failures;
 - no Notification Listener, receiver, content provider or general background
   service;
 - no enrollment listener, protocol command route or raw device endpoint;
@@ -53,6 +57,12 @@ closed `ArtifactRef`; raw tree content never enters Tool JSON, logs or Audit.
 The process-local artifact store intentionally has no direct read method.
 Authorized and audited retrieval will be composed with the production bridge
 transport rather than exposed as an in-process bypass.
+
+The screenshot Provider likewise returns only a protected `ArtifactRef` and a
+new `SCREENSHOT` PhoneState fingerprint. The Accessibility service declares
+screenshot authority but still has no gesture, MediaProjection, storage or
+raw retrieval channel. A live active root revalidates package/window identity;
+if the state changes while capture is pending, the artifact is deleted.
 
 The APK exposes no listener or Binder command surface. The default PEP denies
 every action unless a reviewed authorization verifier is injected by a future

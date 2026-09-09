@@ -207,7 +207,9 @@ internal class EncryptedInMemoryArtifactStore(
         const val KEY_BYTES = 32
         const val NONCE_BYTES = 12
         const val GCM_TAG_BITS = 128
-        const val MAX_CONTENT_BYTES = 1_048_576
+        // UI trees retain their stricter 1 MiB encoder limit. This store also
+        // accepts bounded compressed screenshots without putting them on wire.
+        const val MAX_CONTENT_BYTES = 16_777_216
         const val MAX_TTL_MILLIS = 86_400_000L
         const val HMAC_ALGORITHM = "HmacSHA256"
         const val CIPHER_TRANSFORMATION = "AES/GCM/NoPadding"
