@@ -244,6 +244,7 @@ The following require ADRs before the affected capability is implemented:
 | Enrollment, device identity, mTLS, key rotation and backup exclusion | ADR-0005 |
 | Idempotency, ambiguous completion and bounded recovery | ADR-0006 |
 | Encrypted execution Audit, integrity and key rotation | ADR-0007 accepted; external head anchoring remains a follow-up |
+| Bounded active-window semantic capture and D3 artifact handling | ADR-0008 accepted; authorized retrieval remains transport work |
 
 Android Accessibility remains a high-authority capability, and a compromised
 Android OS can falsify both execution and observation. V0.1 reduces exposure

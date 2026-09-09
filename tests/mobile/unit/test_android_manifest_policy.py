@@ -164,7 +164,7 @@ def test_rejects_unprotected_service_and_insecure_application_defaults(
     ]
 
 
-def test_rejects_accessibility_service_that_can_read_or_act_on_ui(
+def test_rejects_accessibility_service_that_widens_beyond_active_window_read(
     tmp_path: Path,
 ) -> None:
     config = _write_xml(
@@ -179,9 +179,9 @@ def test_rejects_accessibility_service_that_can_read_or_act_on_ui(
     )
 
     assert VERIFIER.validate_accessibility_service_config(config) == [
-        "current-app observer must listen only for typeWindowStateChanged",
-        "current-app observer must set android:canRetrieveWindowContent=false",
-        "current-app observer must set android:canPerformGestures=false",
+        "screen observer must listen only for typeWindowStateChanged",
+        "screen observer must set android:canPerformGestures=false",
+        "screen observer must declare only flagReportViewIds",
     ]
 
 

@@ -1,6 +1,7 @@
 package ai.hermes.mobile.runtime.bridge.observer
 
 import android.os.SystemClock
+import ai.hermes.mobile.runtime.bridge.artifact.ArtifactReference
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -8,11 +9,14 @@ internal enum class PhoneStateUnavailableReason {
     SERVICE_DISCONNECTED,
     NO_WINDOW_STATE,
     STALE_WINDOW_STATE,
+    ACTIVE_WINDOW_UNAVAILABLE,
+    UI_WINDOW_MISMATCH,
+    UI_CAPTURE_FAILED,
 }
 
 internal class PhoneStateUnavailableException(
     val reason: PhoneStateUnavailableReason,
-) : IllegalStateException("current app observation is unavailable: $reason")
+) : IllegalStateException("phone state observation is unavailable: $reason")
 
 internal enum class ScreenTransition {
     NONE,
@@ -49,6 +53,7 @@ internal data class PhoneStateSnapshot(
     val transition: ScreenTransition,
     val capturedAtEpochMillis: Long,
     val freshnessMillis: Long,
+    val artifacts: List<ArtifactReference> = emptyList(),
 )
 
 internal fun interface ElapsedRealtimeClock {
@@ -85,12 +90,14 @@ internal class PhoneStateObserver(
         val previousStateId: String?,
         val packageName: String,
         val activityName: String?,
+        val windowId: Int?,
         val screenFingerprint: ScreenFingerprint,
         val captureStatus: PhoneStateCaptureStatus,
         val captureErrors: List<String>,
         val transition: ScreenTransition,
         val capturedAtEpochMillis: Long,
         val capturedAtElapsedMillis: Long,
+        val artifacts: List<ArtifactReference>,
     )
 
     private var connected = false
@@ -111,6 +118,7 @@ internal class PhoneStateObserver(
     fun recordWindow(
         packageName: String?,
         activityName: String?,
+        windowId: Int? = null,
     ): Boolean {
         if (!connected) return false
         val safePackage = packageName?.takeIf(::validPackageName) ?: return false
@@ -134,6 +142,7 @@ internal class PhoneStateObserver(
                 previousStateId = previous?.stateId,
                 packageName = safePackage,
                 activityName = safeActivity,
+                windowId = windowId,
                 screenFingerprint = fingerprint,
                 captureStatus = captureStatus,
                 captureErrors = captureErrors,
@@ -147,8 +156,75 @@ internal class PhoneStateObserver(
                     },
                 capturedAtEpochMillis = epochClock.nowMillis(),
                 capturedAtElapsedMillis = elapsedClock.nowMillis(),
+                artifacts = emptyList(),
             )
         return true
+    }
+
+    @Synchronized
+    fun recordUiTree(
+        packageName: String,
+        windowId: Int,
+        fingerprintDigest: String,
+        captureErrors: List<String>,
+        artifact: ArtifactReference,
+    ): PhoneStateSnapshot {
+        if (!connected) throw PhoneStateUnavailableException(PhoneStateUnavailableReason.SERVICE_DISCONNECTED)
+        val previous =
+            latest
+                ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.NO_WINDOW_STATE)
+        if (previous.packageName != packageName || previous.windowId != windowId) {
+            throw PhoneStateUnavailableException(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH)
+        }
+        require(DIGEST.matches(fingerprintDigest)) { "UI hierarchy fingerprint is invalid" }
+        require(artifact.digest == fingerprintDigest) { "UI artifact fingerprint mismatch" }
+        require(
+            artifact.mediaType == UI_TREE_MEDIA_TYPE &&
+                artifact.sensitivity == "D3" &&
+                artifact.retentionClass == "EPHEMERAL"
+        ) {
+            "UI artifact policy is invalid"
+        }
+        require(captureErrors.size <= MAX_CAPTURE_ERRORS) { "too many UI capture errors" }
+        require(captureErrors.distinct().size == captureErrors.size) {
+            "UI capture errors must be unique"
+        }
+        require(captureErrors.all(STABLE_ERROR::matches)) { "UI capture error is invalid" }
+        val fingerprint =
+            ScreenFingerprint(
+                basis = ScreenFingerprintBasis.UI_HIERARCHY,
+                digest = fingerprintDigest,
+            )
+        val captureStatus =
+            if (captureErrors.isEmpty()) {
+                PhoneStateCaptureStatus.COMPLETE
+            } else {
+                PhoneStateCaptureStatus.PARTIAL
+            }
+        val observation =
+            StoredObservation(
+                stateId = stateIds.next(),
+                previousStateId = previous.stateId,
+                packageName = packageName,
+                activityName = previous.activityName,
+                windowId = windowId,
+                screenFingerprint = fingerprint,
+                captureStatus = captureStatus,
+                captureErrors = captureErrors.sorted(),
+                transition =
+                    when {
+                        captureStatus != PhoneStateCaptureStatus.COMPLETE -> ScreenTransition.UNKNOWN
+                        previous.captureStatus != PhoneStateCaptureStatus.COMPLETE -> ScreenTransition.UNKNOWN
+                        previous.screenFingerprint.basis != fingerprint.basis -> ScreenTransition.UNKNOWN
+                        previous.screenFingerprint == fingerprint -> ScreenTransition.NONE
+                        else -> ScreenTransition.CHANGED
+                    },
+                capturedAtEpochMillis = epochClock.nowMillis(),
+                capturedAtElapsedMillis = elapsedClock.nowMillis(),
+                artifacts = listOf(artifact),
+            )
+        latest = observation
+        return snapshot(observation)
     }
 
     @Synchronized
@@ -168,7 +244,11 @@ internal class PhoneStateObserver(
     override fun current(maximumAgeMillis: Long): PhoneStateSnapshot {
         availability(maximumAgeMillis)?.let { throw PhoneStateUnavailableException(it) }
         val observation = checkNotNull(latest)
-        return PhoneStateSnapshot(
+        return snapshot(observation)
+    }
+
+    private fun snapshot(observation: StoredObservation): PhoneStateSnapshot =
+        PhoneStateSnapshot(
             stateId = observation.stateId,
             previousStateId = observation.previousStateId,
             packageName = observation.packageName,
@@ -179,8 +259,8 @@ internal class PhoneStateObserver(
             transition = observation.transition,
             capturedAtEpochMillis = observation.capturedAtEpochMillis,
             freshnessMillis = freshness(observation),
+            artifacts = observation.artifacts,
         )
-    }
 
     private fun freshness(observation: StoredObservation): Long =
         (elapsedClock.nowMillis() - observation.capturedAtElapsedMillis).coerceAtLeast(0)
@@ -213,9 +293,13 @@ internal class PhoneStateObserver(
         const val DEFAULT_MAXIMUM_AGE_MILLIS = 5_000L
         private const val FOREGROUND_ACTIVITY_UNAVAILABLE = "FOREGROUND_ACTIVITY_UNAVAILABLE"
         private const val MAXIMUM_FRESHNESS_MILLIS = 5_000L
+        private const val MAX_CAPTURE_ERRORS = 16
+        private const val UI_TREE_MEDIA_TYPE = "application/vnd.hermes.ui-tree+json"
         private val PACKAGE_NAME =
             Regex("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+")
         private val ACTIVITY_NAME = Regex("[A-Za-z_$][A-Za-z0-9_.$]{0,511}")
+        private val DIGEST = Regex("sha256:[0-9a-f]{64}")
+        private val STABLE_ERROR = Regex("[A-Z][A-Z0-9_]{0,63}")
     }
 }
 
@@ -229,7 +313,23 @@ internal object PhoneStateStore : PhoneStateSource {
     fun recordWindow(
         packageName: String?,
         activityName: String?,
-    ): Boolean = tracker.recordWindow(packageName, activityName)
+        windowId: Int? = null,
+    ): Boolean = tracker.recordWindow(packageName, activityName, windowId)
+
+    fun recordUiTree(
+        packageName: String,
+        windowId: Int,
+        fingerprintDigest: String,
+        captureErrors: List<String>,
+        artifact: ArtifactReference,
+    ): PhoneStateSnapshot =
+        tracker.recordUiTree(
+            packageName,
+            windowId,
+            fingerprintDigest,
+            captureErrors,
+            artifact,
+        )
 
     override fun availability(maximumAgeMillis: Long): PhoneStateUnavailableReason? =
         tracker.availability(maximumAgeMillis)

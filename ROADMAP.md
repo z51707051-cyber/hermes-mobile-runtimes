@@ -61,13 +61,13 @@ Repository prerequisites now have the following status:
 | HMR-104 | Capability Registry and Tool Router | Complete; closed catalog and fail-closed host/device routing path |
 | HMR-105 | `phone.current_app` vertical slice | Complete; protected window observer, L0 route, state refs and redacted audit seam |
 | HMR-106 | Minimal PhoneState/Observer | Complete; ADR-0004, protocol 0.1.1, coherent foreground generations and typed transitions |
-| HMR-107 | Append-only redacted Audit | In review; encrypted SQLite ledger, authenticated chain, task export and correlation |
+| HMR-107 | Append-only redacted Audit | Complete; encrypted SQLite ledger, authenticated chain, task export and correlation |
 
 ### P1 Phase 1 capability set
 
 | ID | Task | Result |
 |---|---|---|
-| HMR-108 | `phone.read_screen` semantic nodes | Normalized hierarchy and fixtures |
+| HMR-108 | `phone.read_screen` semantic nodes | In review; bounded active-window tree and encrypted ephemeral artifact |
 | HMR-109 | Protected `phone.screenshot` artifact | Hash, access control and retention |
 | HMR-110 | Navigation action set | Execution/verification split |
 | HMR-111 | Notifications and device state | Cursor, dedupe, sensitivity and state |

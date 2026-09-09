@@ -4,11 +4,11 @@ This directory is the Android execution-plane boundary defined by
 [`ARCHITECTURE.md`](../../ARCHITECTURE.md). HMR-101 provided the reproducible
 build foundation, HMR-102 added the reviewed device-security kernel,
 HMR-103 added the closed protocol codec and HMR-104 added fail-closed routing.
-HMR-105 adds the first read-only provider, `phone.current_app`; HMR-106 adds
-its coherent minimal PhoneState generation. It is still not a general Android
-agent.
+HMR-105 adds `phone.current_app`, HMR-106 adds coherent PhoneState, and HMR-108
+adds bounded `phone.read_screen` semantic capture. It is still not a general
+Android agent.
 
-## HMR-106 PhoneState boundary
+## HMR-108 semantic observation boundary
 
 The debug APK deliberately has:
 
@@ -26,9 +26,13 @@ The debug APK deliberately has:
 - a deny-all default authorization PEP and a live capability check immediately
   before dispatch;
 - one system-bound Accessibility service that listens only for
-  `TYPE_WINDOW_STATE_CHANGED` and retains package/activity identity;
-- `canRetrieveWindowContent=false` and `canPerformGestures=false`, enforced by
-  source and built-APK policy checks;
+  `TYPE_WINDOW_STATE_CHANGED`, retaining package/activity/window identity;
+- active-window content retrieval with only `flagReportViewIds`, while
+  `canPerformGestures=false` remains enforced by source and APK checks;
+- on-demand normalized semantic capture bounded to 500 nodes, 20,000 text
+  characters, depth 64 and one active window;
+- mandatory password-content withholding and encrypted five-minute D3
+  in-memory artifacts with a separately keyed digest;
 - no Notification Listener, receiver, content provider or general background
   service;
 - no enrollment listener, protocol command route or raw device endpoint;
@@ -43,6 +47,12 @@ fingerprint. The fingerprint detects only package/activity transitions and is
 not screenshot verification. A disconnected, empty or stale observer is a
 typed unavailable capability, never an empty-success result; reconnect also
 requires a new event.
+
+The read-screen Provider emits a new UI-hierarchy PhoneState generation and a
+closed `ArtifactRef`; raw tree content never enters Tool JSON, logs or Audit.
+The process-local artifact store intentionally has no direct read method.
+Authorized and audited retrieval will be composed with the production bridge
+transport rather than exposed as an in-process bypass.
 
 The APK exposes no listener or Binder command surface. The default PEP denies
 every action unless a reviewed authorization verifier is injected by a future

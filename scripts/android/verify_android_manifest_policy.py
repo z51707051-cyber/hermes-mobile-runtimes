@@ -246,7 +246,7 @@ def validate_network_security_config(path: Path) -> list[str]:
 
 
 def validate_accessibility_service_config(path: Path) -> list[str]:
-    """Keep HMR-105 observation narrower than UI-tree or gesture authority."""
+    """Allow bounded active-window reads while continuing to forbid gestures."""
 
     try:
         root = ET.parse(path).getroot()
@@ -258,19 +258,18 @@ def validate_accessibility_service_config(path: Path) -> list[str]:
 
     errors: list[str] = []
     if _android(root, "accessibilityEventTypes") != "typeWindowStateChanged":
-        errors.append(
-            "current-app observer must listen only for typeWindowStateChanged"
-        )
-    if _android(root, "canRetrieveWindowContent") != "false":
-        errors.append(
-            "current-app observer must set android:canRetrieveWindowContent=false"
-        )
+        errors.append("screen observer must listen only for typeWindowStateChanged")
+    if _android(root, "canRetrieveWindowContent") != "true":
+        errors.append("screen observer must set android:canRetrieveWindowContent=true")
     if _android(root, "canPerformGestures") != "false":
-        errors.append("current-app observer must set android:canPerformGestures=false")
+        errors.append("screen observer must set android:canPerformGestures=false")
+    if _android(root, "accessibilityFlags") != "flagReportViewIds":
+        errors.append("screen observer must declare only flagReportViewIds")
 
     allowed_attributes = {
         f"{ANDROID}accessibilityEventTypes",
         f"{ANDROID}accessibilityFeedbackType",
+        f"{ANDROID}accessibilityFlags",
         f"{ANDROID}canPerformGestures",
         f"{ANDROID}canRetrieveWindowContent",
         f"{ANDROID}description",
@@ -278,11 +277,9 @@ def validate_accessibility_service_config(path: Path) -> list[str]:
     }
     unexpected = sorted(set(root.attrib) - allowed_attributes)
     if unexpected:
-        errors.append(
-            "current-app observer contains unreviewed accessibility attributes"
-        )
+        errors.append("screen observer contains unreviewed accessibility attributes")
     if list(root):
-        errors.append("current-app observer config must not contain child elements")
+        errors.append("screen observer config must not contain child elements")
     return errors
 
 
@@ -398,7 +395,7 @@ def main() -> int:
         print(f"verified Hermes Mobile Android manifest policy: {path}")
     print(f"verified TLS-only network policy: {args.network_security_config}")
     print(
-        "verified current-app-only accessibility policy: "
+        "verified bounded read-only accessibility policy: "
         f"{args.accessibility_service_config}"
     )
     print("verified no-backup/no-transfer policy")
