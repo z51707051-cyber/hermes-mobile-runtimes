@@ -83,6 +83,63 @@ internal data class NavigationVerificationRequest(
     val expected: String?,
 )
 
+internal data class NavigationVerificationEvaluation(
+    val status: String,
+    val explanation: String,
+)
+
+internal object NavigationVerifier {
+    fun evaluate(
+        after: SemanticUiCapture,
+        request: NavigationVerificationRequest?,
+    ): NavigationVerificationEvaluation {
+        if (after.state.captureStatus != PhoneStateCaptureStatus.COMPLETE) {
+            return result("INCONCLUSIVE", "post-action observation is not complete")
+        }
+        val condition = request?.condition ?: "STATE_CHANGED"
+        val expected = request?.expected
+        return when (condition) {
+            "STATE_CHANGED" ->
+                when (after.state.transition) {
+                    ScreenTransition.CHANGED ->
+                        result("PASSED", "comparable screen fingerprint changed")
+                    ScreenTransition.NONE ->
+                        result("FAILED", "comparable screen fingerprint did not change")
+                    ScreenTransition.UNKNOWN ->
+                        result("INCONCLUSIVE", "screen fingerprints are not comparable")
+                }
+            "FOREGROUND_APP_IS" ->
+                if (after.state.packageName == expected) {
+                    result("PASSED", "foreground package matches the requested package")
+                } else {
+                    result("FAILED", "foreground package does not match the requested package")
+                }
+            "TEXT_PRESENT" ->
+                if (expected.isNullOrEmpty()) {
+                    result("INCONCLUSIVE", "text verification requires a non-empty expected value")
+                } else if (after.visibleText.any { expected in it }) {
+                    result("PASSED", "requested text is present in the protected observation")
+                } else {
+                    result("FAILED", "requested text is absent from the protected observation")
+                }
+            "TEXT_ABSENT" ->
+                if (expected.isNullOrEmpty()) {
+                    result("INCONCLUSIVE", "text verification requires a non-empty expected value")
+                } else if (after.visibleText.none { expected in it }) {
+                    result("PASSED", "requested text is absent from the protected observation")
+                } else {
+                    result("FAILED", "requested text remains present in the protected observation")
+                }
+            else -> result("INCONCLUSIVE", "verification condition is unsupported")
+        }
+    }
+
+    private fun result(
+        status: String,
+        explanation: String,
+    ) = NavigationVerificationEvaluation(status, explanation)
+}
+
 internal data class NavigationExecution(
     val beforeState: PhoneStateSnapshot,
     val afterState: PhoneStateSnapshot,

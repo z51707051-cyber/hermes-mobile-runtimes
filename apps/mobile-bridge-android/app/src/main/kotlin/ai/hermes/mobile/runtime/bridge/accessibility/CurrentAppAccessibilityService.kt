@@ -29,6 +29,7 @@ import ai.hermes.mobile.runtime.bridge.observer.NavigationExecution
 import ai.hermes.mobile.runtime.bridge.observer.NavigationFailureException
 import ai.hermes.mobile.runtime.bridge.observer.NavigationFailureReason
 import ai.hermes.mobile.runtime.bridge.observer.NavigationVerificationRequest
+import ai.hermes.mobile.runtime.bridge.observer.NavigationVerifier
 import ai.hermes.mobile.runtime.bridge.observer.NodeNavigationTarget
 import ai.hermes.mobile.runtime.bridge.observer.OpenAppCommand
 import ai.hermes.mobile.runtime.bridge.observer.ResolvedSemanticTarget
@@ -218,12 +219,12 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                 exc.beforeState = before
                 throw exc
             }
-        val verificationResult = verify(observed, verification)
+        val verificationResult = NavigationVerifier.evaluate(observed, verification)
         return NavigationExecution(
             beforeState = before,
             afterState = observed.state,
-            verificationStatus = verificationResult.first,
-            verificationExplanation = verificationResult.second,
+            verificationStatus = verificationResult.status,
+            verificationExplanation = verificationResult.explanation,
             redactions = observed.redactions,
         )
     }
@@ -444,48 +445,6 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         } while (SystemClock.elapsedRealtime() < deadline)
         throw lastFailure
             ?: PhoneStateUnavailableException(PhoneStateUnavailableReason.UI_CAPTURE_FAILED)
-    }
-
-    private fun verify(
-        after: SemanticUiCapture,
-        request: NavigationVerificationRequest?,
-    ): Pair<String, String> {
-        val condition = request?.condition ?: "STATE_CHANGED"
-        val expected = request?.expected
-        return when (condition) {
-            "STATE_CHANGED" ->
-                when (after.state.transition) {
-                    ai.hermes.mobile.runtime.bridge.observer.ScreenTransition.CHANGED ->
-                        "PASSED" to "comparable screen fingerprint changed"
-                    ai.hermes.mobile.runtime.bridge.observer.ScreenTransition.NONE ->
-                        "FAILED" to "comparable screen fingerprint did not change"
-                    ai.hermes.mobile.runtime.bridge.observer.ScreenTransition.UNKNOWN ->
-                        "INCONCLUSIVE" to "screen fingerprints are not comparable"
-                }
-            "FOREGROUND_APP_IS" ->
-                if (after.state.packageName == expected) {
-                    "PASSED" to "foreground package matches the requested package"
-                } else {
-                    "FAILED" to "foreground package does not match the requested package"
-                }
-            "TEXT_PRESENT" ->
-                if (expected.isNullOrEmpty()) {
-                    "INCONCLUSIVE" to "text verification requires a non-empty expected value"
-                } else if (after.visibleText.any { expected in it }) {
-                    "PASSED" to "requested text is present in the protected observation"
-                } else {
-                    "FAILED" to "requested text is absent from the protected observation"
-                }
-            "TEXT_ABSENT" ->
-                if (expected.isNullOrEmpty()) {
-                    "INCONCLUSIVE" to "text verification requires a non-empty expected value"
-                } else if (after.visibleText.none { expected in it }) {
-                    "PASSED" to "requested text is absent from the protected observation"
-                } else {
-                    "FAILED" to "requested text remains present in the protected observation"
-                }
-            else -> "INCONCLUSIVE" to "verification condition is unsupported"
-        }
     }
 
     private fun targetDescriptor(

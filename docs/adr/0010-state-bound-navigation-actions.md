@@ -114,6 +114,9 @@ The UI hierarchy fingerprint excludes capture time; observation time remains
 in PhoneState. Therefore `STATE_CHANGED` compares semantic content rather than
 merely proving that two captures occurred.
 
+A `PARTIAL` or `INCOHERENT` post-observation cannot pass verification even if
+one requested fragment is present; it returns `INCONCLUSIVE`.
+
 Low-level success and verification remain separate. A completed action may
 return verification `FAILED` or `INCONCLUSIVE`. If post-action observation is
 unavailable, execution is `UNKNOWN_OUTCOME` with the before-state reference;
