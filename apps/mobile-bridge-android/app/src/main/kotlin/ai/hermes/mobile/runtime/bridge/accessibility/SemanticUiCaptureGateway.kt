@@ -5,10 +5,12 @@ import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiCapture
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiCaptureSource
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiLimits
+import ai.hermes.mobile.runtime.bridge.observer.SemanticUiProbe
+import ai.hermes.mobile.runtime.bridge.observer.SemanticUiProbeSource
 import java.lang.ref.WeakReference
 
 /** Holds only the live system-bound service; it never retains a UI node or tree plaintext. */
-internal object SemanticUiCaptureGateway : SemanticUiCaptureSource {
+internal object SemanticUiCaptureGateway : SemanticUiCaptureSource, SemanticUiProbeSource {
     private var service = WeakReference<CurrentAppAccessibilityService>(null)
 
     @Synchronized
@@ -32,5 +34,14 @@ internal object SemanticUiCaptureGateway : SemanticUiCaptureSource {
                     PhoneStateUnavailableReason.SERVICE_DISCONNECTED,
                 )
         return active.captureSemanticUi(limits)
+    }
+
+    override fun probe(limits: SemanticUiLimits): SemanticUiProbe {
+        val active =
+            synchronized(this) { service.get() }
+                ?: throw PhoneStateUnavailableException(
+                    PhoneStateUnavailableReason.SERVICE_DISCONNECTED,
+                )
+        return active.probeSemanticUi(limits)
     }
 }

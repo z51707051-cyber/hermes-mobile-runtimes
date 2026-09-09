@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 notification and device-state observation in review
+> Status: Phase 1 bounded wait implementation in review
 > Last reviewed: 2026-09-09
 > The protected route now performs bounded navigation only against fresh semantic observations and verifies every accepted action.
 
@@ -32,6 +32,8 @@ verification are fixed by
 [`ADR-0010`](docs/adr/0010-state-bound-navigation-actions.md).
 Notification cursor/dedupe and least-authority device-state projection are
 fixed by [`ADR-0011`](docs/adr/0011-notification-and-device-state-observation.md).
+Bounded wait deadlines, cancellation and semantic conditions are fixed by
+[`ADR-0012`](docs/adr/0012-bounded-cancellable-wait.md).
 
 This decision separates two responsibilities:
 
@@ -185,6 +187,14 @@ five-minute encrypted D3 artifact references. Device state is an allowlisted
 D2 projection under `ACCESS_NETWORK_STATE`; it excludes SSID, BSSID, location
 and nearby-device data, and withholds Bluetooth rather than widening authority.
 Neither path creates proactive Event Bus execution.
+
+HMR-112 adds the final V0.1 provider, `phone.wait`. Timer waits and semantic
+condition waits stop at the earliest requested timeout, action deadline,
+authorization expiry or cancellation. Conditional waits use artifact-free,
+HMAC-fingerprinted semantic probes; partial observations cannot pass and raw
+visible text never enters Tool results or Audit. The provider polls at a
+bounded cadence, performs no action retry and cannot continue in the
+background after returning.
 
 `INTERNET` and `ACCESS_NETWORK_STATE` are the only requested Android
 permissions. The production PEP

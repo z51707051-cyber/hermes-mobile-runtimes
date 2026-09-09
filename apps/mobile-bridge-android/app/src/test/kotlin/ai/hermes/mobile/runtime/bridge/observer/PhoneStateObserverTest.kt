@@ -167,6 +167,48 @@ class PhoneStateObserverTest {
     }
 
     @Test
+    fun semanticProbesAreComparableWithoutPublishingArtifactReferences() {
+        var stateSequence = 0
+        val tracker =
+            PhoneStateObserver(
+                elapsedClock = ElapsedRealtimeClock { 100L },
+                epochClock = EpochClock { 1_788_150_000_000L },
+                stateIds = StateIdGenerator { "state-${++stateSequence}" },
+            )
+        tracker.markConnected()
+        tracker.recordWindow("com.example.music", "com.example.music.PlayerActivity", 42)
+
+        val first =
+            tracker.recordUiProbe(
+                packageName = "com.example.music",
+                windowId = 42,
+                fingerprintDigest = "sha256:" + "d".repeat(64),
+                captureErrors = emptyList(),
+            )
+        val unchanged =
+            tracker.recordUiProbe(
+                packageName = "com.example.music",
+                windowId = 42,
+                fingerprintDigest = "sha256:" + "d".repeat(64),
+                captureErrors = emptyList(),
+            )
+        val changed =
+            tracker.recordUiProbe(
+                packageName = "com.example.music",
+                windowId = 42,
+                fingerprintDigest = "sha256:" + "e".repeat(64),
+                captureErrors = emptyList(),
+            )
+
+        assertEquals(ScreenTransition.UNKNOWN, first.transition)
+        assertEquals(ScreenTransition.NONE, unchanged.transition)
+        assertEquals(ScreenTransition.CHANGED, changed.transition)
+        assertTrue(first.artifacts.isEmpty())
+        assertTrue(unchanged.artifacts.isEmpty())
+        assertTrue(changed.artifacts.isEmpty())
+    }
+
+    @Test
     fun screenshotCaptureIsBoundToExactStateAndUsesComparableFingerprints() {
         var stateSequence = 0
         val tracker =

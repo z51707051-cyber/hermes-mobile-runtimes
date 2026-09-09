@@ -93,6 +93,16 @@ D2 artifact under `ACCESS_NETWORK_STATE` with no SSID, BSSID, IP, location,
 nearby-device or stable identifier. Bluetooth is withheld while
 `BLUETOOTH_CONNECT` is absent. No Event Bus or notification action is added.
 
+HMR-112 adds an L0 bounded wait without introducing a sleep or polling bypass.
+Every wait is capped by its requested timeout, action deadline and signed
+authorization expiry, and can be cancelled through a process-local stop-only
+seam. Conditional waits require a live Accessibility service and accept only
+complete semantic observations. Their canonical UI bytes are HMAC-fingerprinted
+with a process-random key and wiped immediately; no UI-tree artifact, node,
+visible text or action target is retained or returned. Polling is limited to
+one capture per 100 ms, performs no action retry and cannot outlive the
+terminal Tool result.
+
 ---
 
 # Hermes Agent Security Policy

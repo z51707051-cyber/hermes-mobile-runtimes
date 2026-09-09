@@ -67,6 +67,7 @@ internal data class NormalizedSemanticUiTree(
     val captureErrors: List<String>,
     val redactions: List<String>,
     val actionTargets: List<SemanticActionTargetDescriptor>,
+    val visibleText: List<String>,
 )
 
 internal data class SemanticUiCapture(
@@ -82,6 +83,19 @@ internal interface SemanticUiCaptureSource {
     fun capture(limits: SemanticUiLimits): SemanticUiCapture
 }
 
+/** Short-lived semantic evidence for condition evaluation; no UI artifact or node escapes. */
+internal data class SemanticUiProbe(
+    val state: PhoneStateSnapshot,
+    val visibleText: List<String>,
+    val redactions: List<String>,
+)
+
+internal interface SemanticUiProbeSource {
+    fun availability(): PhoneStateUnavailableReason?
+
+    fun probe(limits: SemanticUiLimits): SemanticUiProbe
+}
+
 /** Bounded collector that receives primitives only; Android node objects never escape the service. */
 internal class SemanticUiTreeBuilder(
     private val limits: SemanticUiLimits,
@@ -90,6 +104,7 @@ internal class SemanticUiTreeBuilder(
     private val captureErrors = linkedSetOf<String>()
     private val redactions = linkedSetOf<String>()
     private val actionTargets = mutableListOf<SemanticActionTargetDescriptor>()
+    private val visibleText = mutableListOf<String>()
     private var remainingTextChars = limits.maxTextChars
 
     fun add(
@@ -111,6 +126,7 @@ internal class SemanticUiTreeBuilder(
         val description = protectedText(input.contentDescription, input.password)
         val targetText = protectedTargetText(input.text, input.password)
         val targetDescription = protectedTargetText(input.contentDescription, input.password)
+        visibleText += listOfNotNull(text, description)
         actionTargets +=
             SemanticActionTargetDescriptor(
                 nodeId = nodeId,
@@ -191,6 +207,7 @@ internal class SemanticUiTreeBuilder(
             captureErrors = captureErrors.sorted(),
             redactions = redactions.sorted(),
             actionTargets = actionTargets.toList(),
+            visibleText = visibleText.toList(),
         )
     }
 

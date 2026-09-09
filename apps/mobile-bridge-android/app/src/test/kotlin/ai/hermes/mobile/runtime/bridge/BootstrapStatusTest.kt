@@ -1,7 +1,6 @@
 package ai.hermes.mobile.runtime.bridge
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BootstrapStatusTest {
@@ -9,7 +8,7 @@ class BootstrapStatusTest {
     fun bootstrapRequiresLiveAccessibilityObservationBeforeAdvertisingCapability() {
         val status = BootstrapStatusProvider.current()
 
-        assertEquals("HMR-111", status.phase)
-        assertTrue(status.enabledCapabilities.isEmpty())
+        assertEquals("HMR-112", status.phase)
+        assertEquals(listOf("phone.wait"), status.enabledCapabilities)
     }
 }

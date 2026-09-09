@@ -3,6 +3,7 @@ package ai.hermes.mobile.runtime.bridge.runtime
 import ai.hermes.mobile.runtime.bridge.protocol.CanonicalJson
 import ai.hermes.mobile.runtime.bridge.protocol.ProtocolCodec
 import ai.hermes.mobile.runtime.bridge.protocol.ProtocolValidationException
+import java.time.Instant
 
 internal class AndroidRouteRejectedException(
     val code: String,
@@ -23,6 +24,10 @@ internal class AuthorizedAction internal constructor(
         get() = message.getValue("policy_decision_id") as String
     val effectiveRisk: String
         get() = message.getValue("effective_risk") as String
+    val deadline: Instant
+        get() = Instant.parse(message.getValue("deadline") as String)
+    val authorizationExpiresAt: Instant
+        get() = Instant.parse(message.getValue("expires_at") as String)
 
     @Suppress("UNCHECKED_CAST")
     val parameters: Map<String, Any?>

@@ -31,12 +31,14 @@ import ai.hermes.mobile.runtime.bridge.observer.NavigationFailureReason
 import ai.hermes.mobile.runtime.bridge.observer.NavigationVerificationRequest
 import ai.hermes.mobile.runtime.bridge.observer.NavigationVerifier
 import ai.hermes.mobile.runtime.bridge.observer.NodeNavigationTarget
+import ai.hermes.mobile.runtime.bridge.observer.NormalizedSemanticUiTree
 import ai.hermes.mobile.runtime.bridge.observer.OpenAppCommand
 import ai.hermes.mobile.runtime.bridge.observer.ResolvedSemanticTarget
 import ai.hermes.mobile.runtime.bridge.observer.SemanticActionTargetDescriptor
 import ai.hermes.mobile.runtime.bridge.observer.SemanticNodeInput
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiCapture
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiLimits
+import ai.hermes.mobile.runtime.bridge.observer.SemanticUiProbe
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiTreeBuilder
 import ai.hermes.mobile.runtime.bridge.observer.SemanticTargetException
 import ai.hermes.mobile.runtime.bridge.observer.SemanticTargetRegistry
@@ -51,11 +53,14 @@ import ai.hermes.mobile.runtime.bridge.observer.TypeCommand
 import ai.hermes.mobile.runtime.bridge.observer.UiBounds
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
+import java.security.SecureRandom
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * HMR-105–110 observer and guarded navigation adapter.
@@ -85,6 +90,84 @@ class CurrentAppAccessibilityService : AccessibilityService() {
 
     @Suppress("DEPRECATION")
     internal fun captureSemanticUi(limits: SemanticUiLimits): SemanticUiCapture {
+        val captured = collectSemanticUi(limits)
+        val packageName = captured.packageName
+        val windowId = captured.windowId
+        val tree = captured.tree
+        val reference =
+            try {
+                RuntimeArtifactStore.put(
+                    ArtifactWriteRequest(
+                        mediaType = UI_TREE_MEDIA_TYPE,
+                        content = tree.payload,
+                        sensitivity = "D3",
+                        redactionStatus = if (tree.redactions.isEmpty()) "NONE" else "REDACTED",
+                        timeToLiveMillis = UI_TREE_TTL_MILLIS,
+                    ),
+                )
+            } finally {
+                tree.payload.fill(0)
+            }
+        var statePublished = false
+        return try {
+            val state =
+                PhoneStateStore.recordUiTree(
+                    packageName = packageName,
+                    windowId = windowId,
+                    fingerprintDigest = reference.digest,
+                    captureErrors = tree.captureErrors,
+                    artifact = reference,
+                )
+            statePublished = true
+            if (state.captureStatus == ai.hermes.mobile.runtime.bridge.observer.PhoneStateCaptureStatus.COMPLETE) {
+                TARGETS.register(
+                    stateId = state.stateId,
+                    packageName = packageName,
+                    windowId = windowId,
+                    targets = tree.actionTargets,
+                )
+            }
+            SemanticUiCapture(
+                state = state,
+                artifact = reference,
+                redactions = tree.redactions,
+                visibleText = tree.visibleText,
+            )
+        } catch (exc: Exception) {
+            if (statePublished) {
+                PhoneStateStore.invalidateCurrent()
+                TARGETS.clear()
+            }
+            RuntimeArtifactStore.delete(reference.artifactId)
+            throw exc
+        }
+    }
+
+    /** Captures condition evidence without creating a retrievable UI-tree artifact. */
+    internal fun probeSemanticUi(limits: SemanticUiLimits): SemanticUiProbe {
+        val captured = collectSemanticUi(limits)
+        val tree = captured.tree
+        return try {
+            val fingerprint = protectedProbeDigest(tree.payload)
+            val state =
+                PhoneStateStore.recordUiProbe(
+                    packageName = captured.packageName,
+                    windowId = captured.windowId,
+                    fingerprintDigest = fingerprint,
+                    captureErrors = tree.captureErrors,
+                )
+            SemanticUiProbe(
+                state = state,
+                visibleText = tree.visibleText,
+                redactions = tree.redactions,
+            )
+        } finally {
+            tree.payload.fill(0)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun collectSemanticUi(limits: SemanticUiLimits): CapturedSemanticUi {
         val root =
             rootInActiveWindow
                 ?: throw PhoneStateUnavailableException(
@@ -109,56 +192,14 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         } finally {
             root.recycle()
         }
-        val tree = builder.build(packageName)
-        val reference =
-            try {
-                RuntimeArtifactStore.put(
-                    ArtifactWriteRequest(
-                        mediaType = UI_TREE_MEDIA_TYPE,
-                        content = tree.payload,
-                        sensitivity = "D3",
-                        redactionStatus = if (tree.redactions.isEmpty()) "NONE" else "REDACTED",
-                        timeToLiveMillis = UI_TREE_TTL_MILLIS,
-                    ),
-                )
-            } finally {
-                tree.payload.fill(0)
-            }
-        var statePublished = false
-        return try {
-            val state =
-                PhoneStateStore.recordUiTree(
-                        packageName = packageName,
-                        windowId = windowId,
-                        fingerprintDigest = reference.digest,
-                        captureErrors = tree.captureErrors,
-                        artifact = reference,
-                    )
-            statePublished = true
-            if (state.captureStatus == ai.hermes.mobile.runtime.bridge.observer.PhoneStateCaptureStatus.COMPLETE) {
-                TARGETS.register(
-                    stateId = state.stateId,
-                    packageName = packageName,
-                    windowId = windowId,
-                    targets = tree.actionTargets,
-                )
-            }
-            SemanticUiCapture(
-                state = state,
-                artifact = reference,
-                redactions = tree.redactions,
-                visibleText =
-                    tree.actionTargets.flatMap { target ->
-                        listOfNotNull(target.text, target.contentDescription)
-                    },
-            )
-        } catch (exc: Exception) {
-            if (statePublished) {
-                PhoneStateStore.invalidateCurrent()
-                TARGETS.clear()
-            }
-            RuntimeArtifactStore.delete(reference.artifactId)
-            throw exc
+        return CapturedSemanticUi(packageName, windowId, builder.build(packageName))
+    }
+
+    private fun protectedProbeDigest(payload: ByteArray): String {
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(PROBE_DIGEST_KEY, "HmacSHA256"))
+        return "sha256:" + mac.doFinal(payload).joinToString("") { byte ->
+            "%02x".format(byte.toInt() and 0xff)
         }
     }
 
@@ -853,6 +894,12 @@ class CurrentAppAccessibilityService : AccessibilityService() {
     }
 
     private companion object {
+        data class CapturedSemanticUi(
+            val packageName: String,
+            val windowId: Int,
+            val tree: NormalizedSemanticUiTree,
+        )
+
         const val UI_TREE_MEDIA_TYPE = "application/vnd.hermes.ui-tree+json"
         const val UI_TREE_TTL_MILLIS = 300_000L
         const val SCREENSHOT_TTL_MILLIS = 300_000L
@@ -874,6 +921,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         const val MINIMUM_NAVIGATION_SWIPE_PX = 64L
         val POST_ACTION_UI_LIMITS = SemanticUiLimits(200, 10_000)
         val TARGET_WHITESPACE = Regex("\\s+")
+        val PROBE_DIGEST_KEY = ByteArray(32).also(SecureRandom()::nextBytes)
         val TARGETS = SemanticTargetRegistry()
         val NAVIGATION_CALLBACK_THREAD =
             HandlerThread("hmr-navigation-callback").apply { start() }
