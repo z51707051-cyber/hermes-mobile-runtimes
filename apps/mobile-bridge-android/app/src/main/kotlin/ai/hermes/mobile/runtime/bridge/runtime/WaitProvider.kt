@@ -138,7 +138,7 @@ internal class WaitProvider(
         var before: SemanticUiProbe? = null
         var latest: SemanticUiProbe? = null
         val redactions = linkedSetOf<String>()
-        return try {
+        try {
             val initial = semanticUiSource.probe(PROBE_LIMITS)
             before = initial
             latest = initial
@@ -197,7 +197,7 @@ internal class WaitProvider(
                 }
             }
         } catch (exc: PhoneStateUnavailableException) {
-            ProtocolCodec.encode(
+            return ProtocolCodec.encode(
                 unavailable(
                     action,
                     exc,
@@ -209,7 +209,7 @@ internal class WaitProvider(
             )
         } catch (exc: InterruptedException) {
             Thread.currentThread().interrupt()
-            ProtocolCodec.encode(
+            return ProtocolCodec.encode(
                 cancelled(
                     action,
                     before?.state,
@@ -219,7 +219,7 @@ internal class WaitProvider(
                 ),
             )
         } catch (exc: Exception) {
-            ProtocolCodec.encode(
+            return ProtocolCodec.encode(
                 observationFailure(
                     action,
                     before?.state,
@@ -229,6 +229,8 @@ internal class WaitProvider(
                 ),
             )
         }
+        @Suppress("UNREACHABLE_CODE")
+        error("conditional wait loop terminated unexpectedly")
     }
 
     private fun sleepUntil(

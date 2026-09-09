@@ -94,7 +94,6 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         val packageName = captured.packageName
         val windowId = captured.windowId
         val tree = captured.tree
-        val visibleText = visibleText(tree)
         val reference =
             try {
                 RuntimeArtifactStore.put(
@@ -132,7 +131,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                 state = state,
                 artifact = reference,
                 redactions = tree.redactions,
-                visibleText = visibleText,
+                visibleText = tree.visibleText,
             )
         } catch (exc: Exception) {
             if (statePublished) {
@@ -159,7 +158,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                 )
             SemanticUiProbe(
                 state = state,
-                visibleText = visibleText(tree),
+                visibleText = tree.visibleText,
                 redactions = tree.redactions,
             )
         } finally {
@@ -195,11 +194,6 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         }
         return CapturedSemanticUi(packageName, windowId, builder.build(packageName))
     }
-
-    private fun visibleText(tree: NormalizedSemanticUiTree): List<String> =
-        tree.actionTargets.flatMap { target ->
-            listOfNotNull(target.text, target.contentDescription)
-        }
 
     private fun protectedProbeDigest(payload: ByteArray): String {
         val mac = Mac.getInstance("HmacSHA256")

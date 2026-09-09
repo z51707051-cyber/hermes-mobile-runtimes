@@ -67,6 +67,7 @@ internal data class NormalizedSemanticUiTree(
     val captureErrors: List<String>,
     val redactions: List<String>,
     val actionTargets: List<SemanticActionTargetDescriptor>,
+    val visibleText: List<String>,
 )
 
 internal data class SemanticUiCapture(
@@ -103,6 +104,7 @@ internal class SemanticUiTreeBuilder(
     private val captureErrors = linkedSetOf<String>()
     private val redactions = linkedSetOf<String>()
     private val actionTargets = mutableListOf<SemanticActionTargetDescriptor>()
+    private val visibleText = mutableListOf<String>()
     private var remainingTextChars = limits.maxTextChars
 
     fun add(
@@ -124,6 +126,7 @@ internal class SemanticUiTreeBuilder(
         val description = protectedText(input.contentDescription, input.password)
         val targetText = protectedTargetText(input.text, input.password)
         val targetDescription = protectedTargetText(input.contentDescription, input.password)
+        visibleText += listOfNotNull(text, description)
         actionTargets +=
             SemanticActionTargetDescriptor(
                 nodeId = nodeId,
@@ -204,6 +207,7 @@ internal class SemanticUiTreeBuilder(
             captureErrors = captureErrors.sorted(),
             redactions = redactions.sorted(),
             actionTargets = actionTargets.toList(),
+            visibleText = visibleText.toList(),
         )
     }
 
