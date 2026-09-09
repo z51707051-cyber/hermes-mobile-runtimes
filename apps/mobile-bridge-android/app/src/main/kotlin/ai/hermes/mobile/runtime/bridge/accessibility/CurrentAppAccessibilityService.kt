@@ -124,6 +124,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
             } finally {
                 tree.payload.fill(0)
             }
+        var statePublished = false
         return try {
             val state =
                 PhoneStateStore.recordUiTree(
@@ -133,6 +134,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                         captureErrors = tree.captureErrors,
                         artifact = reference,
                     )
+            statePublished = true
             if (state.captureStatus == ai.hermes.mobile.runtime.bridge.observer.PhoneStateCaptureStatus.COMPLETE) {
                 TARGETS.register(
                     stateId = state.stateId,
@@ -151,6 +153,10 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                     },
             )
         } catch (exc: Exception) {
+            if (statePublished) {
+                PhoneStateStore.invalidateCurrent()
+                TARGETS.clear()
+            }
             ARTIFACTS.delete(reference.artifactId)
             throw exc
         }
