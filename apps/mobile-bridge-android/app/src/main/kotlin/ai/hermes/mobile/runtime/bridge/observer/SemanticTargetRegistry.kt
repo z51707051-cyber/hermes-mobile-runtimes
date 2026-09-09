@@ -235,6 +235,11 @@ internal object SemanticRiskClassifier {
 
     fun requiredRisk(target: SemanticActionTargetDescriptor): String {
         if (target.password) return "L3"
+        val accessibleSemantic =
+            listOfNotNull(
+                target.text,
+                target.contentDescription,
+            ).joinToString(" ").lowercase(Locale.ROOT)
         val semantic =
             listOfNotNull(
                 target.text,
@@ -245,7 +250,7 @@ internal object SemanticRiskClassifier {
             level4.any(semantic::contains) -> "L4"
             level3.any(semantic::contains) -> "L3"
             level2.any(semantic::contains) -> "L2"
-            semantic.isBlank() -> "L3"
+            accessibleSemantic.isBlank() -> "L4"
             else -> "L1"
         }
     }

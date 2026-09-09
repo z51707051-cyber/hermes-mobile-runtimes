@@ -10,7 +10,8 @@ bind to the exact `state_precondition` generation in Python and Kotlin.
 
 Android unit tests cover:
 
-- target-registry HMAC re-resolution, expiry and descriptor drift;
+- target-registry HMAC re-resolution, expiry, descriptor drift and fail-closed
+  icon-only classification;
 - L1/L2/L3/L4 semantic classification, including Chinese risk terms;
 - exact Android PEP state, package and effective-target checks;
 - L3 risk upgrade before provider invocation;

@@ -76,7 +76,9 @@ of a later Send/Delete/Pay target and downgrade its device-side risk.
 Device-side classification raises common save/submit/confirm controls to L2,
 communication controls such as send/post/call to L3, and
 delete/pay/purchase/transfer/install controls to L4. Password entry is at
-least L3. Blank semantic controls are L3 rather than silently assumed safe.
+least L3. Controls without accessible text or content description are L4 even
+if they have a generic resource id; an implementation-only id is not treated
+as sufficient evidence that an action is safe.
 
 L4/L5 navigation remains blocked because device-authenticated confirmation is
 not implemented. Coordinate tap/long-press cannot be semantically re-resolved
