@@ -8,7 +8,8 @@ HMR-105 adds `phone.current_app`, HMR-106 adds coherent PhoneState, HMR-108
 adds bounded `phone.read_screen`, HMR-109 adds protected screenshot capture,
 HMR-110 adds state-bound navigation with post-action verification, HMR-111
 adds protected notification/device-state observation, and HMR-112 adds a
-bounded cancellable wait. It remains a bridge, not a general Android agent.
+bounded cancellable wait. HMR-113 adds isolated emulator contracts around the
+packaged bridge. It remains a bridge, not a general Android agent.
 
 ## HMR-112 bounded execution boundary
 
@@ -89,6 +90,13 @@ failure becomes `UNKNOWN_OUTCOME` rather than an automatic retry.
 The APK exposes no listener or Binder command surface. The default PEP denies
 every action unless a reviewed authorization verifier is injected by a future
 transport composition.
+
+The `fixture-app` module and `app/src/androidTest` runner exist only for
+HMR-113 CI. They use synthetic text, are built as separate test APKs and are
+never included in the release bridge. API 30/API 36 clean emulator lanes grant
+and revoke the exact Accessibility service, then exercise slow content,
+dialogs, a verified Back action, IME visibility and semantic UI drift through
+the real Router/PEP path.
 
 The Kotlin codec depends on the pinned stable Moshi `1.15.2` release. Normative
 schemas and cross-language fixtures remain in the repository root; Android

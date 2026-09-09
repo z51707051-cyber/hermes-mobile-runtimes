@@ -20,6 +20,8 @@ on:
       - "docs/testing/hmr-109-screenshot.md"
       - "docs/testing/hmr-110-navigation.md"
       - "docs/testing/hmr-111-notifications-device-state.md"
+      - "docs/testing/hmr-112-bounded-wait.md"
+      - "docs/testing/hmr-113-emulator-contract.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -31,6 +33,7 @@ on:
       - "docs/adr/0009-protected-screenshot-capture.md"
       - "docs/adr/0010-state-bound-navigation-actions.md"
       - "docs/adr/0011-notification-and-device-state-observation.md"
+      - "docs/adr/0012-bounded-cancellable-wait.md"
       - ".github/workflows/mobile-android.yml"
   push:
     branches: [main]
@@ -52,6 +55,8 @@ on:
       - "docs/testing/hmr-109-screenshot.md"
       - "docs/testing/hmr-110-navigation.md"
       - "docs/testing/hmr-111-notifications-device-state.md"
+      - "docs/testing/hmr-112-bounded-wait.md"
+      - "docs/testing/hmr-113-emulator-contract.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -63,6 +68,7 @@ on:
       - "docs/adr/0009-protected-screenshot-capture.md"
       - "docs/adr/0010-state-bound-navigation-actions.md"
       - "docs/adr/0011-notification-and-device-state-observation.md"
+      - "docs/adr/0012-bounded-cancellable-wait.md"
       - ".github/workflows/mobile-android.yml"
 
 permissions:
@@ -191,6 +197,8 @@ jobs:
             :app:testDebugUnitTest \
             :app:lintDebug \
             :app:assembleDebug \
+            :fixture-app:lintDebug \
+            :fixture-app:assembleDebug \
             cyclonedxBom
 
       - name: Build with strict dependency verification
@@ -202,6 +210,8 @@ jobs:
             :app:testDebugUnitTest \
             :app:lintDebug \
             :app:assembleDebug \
+            :fixture-app:lintDebug \
+            :fixture-app:assembleDebug \
             cyclonedxBom
           git diff --exit-code -- gradle/verification-metadata.xml app/gradle.lockfile gradle.lockfile
 
@@ -297,5 +307,152 @@ jobs:
             apps/mobile-bridge-android/app/build/outputs/apk/debug/app-debug.apk
             apps/mobile-bridge-android/build/reports/hmr/apk
             apps/mobile-bridge-android/build/reports/hmr/sbom
+          if-no-files-found: error
+          retention-days: 14
+
+  emulator-contract:
+    name: Emulator contract (API ${{ matrix.api-level }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [30, 36]
+    defaults:
+      run:
+        shell: bash
+        working-directory: apps/mobile-bridge-android
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+
+      - name: Install build and matrix emulator packages
+        env:
+          HMR_API_LEVEL: ${{ matrix.api-level }}
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platform-tools" \
+            "emulator" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "system-images;android-${HMR_API_LEVEL};google_apis;x86_64"
+
+      - name: Build bridge, fixture and contract APKs
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --dependency-verification=strict \
+            :app:assembleDebug \
+            :app:assembleDebugAndroidTest \
+            :fixture-app:assembleDebug
+
+      - name: Create and boot clean emulator
+        env:
+          HMR_API_LEVEL: ${{ matrix.api-level }}
+        run: |
+          set -euo pipefail
+          report_dir="build/reports/hmr/emulator/api-${HMR_API_LEVEL}"
+          mkdir -p "$report_dir"
+          image_dir="$ANDROID_SDK_ROOT/system-images/android-${HMR_API_LEVEL}/google_apis/x86_64"
+          find "$image_dir" -type f -name system.img -print -exec sha256sum {} \; \
+            > "$report_dir/system-image.sha256"
+          test -s "$report_dir/system-image.sha256"
+          echo no | avdmanager create avd \
+            --force \
+            --name "hmr-api-${HMR_API_LEVEL}" \
+            --package "system-images;android-${HMR_API_LEVEL};google_apis;x86_64" \
+            --device pixel_2
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+          fi
+          emulator \
+            -avd "hmr-api-${HMR_API_LEVEL}" \
+            -no-window \
+            -no-snapshot \
+            -noaudio \
+            -no-boot-anim \
+            -gpu swiftshader_indirect \
+            > "$report_dir/emulator.log" 2>&1 &
+          echo $! > "$report_dir/emulator.pid"
+          timeout 240 bash -c '
+            adb wait-for-device
+            until [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" == "1" ]]; do
+              sleep 2
+            done
+          '
+          adb shell input keyevent 82
+          adb shell settings put secure show_ime_with_hard_keyboard 1
+          adb shell getprop > "$report_dir/device-properties.txt"
+
+      - name: Run clean grant/revoke and recovery contracts
+        env:
+          HMR_API_LEVEL: ${{ matrix.api-level }}
+        run: |
+          set -euo pipefail
+          report_dir="build/reports/hmr/emulator/api-${HMR_API_LEVEL}"
+          bridge_apk="app/build/outputs/apk/debug/app-debug.apk"
+          contract_apk="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+          fixture_apk="fixture-app/build/outputs/apk/debug/fixture-app-debug.apk"
+          runner="ai.hermes.mobile.runtime.test/ai.hermes.mobile.runtime.bridge.EmulatorContractInstrumentation"
+          service="ai.hermes.mobile.runtime/ai.hermes.mobile.runtime.bridge.accessibility.CurrentAppAccessibilityService"
+
+          adb install --no-streaming "$bridge_apk"
+          adb install --no-streaming "$contract_apk"
+          adb install --no-streaming "$fixture_apk"
+
+          adb shell am instrument -w -r -e mode ungranted "$runner" \
+            | tee "$report_dir/ungranted.txt"
+          grep -Fq "HMR_CONTRACT_STATUS=PASSED" "$report_dir/ungranted.txt"
+
+          adb shell settings put secure enabled_accessibility_services "$service"
+          adb shell settings put secure accessibility_enabled 1
+          sleep 2
+          adb shell am instrument -w -r -e mode granted "$runner" \
+            | tee "$report_dir/granted.txt"
+          grep -Fq "HMR_CONTRACT_STATUS=PASSED" "$report_dir/granted.txt"
+
+          adb shell settings delete secure enabled_accessibility_services
+          adb shell settings put secure accessibility_enabled 0
+          sleep 2
+          adb shell am instrument -w -r -e mode ungranted "$runner" \
+            | tee "$report_dir/revoked.txt"
+          grep -Fq "HMR_CONTRACT_STATUS=PASSED" "$report_dir/revoked.txt"
+
+      - name: Collect emulator evidence
+        if: always()
+        env:
+          HMR_API_LEVEL: ${{ matrix.api-level }}
+        run: |
+          set -euo pipefail
+          report_dir="build/reports/hmr/emulator/api-${HMR_API_LEVEL}"
+          mkdir -p "$report_dir"
+          adb logcat -d -v threadtime > "$report_dir/logcat.txt" || true
+          adb shell dumpsys accessibility > "$report_dir/accessibility.txt" || true
+          adb shell dumpsys window > "$report_dir/window.txt" || true
+
+      - name: Upload emulator contract evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hmr-113-emulator-api-${{ matrix.api-level }}
+          path: apps/mobile-bridge-android/build/reports/hmr/emulator/api-${{ matrix.api-level }}
           if-no-files-found: error
           retention-days: 14
