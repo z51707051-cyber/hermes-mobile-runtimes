@@ -56,12 +56,14 @@ class NotificationLedgerTest {
             },
         )
 
-        val snapshot = document(ledger.query(NotificationQuery(null, 100, emptySet())))
+        val batch = ledger.query(NotificationQuery(null, 100, emptySet()))
+        assertTrue(batch.payload.size <= 1_048_576)
+        val snapshot = document(batch)
         assertEquals(true, snapshot["truncated"])
         val records = snapshot.getValue("records") as List<*>
         assertEquals(100, records.size)
         val text = (records.first() as Map<*, *>)["text"] as String
-        assertEquals(4_096, text.codePointCount(0, text.length))
+        assertEquals(512, text.codePointCount(0, text.length))
         assertFalse(text.last().isHighSurrogate())
     }
 

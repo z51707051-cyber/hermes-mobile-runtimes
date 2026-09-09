@@ -27,7 +27,9 @@ class CurrentNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationRemoved(notification: StatusBarNotification?) {
         notification ?: return
-        NotificationCaptureGateway.remove(notification.key, notification.packageName)
+        val systemKey = notification.key ?: return
+        val sourcePackage = notification.packageName ?: return
+        NotificationCaptureGateway.remove(systemKey, sourcePackage)
     }
 
     override fun onDestroy() {
@@ -37,10 +39,11 @@ class CurrentNotificationListenerService : NotificationListenerService() {
 
     private fun normalized(value: StatusBarNotification): NotificationInput? {
         val packageName = value.packageName ?: return null
+        val systemKey = value.key ?: return null
         val notification = value.notification ?: return null
-        val extras = notification.extras
+        val extras = notification.extras ?: return null
         return NotificationInput(
-            systemKey = value.key,
+            systemKey = systemKey,
             sourcePackage = packageName,
             postedAtEpochMillis = value.postTime,
             title = bounded(extras.getCharSequence(Notification.EXTRA_TITLE), MAX_CALLBACK_TEXT_CHARS),
@@ -54,13 +57,26 @@ class CurrentNotificationListenerService : NotificationListenerService() {
 
     private fun bounded(value: CharSequence?, maximumCodePoints: Int): String? {
         value ?: return null
-        val text = value.toString()
-        if (text.codePointCount(0, text.length) <= maximumCodePoints) return text
-        return text.substring(0, text.offsetByCodePoints(0, maximumCodePoints))
+        var end = 0
+        var codePoints = 0
+        while (end < value.length && codePoints < maximumCodePoints) {
+            end +=
+                if (
+                    Character.isHighSurrogate(value[end]) &&
+                    end + 1 < value.length &&
+                    Character.isLowSurrogate(value[end + 1])
+                ) {
+                    2
+                } else {
+                    1
+                }
+            codePoints += 1
+        }
+        return value.subSequence(0, end).toString()
     }
 
     private companion object {
-        const val MAX_CALLBACK_TEXT_CHARS = 4_096
+        const val MAX_CALLBACK_TEXT_CHARS = 512
         const val MAX_CALLBACK_METADATA_CHARS = 256
     }
 }

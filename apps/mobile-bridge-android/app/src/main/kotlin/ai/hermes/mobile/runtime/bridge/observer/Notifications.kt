@@ -358,7 +358,9 @@ internal class NotificationLedger(
         const val MAX_CHANGES = 256
         const val MAX_QUERY_LIMIT = 100
         const val MAX_SOURCE_PACKAGES = 20
-        const val MAX_TEXT_CHARS = 4_096
+        // Three fields x 512 worst-case Unicode code points x 100 records
+        // remains below the protocol's 1 MiB canonical JSON ceiling.
+        const val MAX_TEXT_CHARS = 512
         const val MAX_METADATA_CHARS = 256
         const val MAX_SYSTEM_KEY_CHARS = 4_096
         const val MAX_SAFE_INTEGER = 9_007_199_254_740_991L
