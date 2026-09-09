@@ -6,11 +6,11 @@ build foundation, HMR-102 added the reviewed device-security kernel,
 HMR-103 added the closed protocol codec and HMR-104 added fail-closed routing.
 HMR-105 adds `phone.current_app`, HMR-106 adds coherent PhoneState, HMR-108
 adds bounded `phone.read_screen`, HMR-109 adds protected screenshot capture,
-HMR-110 adds state-bound navigation with post-action verification, and HMR-111
-adds protected notification/device-state observation. It remains a bridge,
-not a general Android agent.
+HMR-110 adds state-bound navigation with post-action verification, HMR-111
+adds protected notification/device-state observation, and HMR-112 adds a
+bounded cancellable wait. It remains a bridge, not a general Android agent.
 
-## HMR-111 protected observation boundary
+## HMR-112 bounded execution boundary
 
 The debug APK deliberately has:
 
@@ -48,6 +48,10 @@ The debug APK deliberately has:
 - one separately system-bound Notification Listener with a bounded memory-only
   ledger, HMAC ids, dedupe and process-session cursors;
 - protected D3 notification and minimized D2 device-state artifacts;
+- bounded timer/semantic waits capped by request deadline and authorization
+  expiry, with process-local cancellation and no automatic action retry;
+- artifact-free semantic wait probes with process-keyed fingerprints and no
+  retained or returned UI plaintext;
 - no notification actions, Event Bus, receiver, content provider, SSID/BSSID,
   IP, location, nearby-device or stable-device observation;
 - no enrollment listener, protocol command route or raw device endpoint;

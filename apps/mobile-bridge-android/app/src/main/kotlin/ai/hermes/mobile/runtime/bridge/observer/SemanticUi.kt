@@ -82,6 +82,19 @@ internal interface SemanticUiCaptureSource {
     fun capture(limits: SemanticUiLimits): SemanticUiCapture
 }
 
+/** Short-lived semantic evidence for condition evaluation; no UI artifact or node escapes. */
+internal data class SemanticUiProbe(
+    val state: PhoneStateSnapshot,
+    val visibleText: List<String>,
+    val redactions: List<String>,
+)
+
+internal interface SemanticUiProbeSource {
+    fun availability(): PhoneStateUnavailableReason?
+
+    fun probe(limits: SemanticUiLimits): SemanticUiProbe
+}
+
 /** Bounded collector that receives primitives only; Android node objects never escape the service. */
 internal class SemanticUiTreeBuilder(
     private val limits: SemanticUiLimits,

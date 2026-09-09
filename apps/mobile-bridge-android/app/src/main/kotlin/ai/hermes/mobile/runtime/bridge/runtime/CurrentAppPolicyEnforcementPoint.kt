@@ -9,6 +9,7 @@ import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiCaptureSource
+import ai.hermes.mobile.runtime.bridge.observer.SemanticUiProbeSource
 import ai.hermes.mobile.runtime.bridge.observer.ScreenshotCaptureSource
 
 /** Checks live capability state after authorization and immediately before dispatch. */
@@ -16,6 +17,7 @@ internal class CurrentAppPolicyEnforcementPoint(
     private val authorizationDelegate: AndroidPolicyEnforcementPoint,
     private val source: PhoneStateSource,
     private val semanticUiSource: SemanticUiCaptureSource? = null,
+    private val semanticUiProbeSource: SemanticUiProbeSource? = null,
     private val screenshotSource: ScreenshotCaptureSource? = null,
     private val navigationSource: NavigationActionSource? = null,
     private val notificationSource: NotificationCaptureSource? = null,
@@ -66,8 +68,18 @@ internal class CurrentAppPolicyEnforcementPoint(
                 } else {
                     PepDecision.deny("CAPABILITY_UNAVAILABLE")
                 }
+            WAIT_TOOL -> waitDecision(action)
             in NAVIGATION_TOOLS -> navigationDecision(action)
             else -> authorizationDecision
+        }
+    }
+
+    private fun waitDecision(action: AuthorizedAction): PepDecision {
+        if (action.parameters["condition"] == null) return PepDecision.allow()
+        return if (semanticUiProbeSource?.let { it.availability() == null } == true) {
+            PepDecision.allow()
+        } else {
+            PepDecision.deny("CAPABILITY_UNAVAILABLE")
         }
     }
 
@@ -145,6 +157,7 @@ internal class CurrentAppPolicyEnforcementPoint(
         const val SCREENSHOT_TOOL = "phone.screenshot"
         const val NOTIFICATIONS_TOOL = "phone.notifications"
         const val DEVICE_STATE_TOOL = "phone.device_state"
+        const val WAIT_TOOL = "phone.wait"
         val NAVIGATION_TOOLS =
             setOf(
                 "phone.tap",

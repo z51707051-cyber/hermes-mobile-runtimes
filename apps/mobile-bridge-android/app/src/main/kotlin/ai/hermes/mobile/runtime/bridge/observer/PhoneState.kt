@@ -234,6 +234,64 @@ internal class PhoneStateObserver(
         return snapshot(observation)
     }
 
+    /** Publishes a bounded semantic probe without retaining or referencing its plaintext. */
+    @Synchronized
+    fun recordUiProbe(
+        packageName: String,
+        windowId: Int,
+        fingerprintDigest: String,
+        captureErrors: List<String>,
+    ): PhoneStateSnapshot {
+        if (!connected) throw PhoneStateUnavailableException(PhoneStateUnavailableReason.SERVICE_DISCONNECTED)
+        val previous =
+            latest
+                ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.NO_WINDOW_STATE)
+        if (previous.packageName != packageName || previous.windowId != windowId) {
+            throw PhoneStateUnavailableException(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH)
+        }
+        require(DIGEST.matches(fingerprintDigest)) { "UI probe fingerprint is invalid" }
+        require(captureErrors.size <= MAX_CAPTURE_ERRORS) { "too many UI capture errors" }
+        require(captureErrors.distinct().size == captureErrors.size) {
+            "UI capture errors must be unique"
+        }
+        require(captureErrors.all(STABLE_ERROR::matches)) { "UI capture error is invalid" }
+        val fingerprint =
+            ScreenFingerprint(
+                basis = ScreenFingerprintBasis.UI_HIERARCHY,
+                digest = fingerprintDigest,
+            )
+        val captureStatus =
+            if (captureErrors.isEmpty()) {
+                PhoneStateCaptureStatus.COMPLETE
+            } else {
+                PhoneStateCaptureStatus.PARTIAL
+            }
+        val observation =
+            StoredObservation(
+                stateId = stateIds.next(),
+                previousStateId = previous.stateId,
+                packageName = packageName,
+                activityName = previous.activityName,
+                windowId = windowId,
+                screenFingerprint = fingerprint,
+                captureStatus = captureStatus,
+                captureErrors = captureErrors.sorted(),
+                transition =
+                    when {
+                        captureStatus != PhoneStateCaptureStatus.COMPLETE -> ScreenTransition.UNKNOWN
+                        previous.captureStatus != PhoneStateCaptureStatus.COMPLETE -> ScreenTransition.UNKNOWN
+                        previous.screenFingerprint.basis != fingerprint.basis -> ScreenTransition.UNKNOWN
+                        previous.screenFingerprint == fingerprint -> ScreenTransition.NONE
+                        else -> ScreenTransition.CHANGED
+                    },
+                capturedAtEpochMillis = epochClock.nowMillis(),
+                capturedAtElapsedMillis = elapsedClock.nowMillis(),
+                artifacts = emptyList(),
+            )
+        latest = observation
+        return snapshot(observation)
+    }
+
     @Synchronized
     fun recordScreenshot(
         expectedStateId: String,
@@ -433,6 +491,19 @@ internal object PhoneStateStore : PhoneStateSource {
             expectedStateId,
             fingerprintDigest,
             artifact,
+        )
+
+    fun recordUiProbe(
+        packageName: String,
+        windowId: Int,
+        fingerprintDigest: String,
+        captureErrors: List<String>,
+    ): PhoneStateSnapshot =
+        tracker.recordUiProbe(
+            packageName = packageName,
+            windowId = windowId,
+            fingerprintDigest = fingerprintDigest,
+            captureErrors = captureErrors,
         )
 
     fun visualCaptureAnchor(

@@ -16,6 +16,7 @@ internal object BridgeRuntime {
     private val notificationProvider =
         NotificationProvider(NotificationCaptureGateway, PhoneStateStore)
     private val deviceStateProvider = DeviceStateProvider(AndroidDeviceStateGateway, PhoneStateStore)
+    private val waitProvider = WaitProvider(PhoneStateStore, SemanticUiCaptureGateway)
     private val navigationProviders =
         listOf(
             "phone.tap",
@@ -34,6 +35,7 @@ internal object BridgeRuntime {
                 screenshotProvider,
                 notificationProvider,
                 deviceStateProvider,
+                waitProvider,
             ) + navigationProviders,
         )
 
@@ -47,6 +49,7 @@ internal object BridgeRuntime {
                     authorizationDelegate = authorizationPep,
                     source = PhoneStateStore,
                     semanticUiSource = SemanticUiCaptureGateway,
+                    semanticUiProbeSource = SemanticUiCaptureGateway,
                     screenshotSource = ScreenshotCaptureGateway,
                     navigationSource = NavigationActionGateway,
                     notificationSource = NotificationCaptureGateway,
@@ -56,6 +59,7 @@ internal object BridgeRuntime {
 
     fun availableCapabilities(): List<String> =
         buildList {
+            add(waitProvider.descriptor.tool)
             if (
                 PhoneStateStore.availability(PhoneStateObserver.DEFAULT_MAXIMUM_AGE_MILLIS) == null
             ) {
@@ -77,4 +81,7 @@ internal object BridgeRuntime {
                 add(deviceStateProvider.descriptor.tool)
             }
         }
+
+    /** Cancellation is process-local and can only stop an already active request. */
+    fun cancelWait(requestId: String): Boolean = RuntimeWaitCancellationSource.cancel(requestId)
 }
