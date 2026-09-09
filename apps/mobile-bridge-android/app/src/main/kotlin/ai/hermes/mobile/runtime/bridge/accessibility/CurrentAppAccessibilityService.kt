@@ -16,7 +16,7 @@ import android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK
 import android.view.accessibility.AccessibilityNodeInfo.ACTION_FOCUS
 import android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT
 import ai.hermes.mobile.runtime.bridge.artifact.ArtifactWriteRequest
-import ai.hermes.mobile.runtime.bridge.artifact.EncryptedInMemoryArtifactStore
+import ai.hermes.mobile.runtime.bridge.artifact.RuntimeArtifactStore
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableException
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
@@ -112,7 +112,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         val tree = builder.build(packageName)
         val reference =
             try {
-                ARTIFACTS.put(
+                RuntimeArtifactStore.put(
                     ArtifactWriteRequest(
                         mediaType = UI_TREE_MEDIA_TYPE,
                         content = tree.payload,
@@ -157,7 +157,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                 PhoneStateStore.invalidateCurrent()
                 TARGETS.clear()
             }
-            ARTIFACTS.delete(reference.artifactId)
+            RuntimeArtifactStore.delete(reference.artifactId)
             throw exc
         }
     }
@@ -589,7 +589,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         val encoded = encodeScreenshot(result, spec)
         val reference =
             try {
-                ARTIFACTS.put(
+                RuntimeArtifactStore.put(
                     ArtifactWriteRequest(
                         mediaType =
                             when (spec.format) {
@@ -619,13 +619,13 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                 artifact = reference,
             )
         } catch (exc: PhoneStateUnavailableException) {
-            ARTIFACTS.delete(reference.artifactId)
+            RuntimeArtifactStore.delete(reference.artifactId)
             if (exc.reason == PhoneStateUnavailableReason.SCREENSHOT_WINDOW_CHANGED) {
                 throw ScreenshotCaptureException(ScreenshotFailureReason.WINDOW_CHANGED)
             }
             throw exc
         } catch (exc: Exception) {
-            ARTIFACTS.delete(reference.artifactId)
+            RuntimeArtifactStore.delete(reference.artifactId)
             throw exc
         }
     }
@@ -881,7 +881,6 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         val SCREENSHOT_CALLBACK_EXECUTOR = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "hmr-screenshot-callback").apply { isDaemon = true }
         }
-        val ARTIFACTS = EncryptedInMemoryArtifactStore()
     }
 }
 

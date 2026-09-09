@@ -72,6 +72,17 @@ internal interface ArtifactStore {
     fun purgeExpired(): Int
 }
 
+/** One process-local protected store shared by reviewed Android capture adapters. */
+internal object RuntimeArtifactStore : ArtifactStore {
+    private val delegate = EncryptedInMemoryArtifactStore()
+
+    override fun put(request: ArtifactWriteRequest): ArtifactReference = delegate.put(request)
+
+    override fun delete(artifactId: String): Boolean = delegate.delete(artifactId)
+
+    override fun purgeExpired(): Int = delegate.purgeExpired()
+}
+
 internal fun interface ArtifactClock {
     fun nowMillis(): Long
 }

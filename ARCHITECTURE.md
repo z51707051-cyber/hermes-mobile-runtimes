@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 state-bound navigation in review
+> Status: Phase 1 notification and device-state observation in review
 > Last reviewed: 2026-09-09
 > The protected route now performs bounded navigation only against fresh semantic observations and verifies every accepted action.
 
@@ -30,6 +30,8 @@ by [`ADR-0009`](docs/adr/0009-protected-screenshot-capture.md).
 State-bound navigation, device-side semantic risk upgrade and post-action
 verification are fixed by
 [`ADR-0010`](docs/adr/0010-state-bound-navigation-actions.md).
+Notification cursor/dedupe and least-authority device-state projection are
+fixed by [`ADR-0011`](docs/adr/0011-notification-and-device-state-observation.md).
 
 This decision separates two responsibilities:
 
@@ -176,7 +178,16 @@ the manifest grants only MAIN/LAUNCHER package visibility—not
 observation and returns execution and verification separately; missing
 post-state is `UNKNOWN_OUTCOME`, never permission to repeat blindly.
 
-`INTERNET` remains the sole requested Android permission. The production PEP
+HMR-111 adds independent L0 notification and device-state providers. The
+system-bound notification listener uses a bounded memory-only change ledger,
+HMAC ids, dedupe, session cursors and disconnect purge. Results expose only
+five-minute encrypted D3 artifact references. Device state is an allowlisted
+D2 projection under `ACCESS_NETWORK_STATE`; it excludes SSID, BSSID, location
+and nearby-device data, and withholds Bluetooth rather than widening authority.
+Neither path creates proactive Event Bus execution.
+
+`INTERNET` and `ACCESS_NETWORK_STATE` are the only requested Android
+permissions. The production PEP
 still defaults to deny-all, and there is no protocol listener, broker IPC
 client or model-facing Tool registration in the APK. The launcher is not a
 command channel.

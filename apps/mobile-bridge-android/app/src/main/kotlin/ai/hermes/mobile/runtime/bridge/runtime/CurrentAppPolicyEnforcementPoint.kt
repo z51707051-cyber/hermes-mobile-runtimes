@@ -1,11 +1,13 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
-import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
-import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
-import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
+import ai.hermes.mobile.runtime.bridge.observer.DeviceStateCaptureSource
 import ai.hermes.mobile.runtime.bridge.observer.NavigationActionSource
 import ai.hermes.mobile.runtime.bridge.observer.NavigationFailureException
+import ai.hermes.mobile.runtime.bridge.observer.NotificationCaptureSource
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateCaptureStatus
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
 import ai.hermes.mobile.runtime.bridge.observer.SemanticUiCaptureSource
 import ai.hermes.mobile.runtime.bridge.observer.ScreenshotCaptureSource
 
@@ -16,6 +18,8 @@ internal class CurrentAppPolicyEnforcementPoint(
     private val semanticUiSource: SemanticUiCaptureSource? = null,
     private val screenshotSource: ScreenshotCaptureSource? = null,
     private val navigationSource: NavigationActionSource? = null,
+    private val notificationSource: NotificationCaptureSource? = null,
+    private val deviceStateSource: DeviceStateCaptureSource? = null,
     private val maximumAgeMillis: Long = PhoneStateObserver.DEFAULT_MAXIMUM_AGE_MILLIS,
 ) : AndroidPolicyEnforcementPoint {
     override fun evaluate(action: AuthorizedAction): PepDecision {
@@ -46,6 +50,18 @@ internal class CurrentAppPolicyEnforcementPoint(
                     screenshotSource != null &&
                     screenshotSource.availability() == null
                 ) {
+                    PepDecision.allow()
+                } else {
+                    PepDecision.deny("CAPABILITY_UNAVAILABLE")
+                }
+            NOTIFICATIONS_TOOL ->
+                if (notificationSource?.let { it.availability() == null } == true) {
+                    PepDecision.allow()
+                } else {
+                    PepDecision.deny("CAPABILITY_UNAVAILABLE")
+                }
+            DEVICE_STATE_TOOL ->
+                if (deviceStateSource?.let { it.availability() == null } == true) {
                     PepDecision.allow()
                 } else {
                     PepDecision.deny("CAPABILITY_UNAVAILABLE")
@@ -127,6 +143,8 @@ internal class CurrentAppPolicyEnforcementPoint(
         const val CURRENT_APP_TOOL = "phone.current_app"
         const val READ_SCREEN_TOOL = "phone.read_screen"
         const val SCREENSHOT_TOOL = "phone.screenshot"
+        const val NOTIFICATIONS_TOOL = "phone.notifications"
+        const val DEVICE_STATE_TOOL = "phone.device_state"
         val NAVIGATION_TOOLS =
             setOf(
                 "phone.tap",

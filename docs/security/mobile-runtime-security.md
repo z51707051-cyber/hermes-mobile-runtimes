@@ -216,6 +216,12 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
   and package visibility is exactly MAIN/LAUNCHER, never all packages. Every
   accepted mutation performs a bounded post-observation; unavailable evidence
   is `UNKNOWN_OUTCOME` and cannot authorize a blind retry.
+- HMR-111 treats notifications as D3 untrusted input. The system-bound listener
+  projects bounded primitives into a memory-only cursor/dedupe ledger purged on
+  disconnect. Device state is a closed D2 projection under
+  `ACCESS_NETWORK_STATE`, excludes location-correlated identities, and
+  withholds Bluetooth rather than requesting `BLUETOOTH_CONNECT`. Neither
+  provider dispatches events or mutates the phone.
 - Pin upstream source SHAs and dependencies; preserve MIT/Apache notices.
 - Generate SBOMs for Python, Gradle/APK, models and bundled assets separately.
 - Treat Mobilerun Portal APK and model/data licenses as independent artifacts until proven otherwise.
