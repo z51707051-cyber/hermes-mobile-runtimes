@@ -22,7 +22,9 @@ NETWORK_SECURITY_CONFIG = "@xml/network_security_config"
 ACCESSIBILITY_SERVICE_CONFIG = "@xml/current_app_accessibility_service"
 ACCESSIBILITY_SERVICE_PERMISSION = "android.permission.BIND_ACCESSIBILITY_SERVICE"
 ACCESSIBILITY_SERVICE_ACTION = "android.accessibilityservice.AccessibilityService"
-NOTIFICATION_SERVICE_PERMISSION = "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+NOTIFICATION_SERVICE_PERMISSION = (
+    "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+)
 NOTIFICATION_SERVICE_ACTION = "android.service.notification.NotificationListenerService"
 COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
@@ -287,7 +289,10 @@ def validate_manifest(
             errors.append(
                 "the notification listener must explicitly set android:exported=true"
             )
-        if _android(notification_service, "permission") != NOTIFICATION_SERVICE_PERMISSION:
+        if (
+            _android(notification_service, "permission")
+            != NOTIFICATION_SERVICE_PERMISSION
+        ):
             errors.append(
                 "the notification listener must require "
                 f"{NOTIFICATION_SERVICE_PERMISSION}"
