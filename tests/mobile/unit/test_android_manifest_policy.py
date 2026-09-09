@@ -55,11 +55,13 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
         """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
           <queries><intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
           </intent></queries>
-          <application android:allowBackup="false"
+          <application android:name=".HermesMobileApplication"
+              android:allowBackup="false"
               android:usesCleartextTraffic="false"
               android:networkSecurityConfig="@ref/0x7f030002">
             <activity android:name=".MainActivity" android:exported="true">
@@ -76,6 +78,13 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
               </intent-filter>
               <meta-data android:name="android.accessibilityservice"
                   android:resource="@xml/current_app_accessibility_service" />
+            </service>
+            <service android:name=".notification.CurrentNotificationListenerService"
+                android:exported="true"
+                android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+              <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+              </intent-filter>
             </service>
           </application>
         </manifest>
@@ -96,19 +105,21 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
     ]
 
 
-def test_rejects_any_permission_beyond_internet(tmp_path: Path) -> None:
+def test_rejects_any_permission_beyond_reviewed_minimum(tmp_path: Path) -> None:
     manifest = _write_xml(
         tmp_path,
         "AndroidManifest.xml",
         """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
           <uses-permission android:name="android.permission.RECORD_AUDIO" />
           <queries><intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
           </intent></queries>
-          <application android:allowBackup="false"
+          <application android:name=".HermesMobileApplication"
+              android:allowBackup="false"
               android:usesCleartextTraffic="false"
               android:networkSecurityConfig="@xml/network_security_config">
             <activity android:name=".MainActivity" android:exported="true">
@@ -126,13 +137,21 @@ def test_rejects_any_permission_beyond_internet(tmp_path: Path) -> None:
               <meta-data android:name="android.accessibilityservice"
                   android:resource="@xml/current_app_accessibility_service" />
             </service>
+            <service android:name=".notification.CurrentNotificationListenerService"
+                android:exported="true"
+                android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+              <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+              </intent-filter>
+            </service>
           </application>
         </manifest>
         """,
     )
 
     assert VERIFIER.validate_manifest(manifest) == [
-        "Android permissions must be exactly android.permission.INTERNET; found "
+        "Android permissions must be exactly android.permission.ACCESS_NETWORK_STATE, "
+        "android.permission.INTERNET; found android.permission.ACCESS_NETWORK_STATE, "
         "android.permission.INTERNET, android.permission.RECORD_AUDIO"
     ]
 
@@ -146,11 +165,13 @@ def test_rejects_unprotected_service_and_insecure_application_defaults(
         """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
           <queries><intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
           </intent></queries>
-          <application android:allowBackup="true" android:usesCleartextTraffic="true">
+          <application android:name=".HermesMobileApplication"
+              android:allowBackup="true" android:usesCleartextTraffic="true">
             <activity android:name=".MainActivity" android:exported="true">
               <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -168,11 +189,8 @@ def test_rejects_unprotected_service_and_insecure_application_defaults(
         "application android:usesCleartextTraffic must be false",
         "application android:networkSecurityConfig must reference "
         "@xml/network_security_config; found <none>",
-        "the only service must resolve to CurrentAppAccessibilityService",
-        "the accessibility service must require "
-        "android.permission.BIND_ACCESSIBILITY_SERVICE",
-        "the accessibility service must declare only the system AccessibilityService action",
-        "the accessibility service must contain exactly one accessibility metadata entry",
+        "services must be exactly the protected accessibility and notification listeners",
+        "only the launcher activity and protected system-bound services may be exported",
     ]
 
 
@@ -183,8 +201,10 @@ def test_rejects_broad_package_visibility(tmp_path: Path) -> None:
         """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
           <queries><package android:name="com.example.target" /></queries>
-          <application android:allowBackup="false"
+          <application android:name=".HermesMobileApplication"
+              android:allowBackup="false"
               android:usesCleartextTraffic="false"
               android:networkSecurityConfig="@xml/network_security_config">
             <activity android:name=".MainActivity" android:exported="true">
@@ -202,6 +222,13 @@ def test_rejects_broad_package_visibility(tmp_path: Path) -> None:
               <meta-data android:name="android.accessibilityservice"
                   android:resource="@xml/current_app_accessibility_service" />
             </service>
+            <service android:name=".notification.CurrentNotificationListenerService"
+                android:exported="true"
+                android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+              <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+              </intent-filter>
+            </service>
           </application>
         </manifest>
         """,
@@ -209,6 +236,61 @@ def test_rejects_broad_package_visibility(tmp_path: Path) -> None:
 
     assert VERIFIER.validate_manifest(manifest) == [
         "package visibility must be exactly one MAIN/LAUNCHER intent query"
+    ]
+
+
+def test_rejects_unprotected_or_widened_notification_listener(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_xml(
+        tmp_path,
+        "AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+          <queries><intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+          </intent></queries>
+          <application android:name=".HermesMobileApplication"
+              android:allowBackup="false"
+              android:usesCleartextTraffic="false"
+              android:networkSecurityConfig="@xml/network_security_config">
+            <activity android:name=".MainActivity" android:exported="true">
+              <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+              </intent-filter>
+            </activity>
+            <service android:name=".accessibility.CurrentAppAccessibilityService"
+                android:exported="true"
+                android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+              <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+              </intent-filter>
+              <meta-data android:name="android.accessibilityservice"
+                  android:resource="@xml/current_app_accessibility_service" />
+            </service>
+            <service android:name=".notification.CurrentNotificationListenerService"
+                android:exported="true">
+              <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+                <category android:name="android.intent.category.DEFAULT" />
+              </intent-filter>
+              <meta-data android:name="unreviewed" android:value="true" />
+            </service>
+          </application>
+        </manifest>
+        """,
+    )
+
+    assert VERIFIER.validate_manifest(manifest) == [
+        "the notification listener must require "
+        "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE",
+        "the notification listener must declare only the system "
+        "NotificationListenerService action",
+        "notification listener metadata is forbidden",
     ]
 
 

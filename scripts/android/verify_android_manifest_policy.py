@@ -14,15 +14,24 @@ ANDROID_NS = "http://schemas.android.com/apk/res/android"
 ANDROID = f"{{{ANDROID_NS}}}"
 COMPONENT_TAGS = ("activity", "activity-alias", "service", "receiver", "provider")
 PERMISSION_TAGS = ("uses-permission", "uses-permission-sdk-23")
-ALLOWED_PERMISSIONS = {"android.permission.INTERNET"}
+ALLOWED_PERMISSIONS = {
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.INTERNET",
+}
 NETWORK_SECURITY_CONFIG = "@xml/network_security_config"
 ACCESSIBILITY_SERVICE_CONFIG = "@xml/current_app_accessibility_service"
 ACCESSIBILITY_SERVICE_PERMISSION = "android.permission.BIND_ACCESSIBILITY_SERVICE"
 ACCESSIBILITY_SERVICE_ACTION = "android.accessibilityservice.AccessibilityService"
+NOTIFICATION_SERVICE_PERMISSION = "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+NOTIFICATION_SERVICE_ACTION = "android.service.notification.NotificationListenerService"
 COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
 LAUNCHER_QUERY_ACTION = "android.intent.action.MAIN"
 LAUNCHER_QUERY_CATEGORY = "android.intent.category.LAUNCHER"
+APPLICATION_NAMES = {
+    ".HermesMobileApplication",
+    "ai.hermes.mobile.runtime.bridge.HermesMobileApplication",
+}
 
 
 def _android(element: ET.Element, attribute: str) -> str | None:
@@ -50,11 +59,24 @@ def _compiled_reference_matches(
     )
 
 
+def _has_exact_action_filter(service: ET.Element, expected_action: str) -> bool:
+    filters = service.findall("intent-filter")
+    if len(filters) != 1 or filters[0].attrib:
+        return False
+    children = list(filters[0])
+    return (
+        len(children) == 1
+        and children[0].tag == "action"
+        and set(children[0].attrib) == {f"{ANDROID}name"}
+        and _android(children[0], "name") == expected_action
+    )
+
+
 def validate_manifest(
     path: Path,
     resource_table: str | None = None,
 ) -> list[str]:
-    """Return all HMR-102 manifest policy violations."""
+    """Return all reviewed Hermes Mobile manifest policy violations."""
 
     try:
         root = ET.parse(path).getroot()
@@ -143,6 +165,8 @@ def validate_manifest(
         )
     if _android(application, "permission"):
         errors.append("application-level Android permission is forbidden")
+    if _android(application, "name") not in APPLICATION_NAMES:
+        errors.append("application must resolve to HermesMobileApplication")
 
     components = [node for tag in COMPONENT_TAGS for node in application.findall(tag)]
     forbidden = [
@@ -189,24 +213,34 @@ def validate_manifest(
         errors.append("launcher activity must declare android.intent.category.LAUNCHER")
 
     services = application.findall("service")
-    if len(services) != 1:
+    accessibility_names = {
+        ".accessibility.CurrentAppAccessibilityService",
+        "ai.hermes.mobile.runtime.bridge.accessibility.CurrentAppAccessibilityService",
+    }
+    notification_names = {
+        ".notification.CurrentNotificationListenerService",
+        "ai.hermes.mobile.runtime.bridge.notification.CurrentNotificationListenerService",
+    }
+    accessibility_services = [
+        node for node in services if _android(node, "name") in accessibility_names
+    ]
+    notification_services = [
+        node for node in services if _android(node, "name") in notification_names
+    ]
+    if (
+        len(services) != 2
+        or len(accessibility_services) != 1
+        or len(notification_services) != 1
+    ):
         errors.append(
-            "expected exactly one protected current-app accessibility service, "
-            f"found {len(services)}"
+            "services must be exactly the protected accessibility and notification listeners"
         )
-        service = None
-    else:
-        service = services[0]
+    service = accessibility_services[0] if len(accessibility_services) == 1 else None
+    notification_service = (
+        notification_services[0] if len(notification_services) == 1 else None
+    )
 
     if service is not None:
-        service_names = {
-            ".accessibility.CurrentAppAccessibilityService",
-            "ai.hermes.mobile.runtime.bridge.accessibility.CurrentAppAccessibilityService",
-        }
-        if _android(service, "name") not in service_names:
-            errors.append(
-                "the only service must resolve to CurrentAppAccessibilityService"
-            )
         if _android(service, "exported") != "true":
             errors.append(
                 "the accessibility service must explicitly set android:exported=true"
@@ -217,12 +251,7 @@ def validate_manifest(
                 f"{ACCESSIBILITY_SERVICE_PERMISSION}"
             )
 
-        service_actions = {
-            _android(node, "name")
-            for intent_filter in service.findall("intent-filter")
-            for node in intent_filter.findall("action")
-        }
-        if service_actions != {ACCESSIBILITY_SERVICE_ACTION}:
+        if not _has_exact_action_filter(service, ACCESSIBILITY_SERVICE_ACTION):
             errors.append(
                 "the accessibility service must declare only the system "
                 "AccessibilityService action"
@@ -253,11 +282,35 @@ def validate_manifest(
                     f"{ACCESSIBILITY_SERVICE_CONFIG}; found {config or '<none>'}"
                 )
 
+    if notification_service is not None:
+        if _android(notification_service, "exported") != "true":
+            errors.append(
+                "the notification listener must explicitly set android:exported=true"
+            )
+        if _android(notification_service, "permission") != NOTIFICATION_SERVICE_PERMISSION:
+            errors.append(
+                "the notification listener must require "
+                f"{NOTIFICATION_SERVICE_PERMISSION}"
+            )
+        if not _has_exact_action_filter(
+            notification_service, NOTIFICATION_SERVICE_ACTION
+        ):
+            errors.append(
+                "the notification listener must declare only the system "
+                "NotificationListenerService action"
+            )
+        if notification_service.findall("meta-data"):
+            errors.append("notification listener metadata is forbidden")
+
     exported = [node for node in components if _android(node, "exported") == "true"]
-    expected_exported = {activity} | ({service} if service is not None else set())
+    expected_exported = (
+        {activity}
+        | ({service} if service is not None else set())
+        | ({notification_service} if notification_service is not None else set())
+    )
     if set(exported) != expected_exported:
         errors.append(
-            "only the launcher activity and protected accessibility service may be exported"
+            "only the launcher activity and protected system-bound services may be exported"
         )
 
     return errors

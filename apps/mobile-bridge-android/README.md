@@ -6,14 +6,15 @@ build foundation, HMR-102 added the reviewed device-security kernel,
 HMR-103 added the closed protocol codec and HMR-104 added fail-closed routing.
 HMR-105 adds `phone.current_app`, HMR-106 adds coherent PhoneState, HMR-108
 adds bounded `phone.read_screen`, HMR-109 adds protected screenshot capture,
-and HMR-110 adds state-bound navigation with post-action verification. It is
-still not a general Android agent.
+HMR-110 adds state-bound navigation with post-action verification, and HMR-111
+adds protected notification/device-state observation. It remains a bridge,
+not a general Android agent.
 
-## HMR-110 protected navigation boundary
+## HMR-111 protected observation boundary
 
 The debug APK deliberately has:
 
-- `INTERNET` as its only requested Android permission;
+- exactly `INTERNET` and the normal `ACCESS_NETWORK_STATE` permission;
 - cleartext disabled in the manifest and network-security configuration;
 - a P-256 device identity whose private key remains in Android Keystore;
 - a strict TLS 1.3/1.2 policy and closed `/v0/enroll` HTTPS endpoint parser;
@@ -44,8 +45,11 @@ The debug APK deliberately has:
 - MAIN/LAUNCHER package visibility only, with no `QUERY_ALL_PACKAGES`;
 - device-side risk upgrade, unconditional L4/L5 denial, and bounded
   post-action semantic verification;
-- no Notification Listener, receiver, content provider or general background
-  service;
+- one separately system-bound Notification Listener with a bounded memory-only
+  ledger, HMAC ids, dedupe and process-session cursors;
+- protected D3 notification and minimized D2 device-state artifacts;
+- no notification actions, Event Bus, receiver, content provider, SSID/BSSID,
+  IP, location, nearby-device or stable-device observation;
 - no enrollment listener, protocol command route or raw device endpoint;
 - one exported launcher activity that displays bootstrap status;
 - no code copied or adapted from `hermes-android`.

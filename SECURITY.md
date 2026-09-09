@@ -84,6 +84,15 @@ observation; inability to verify is an `UNKNOWN_OUTCOME` and must not trigger a
 blind retry. The production PEP remains deny-all until authenticated broker
 transport is composed.
 
+HMR-111 adds a separate system-bound notification listener and read-only
+device-state adapter. Notification callbacks retain only bounded primitive
+fields in a memory-only ledger with HMAC ids, dedupe, opaque cursors and
+disconnect purge. Results contain only five-minute encrypted D3 references;
+notification text cannot trigger tools directly. Device state is a minimized
+D2 artifact under `ACCESS_NETWORK_STATE` with no SSID, BSSID, IP, location,
+nearby-device or stable identifier. Bluetooth is withheld while
+`BLUETOOTH_CONNECT` is absent. No Event Bus or notification action is added.
+
 ---
 
 # Hermes Agent Security Policy

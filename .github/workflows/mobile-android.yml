@@ -19,6 +19,7 @@ on:
       - "docs/testing/hmr-108-read-screen.md"
       - "docs/testing/hmr-109-screenshot.md"
       - "docs/testing/hmr-110-navigation.md"
+      - "docs/testing/hmr-111-notifications-device-state.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -29,6 +30,7 @@ on:
       - "docs/adr/0008-bounded-semantic-ui-capture.md"
       - "docs/adr/0009-protected-screenshot-capture.md"
       - "docs/adr/0010-state-bound-navigation-actions.md"
+      - "docs/adr/0011-notification-and-device-state-observation.md"
       - ".github/workflows/mobile-android.yml"
   push:
     branches: [main]
@@ -49,6 +51,7 @@ on:
       - "docs/testing/hmr-108-read-screen.md"
       - "docs/testing/hmr-109-screenshot.md"
       - "docs/testing/hmr-110-navigation.md"
+      - "docs/testing/hmr-111-notifications-device-state.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -59,6 +62,7 @@ on:
       - "docs/adr/0008-bounded-semantic-ui-capture.md"
       - "docs/adr/0009-protected-screenshot-capture.md"
       - "docs/adr/0010-state-bound-navigation-actions.md"
+      - "docs/adr/0011-notification-and-device-state-observation.md"
       - ".github/workflows/mobile-android.yml"
 
 permissions:

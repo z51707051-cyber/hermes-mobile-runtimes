@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Allow exact-package launcher resolution without QUERY_ALL_PACKAGES. -->
     <queries>
@@ -11,8 +12,8 @@
         </intent>
     </queries>
 
-    <!-- INTERNET remains the only requested Android permission. -->
     <application
+        android:name=".HermesMobileApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -41,6 +42,15 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/current_app_accessibility_service" />
+        </service>
+        <service
+            android:name=".notification.CurrentNotificationListenerService"
+            android:exported="true"
+            android:label="@string/notification_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
     </application>
 
