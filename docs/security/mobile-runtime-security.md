@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Security
 
 > Status: Phase 1 security baseline
-> Last reviewed: 2026-08-29
-> Security-sensitive implementation follows ADR-0003, ADR-0005 and the reviewed threat model.
+> Last reviewed: 2026-09-09
+> Security-sensitive implementation follows ADR-0003, ADR-0005, ADR-0008, ADR-0009 and the reviewed threat model.
 
 ## 1. Security objective
 
@@ -139,6 +139,14 @@ requirements are defined in [`threat-model.md`](threat-model.md).
 | Clipboard/contacts/location/audio | Highly sensitive | Feature-gated; least retention; explicit policy |
 | Permission decisions | Security audit | Append-only, retain decision metadata, redact content |
 | Skill traces | Sensitive | Parameterize/redact before validation storage |
+
+HMR-108/109 keep semantic trees and screenshots in AES-256-GCM encrypted,
+five-minute process-local artifacts. Their separately keyed digests may appear
+as state fingerprints, but raw content cannot enter Tool JSON, ordinary logs
+or Audit. Screenshot capture has hard crop/pixel/encoded-size/deadline limits,
+and a foreground state race deletes the new artifact. Artifact retrieval is
+not yet exposed; production transport must make every read separately
+authorized and audited.
 
 `before_state` and `after_state` contain references and summaries. Artifact access is separately authorized and logged. Deleting a task or device must have a documented effect on retained sensitive artifacts.
 

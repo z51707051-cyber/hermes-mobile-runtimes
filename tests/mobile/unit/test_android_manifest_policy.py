@@ -174,13 +174,15 @@ def test_rejects_accessibility_service_that_widens_beyond_active_window_read(
         <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
             android:accessibilityEventTypes="typeAllMask"
             android:canPerformGestures="true"
-            android:canRetrieveWindowContent="true" />
+            android:canRetrieveWindowContent="true"
+            android:canTakeScreenshot="false" />
         """,
     )
 
     assert VERIFIER.validate_accessibility_service_config(config) == [
         "screen observer must listen only for typeWindowStateChanged",
         "screen observer must set android:canPerformGestures=false",
+        "screen observer must set android:canTakeScreenshot=true",
         "screen observer must declare only flagReportViewIds",
     ]
 

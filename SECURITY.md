@@ -58,6 +58,17 @@ in a five-minute process-local artifact with a separately keyed digest, while
 Tool JSON and Audit carry only metadata. The store has no direct content read
 API; authorized/audited retrieval must arrive with the production transport.
 
+HMR-109 enables the same system-bound service's screenshot capability as a
+read-only vision fallback. Capture is authorized by Router/PEP, correlated to
+a live active-root package/window and committed only if the exact state id is
+still current. Dimensions, crop, pixels, callback duration and encoded bytes
+are bounded; hardware buffers and temporary bitmaps are released. PNG/WebP
+bytes are encrypted as five-minute D3 artifacts and zeroed after storage, and
+only a separately keyed fingerprint plus ArtifactRef metadata reaches Tool
+results. Secure-window and revoked-access failures do not auto-retry. There is
+still no gesture, MediaProjection, shared-file, raw retrieval or additional
+Android permission surface.
+
 ---
 
 # Hermes Agent Security Policy

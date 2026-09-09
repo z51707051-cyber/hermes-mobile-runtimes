@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 bounded semantic UI capture in review
-> Last reviewed: 2026-09-08
-> The protected route now captures a bounded active-window semantic tree into an encrypted ephemeral artifact.
+> Status: Phase 1 protected screenshot capture in review
+> Last reviewed: 2026-09-09
+> The protected route now captures bounded semantic and pixel observations into encrypted ephemeral artifacts.
 
 ## 1. Decision
 
@@ -25,6 +25,8 @@ Durable Audit storage, redaction and integrity are fixed by
 [`ADR-0007`](docs/adr/0007-encrypted-append-only-audit-ledger.md).
 Semantic UI capture and its least-authority Accessibility profile are fixed by
 [`ADR-0008`](docs/adr/0008-bounded-semantic-ui-capture.md).
+Protected screenshot capture, visual fingerprinting and image bounds are fixed
+by [`ADR-0009`](docs/adr/0009-protected-screenshot-capture.md).
 
 This decision separates two responsibilities:
 
@@ -145,6 +147,18 @@ content, correlates package/window identity and emits a new `UI_HIERARCHY`
 PhoneState generation. Canonical UI content is encrypted in a five-minute D3
 in-memory artifact; Tool JSON and Audit receive only its closed reference.
 Authorized artifact retrieval remains part of the production transport work.
+
+HMR-109 adds the L0 `phone.screenshot` vision fallback through Android's API
+30 Accessibility screenshot callback. The provider validates a live active
+root, binds completion to the exact foreground state id, bounds dimensions,
+crop, pixels, callback time and encoded bytes, and releases all Android image
+objects. PNG or lossless WebP enters the same encrypted five-minute D3 store;
+the keyed artifact digest becomes a typed `SCREENSHOT` fingerprint. Secure
+windows, revoked access, rate limiting, oversize images and window races have
+closed typed failures. Screenshot authority adds no permission, gesture,
+MediaProjection, public file or new exported component.
+The protocol reserves secondary display ids, but this adapter currently fails
+them closed until PhoneState becomes display-scoped.
 
 `INTERNET` remains the sole requested Android permission. The production PEP
 still defaults to deny-all, and there is no protocol listener, broker IPC

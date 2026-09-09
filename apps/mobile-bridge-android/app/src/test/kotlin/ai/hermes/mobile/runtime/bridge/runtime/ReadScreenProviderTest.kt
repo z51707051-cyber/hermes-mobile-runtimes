@@ -83,6 +83,21 @@ class ReadScreenProviderTest {
         )
     }
 
+    @Test
+    fun liveCaptureCanRenewAStaleIdentityGeneration() {
+        val source = FakeSemanticSource(capture = capture())
+        val router =
+            router(
+                source,
+                FakePhoneStateSource(PhoneStateUnavailableReason.STALE_WINDOW_STATE),
+            )
+
+        val result = ProtocolCodec.decode(router.routeAuthorized(readScreenAction()))
+
+        assertEquals("SUCCEEDED", result["execution_status"])
+        assertEquals(1, source.captureCalls)
+    }
+
     private class FakeSemanticSource(
         private val capture: SemanticUiCapture,
         private val unavailable: PhoneStateUnavailableReason? = null,
@@ -101,8 +116,10 @@ class ReadScreenProviderTest {
         }
     }
 
-    private class FakePhoneStateSource : PhoneStateSource {
-        override fun availability(maximumAgeMillis: Long): PhoneStateUnavailableReason? = null
+    private class FakePhoneStateSource(
+        private val unavailable: PhoneStateUnavailableReason? = null,
+    ) : PhoneStateSource {
+        override fun availability(maximumAgeMillis: Long): PhoneStateUnavailableReason? = unavailable
 
         override fun current(maximumAgeMillis: Long): PhoneStateSnapshot = observation()
     }
