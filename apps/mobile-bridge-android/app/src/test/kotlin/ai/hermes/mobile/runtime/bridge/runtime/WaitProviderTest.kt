@@ -356,7 +356,12 @@ class WaitProviderTest {
                             } else {
                                 listOf("NODE_LIMIT_REACHED")
                             },
-                        transition = ScreenTransition.NONE,
+                        transition =
+                            if (status == PhoneStateCaptureStatus.COMPLETE) {
+                                ScreenTransition.NONE
+                            } else {
+                                ScreenTransition.UNKNOWN
+                            },
                         capturedAtEpochMillis = epochStart(),
                         freshnessMillis = 0,
                     ),
