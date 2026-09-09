@@ -1,8 +1,8 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 durable execution Audit in review
+> Status: Phase 1 bounded semantic UI capture in review
 > Last reviewed: 2026-09-08
-> The protected route now has encrypted, restart-safe and tamper-evident execution Audit.
+> The protected route now captures a bounded active-window semantic tree into an encrypted ephemeral artifact.
 
 ## 1. Decision
 
@@ -23,6 +23,8 @@ are fixed by
 [`ADR-0004`](docs/adr/0004-phone-state-consistency-and-artifact-storage.md).
 Durable Audit storage, redaction and integrity are fixed by
 [`ADR-0007`](docs/adr/0007-encrypted-append-only-audit-ledger.md).
+Semantic UI capture and its least-authority Accessibility profile are fixed by
+[`ADR-0008`](docs/adr/0008-bounded-semantic-ui-capture.md).
 
 This decision separates two responsibilities:
 
@@ -135,6 +137,14 @@ they can be read or exported. Integrity uses a separate injected HMAC-SHA256
 keyring, exact retries are idempotent, conflicting history fails closed, and
 raw parameters, UI and notification content cannot fit the record schema.
 Whole-database rollback protection still requires an external signed head.
+
+HMR-108 adds an L0 `phone.read_screen` provider without exposing Android node
+objects or widening into gesture authority. An authorized request traverses
+only the active window under hard node/text/depth limits, withholds password
+content, correlates package/window identity and emits a new `UI_HIERARCHY`
+PhoneState generation. Canonical UI content is encrypted in a five-minute D3
+in-memory artifact; Tool JSON and Audit receive only its closed reference.
+Authorized artifact retrieval remains part of the production transport work.
 
 `INTERNET` remains the sole requested Android permission. The production PEP
 still defaults to deny-all, and there is no protocol listener, broker IPC
@@ -350,6 +360,7 @@ non-blocking preview canary until explicitly promoted.
 - ADR-0005: Device identity, transport and key rotation — accepted.
 - ADR-0006: Error taxonomy and bounded recovery policy.
 - ADR-0007: Encrypted append-only Audit ledger — accepted.
+- ADR-0008: Bounded semantic UI capture — accepted.
 
-Phase 1 expands only through the reviewed HMR-101–HMR-107 foundation and the
-`phone.current_app` vertical slice. See [`ROADMAP.md`](ROADMAP.md).
+Phase 1 expands only through the reviewed HMR-101–HMR-108 foundation and the
+two read-only observation slices. See [`ROADMAP.md`](ROADMAP.md).

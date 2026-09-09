@@ -16,6 +16,7 @@ on:
       - "docs/testing/hmr-105-current-app.md"
       - "docs/testing/hmr-106-phone-state.md"
       - "docs/testing/hmr-107-durable-audit.md"
+      - "docs/testing/hmr-108-read-screen.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -23,6 +24,7 @@ on:
       - "uv.lock"
       - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
       - "docs/adr/0007-encrypted-append-only-audit-ledger.md"
+      - "docs/adr/0008-bounded-semantic-ui-capture.md"
       - ".github/workflows/mobile-android.yml"
   push:
     branches: [main]
@@ -40,6 +42,7 @@ on:
       - "docs/testing/hmr-105-current-app.md"
       - "docs/testing/hmr-106-phone-state.md"
       - "docs/testing/hmr-107-durable-audit.md"
+      - "docs/testing/hmr-108-read-screen.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -47,6 +50,7 @@ on:
       - "uv.lock"
       - "docs/adr/0005-device-identity-transport-and-key-rotation.md"
       - "docs/adr/0007-encrypted-append-only-audit-ledger.md"
+      - "docs/adr/0008-bounded-semantic-ui-capture.md"
       - ".github/workflows/mobile-android.yml"
 
 permissions:

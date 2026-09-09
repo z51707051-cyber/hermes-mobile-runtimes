@@ -1,5 +1,6 @@
 package ai.hermes.mobile.runtime.bridge.observer
 
+import ai.hermes.mobile.runtime.bridge.artifact.ArtifactReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -100,4 +101,61 @@ class PhoneStateObserverTest {
         assertEquals(listOf("FOREGROUND_ACTIVITY_UNAVAILABLE"), observation.captureErrors)
         assertEquals(ScreenTransition.UNKNOWN, observation.transition)
     }
+
+    @Test
+    fun uiTreeCaptureMustMatchTheCurrentWindowGeneration() {
+        var stateSequence = 0
+        val tracker =
+            PhoneStateObserver(
+                elapsedClock = ElapsedRealtimeClock { 100L },
+                epochClock = EpochClock { 1_788_150_000_000L },
+                stateIds = StateIdGenerator { "state-${++stateSequence}" },
+            )
+        tracker.markConnected()
+        tracker.recordWindow(
+            "com.example.music",
+            "com.example.music.PlayerActivity",
+            windowId = 42,
+        )
+
+        val captured =
+            tracker.recordUiTree(
+                packageName = "com.example.music",
+                windowId = 42,
+                fingerprintDigest = "sha256:" + "b".repeat(64),
+                captureErrors = emptyList(),
+                artifact = artifact(),
+            )
+
+        assertEquals("state-2", captured.stateId)
+        assertEquals("state-1", captured.previousStateId)
+        assertEquals(ScreenFingerprintBasis.UI_HIERARCHY, captured.screenFingerprint.basis)
+        assertEquals(ScreenTransition.UNKNOWN, captured.transition)
+        assertEquals(listOf("artifact-tree"), captured.artifacts.map { it.artifactId })
+
+        val mismatch =
+            assertThrows(PhoneStateUnavailableException::class.java) {
+                tracker.recordUiTree(
+                    packageName = "com.example.other",
+                    windowId = 42,
+                    fingerprintDigest = "sha256:" + "c".repeat(64),
+                    captureErrors = emptyList(),
+                    artifact = artifact(),
+                )
+            }
+        assertEquals(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH, mismatch.reason)
+        assertEquals("state-2", tracker.current(5_000).stateId)
+    }
+
+    private fun artifact(): ArtifactReference =
+        ArtifactReference(
+            artifactId = "artifact-tree",
+            mediaType = "application/vnd.hermes.ui-tree+json",
+            sizeBytes = 100,
+            digest = "sha256:" + "b".repeat(64),
+            sensitivity = "D3",
+            redactionStatus = "NONE",
+            retentionClass = "EPHEMERAL",
+            expiresAtEpochMillis = 1_788_150_300_000L,
+        )
 }

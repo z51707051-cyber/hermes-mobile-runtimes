@@ -1,25 +1,16 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
-import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSnapshot
-import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
-import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableException
+import ai.hermes.mobile.runtime.bridge.observer.SemanticUiCapture
+import ai.hermes.mobile.runtime.bridge.observer.SemanticUiCaptureSource
+import ai.hermes.mobile.runtime.bridge.observer.SemanticUiLimits
 import ai.hermes.mobile.runtime.bridge.protocol.CanonicalJson
 import ai.hermes.mobile.runtime.bridge.protocol.ProtocolCodec
 import java.time.Instant
 
-internal fun interface ProviderEpochClock {
-    fun nowMillis(): Long
-}
-
-internal fun interface ProviderElapsedClock {
-    fun nowMillis(): Long
-}
-
-/** Read-only Android provider for the coherent foreground PhoneState projection. */
-internal class CurrentAppProvider(
-    private val source: PhoneStateSource,
-    private val maximumAgeMillis: Long = PhoneStateObserver.DEFAULT_MAXIMUM_AGE_MILLIS,
+/** Produces a protected normalized UI-tree artifact for the active window only. */
+internal class ReadScreenProvider(
+    private val source: SemanticUiCaptureSource,
     private val epochClock: ProviderEpochClock = ProviderEpochClock { System.currentTimeMillis() },
     private val elapsedClock: ProviderElapsedClock = ProviderElapsedClock { System.nanoTime() / 1_000_000 },
 ) : CapabilityProvider {
@@ -28,19 +19,30 @@ internal class CurrentAppProvider(
     override fun execute(action: AuthorizedAction): ByteArray {
         val startedAt = elapsedClock.nowMillis()
         return try {
-            val observation = source.current(maximumAgeMillis)
-            ProtocolCodec.encode(success(action, observation, durationSince(startedAt)))
+            val limits = limits(action.parameters)
+            val capture = source.capture(limits)
+            ProtocolCodec.encode(success(action, capture, durationSince(startedAt)))
         } catch (exc: PhoneStateUnavailableException) {
             ProtocolCodec.encode(unavailable(action, exc, durationSince(startedAt)))
+        } catch (exc: Exception) {
+            ProtocolCodec.encode(failed(action, durationSince(startedAt)))
         }
     }
 
+    private fun limits(parameters: Map<String, Any?>): SemanticUiLimits =
+        SemanticUiLimits(
+            maxNodes = (parameters["max_nodes"] as? Number)?.toInt() ?: DEFAULT_MAX_NODES,
+            maxTextChars =
+                (parameters["max_text_chars"] as? Number)?.toInt()
+                    ?: DEFAULT_MAX_TEXT_CHARS,
+        )
+
     private fun success(
         action: AuthorizedAction,
-        observation: PhoneStateSnapshot,
+        capture: SemanticUiCapture,
         durationMillis: Long,
     ): Map<String, Any?> {
-        val state = observation.protocolValue(action.deviceId)
+        val state = capture.state.protocolValue(action.deviceId)
         return baseResult(action, durationMillis) +
             mapOf(
                 "execution_status" to "SUCCEEDED",
@@ -51,10 +53,12 @@ internal class CurrentAppProvider(
                 "verification" to
                     mapOf(
                         "status" to "NOT_APPLICABLE",
-                        "observed_state_ids" to listOf(observation.stateId),
+                        "observed_state_ids" to listOf(capture.state.stateId),
                         "evaluator" to PROVIDER_ID,
-                        "explanation" to "read-only current app observation",
+                        "explanation" to "read-only semantic UI capture",
                     ),
+                "artifacts" to listOf(capture.artifact.protocolValue()),
+                "redactions" to capture.redactions,
             )
     }
 
@@ -62,6 +66,30 @@ internal class CurrentAppProvider(
         action: AuthorizedAction,
         exception: PhoneStateUnavailableException,
         durationMillis: Long,
+    ): Map<String, Any?> =
+        failureResult(
+            action,
+            durationMillis,
+            reason = exception.reason.name,
+            retryDisposition = "REOBSERVE",
+        )
+
+    private fun failed(
+        action: AuthorizedAction,
+        durationMillis: Long,
+    ): Map<String, Any?> =
+        failureResult(
+            action,
+            durationMillis,
+            reason = "UI_CAPTURE_FAILED",
+            retryDisposition = "RETRY_SAME_ACTION",
+        )
+
+    private fun failureResult(
+        action: AuthorizedAction,
+        durationMillis: Long,
+        reason: String,
+        retryDisposition: String,
     ): Map<String, Any?> =
         baseResult(action, durationMillis) +
             mapOf(
@@ -73,9 +101,9 @@ internal class CurrentAppProvider(
                         "code" to "CAPABILITY_UNAVAILABLE",
                         "category" to "OBSERVATION",
                         "owner" to "OBSERVER",
-                        "message" to "current app observation is unavailable",
-                        "retry_disposition" to "REOBSERVE",
-                        "details" to mapOf("reason" to exception.reason.name),
+                        "message" to "semantic UI observation is unavailable",
+                        "retry_disposition" to retryDisposition,
+                        "details" to mapOf("reason" to reason),
                     ),
                 "recoverable" to true,
                 "verification" to
@@ -83,8 +111,10 @@ internal class CurrentAppProvider(
                         "status" to "INCONCLUSIVE",
                         "observed_state_ids" to emptyList<String>(),
                         "evaluator" to PROVIDER_ID,
-                        "explanation" to "no fresh current app observation",
+                        "explanation" to "no coherent semantic UI capture",
                     ),
+                "artifacts" to emptyList<Any>(),
+                "redactions" to emptyList<String>(),
             )
 
     private fun baseResult(
@@ -95,21 +125,19 @@ internal class CurrentAppProvider(
             mapOf(
                 "message_type" to "tool.execution_result",
                 "duration" to durationMillis,
-                "timestamp" to timestamp(epochClock.nowMillis()),
+                "timestamp" to Instant.ofEpochMilli(epochClock.nowMillis()).toString(),
                 "parameter_digest" to CanonicalJson.sha256(action.parameters),
                 "permission_decision_id" to action.policyDecisionId,
-                "artifacts" to emptyList<Any>(),
-                "redactions" to emptyList<String>(),
             )
 
     private fun durationSince(startedAt: Long): Long =
         (elapsedClock.nowMillis() - startedAt).coerceIn(0, MAXIMUM_DURATION_MILLIS)
 
-    private fun timestamp(epochMillis: Long): String = Instant.ofEpochMilli(epochMillis).toString()
-
     private companion object {
-        const val TOOL = "phone.current_app"
-        const val PROVIDER_ID = "android.accessibility.current_app.v1"
+        const val TOOL = "phone.read_screen"
+        const val PROVIDER_ID = "android.accessibility.read_screen.v1"
+        const val DEFAULT_MAX_NODES = 200
+        const val DEFAULT_MAX_TEXT_CHARS = 10_000
         const val MAXIMUM_DURATION_MILLIS = 86_400_000L
         val RESULT_BINDING_FIELDS =
             setOf(

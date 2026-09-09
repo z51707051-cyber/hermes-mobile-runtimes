@@ -40,6 +40,10 @@ The checked configuration is intentionally narrower than later Phase 1 work:
   access;
 - no retained `AccessibilityEvent` or Android UI object.
 
+This describes the HMR-105 checkpoint. HMR-108 intentionally supersedes the
+`canRetrieveWindowContent=false` setting under ADR-0008 while preserving the
+same event subscription, transient-node rule and gesture prohibition.
+
 The HMR-105 checkpoint stored a generated state id, package, class name and
 capture clocks and sent only the foreground package. HMR-106/ADR-0004
 supersedes that projection with the versioned coherent PhoneState model.

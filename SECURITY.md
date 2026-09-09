@@ -49,6 +49,15 @@ failure fail closed. Raw parameters, UI and notification content have no
 record field. The ledger is tamper-evident, but whole-database rollback needs
 an external signed head before it can be described as rollback-proof.
 
+HMR-108 deliberately expands Accessibility to read the active window for an
+authorized `phone.read_screen` call. It still subscribes only to window-state
+events, declares only `flagReportViewIds`, cannot perform gestures and has no
+raw command endpoint. Android node objects are traversed transiently under
+hard limits; password content is withheld. The normalized D3 tree is encrypted
+in a five-minute process-local artifact with a separately keyed digest, while
+Tool JSON and Audit carry only metadata. The store has no direct content read
+API; authorized/audited retrieval must arrive with the production transport.
+
 ---
 
 # Hermes Agent Security Policy

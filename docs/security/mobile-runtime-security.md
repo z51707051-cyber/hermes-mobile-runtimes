@@ -197,6 +197,10 @@ defined in [`supply-chain-and-sbom.md`](supply-chain-and-sbom.md).
   chain with a separate key authority, verifies before append/read/export and
   fails closed on corruption or storage loss. Raw parameters and device content
   cannot enter this ledger; whole-store rollback needs an external head anchor.
+- HMR-108 permits active-window hierarchy reads only after Android PEP allow.
+  It keeps gestures/all-window capture disabled, bounds traversal, withholds
+  password content and stores normalized D3 content only as an encrypted
+  five-minute artifact. Result/Audit data carries references, not the tree.
 - Pin upstream source SHAs and dependencies; preserve MIT/Apache notices.
 - Generate SBOMs for Python, Gradle/APK, models and bundled assets separately.
 - Treat Mobilerun Portal APK and model/data licenses as independent artifacts until proven otherwise.
