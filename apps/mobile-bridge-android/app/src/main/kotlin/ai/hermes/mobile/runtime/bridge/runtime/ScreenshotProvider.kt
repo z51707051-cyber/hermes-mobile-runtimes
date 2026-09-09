@@ -51,10 +51,10 @@ internal class ScreenshotProvider(
         val crop =
             (parameters["crop"] as? Map<*, *>)?.let { value ->
                 ScreenshotCrop(
-                    xPx = (value.getValue("x_px") as Number).toInt(),
-                    yPx = (value.getValue("y_px") as Number).toInt(),
-                    widthPx = (value.getValue("width_px") as Number).toInt(),
-                    heightPx = (value.getValue("height_px") as Number).toInt(),
+                    xPx = (value["x_px"] as Number).toInt(),
+                    yPx = (value["y_px"] as Number).toInt(),
+                    widthPx = (value["width_px"] as Number).toInt(),
+                    heightPx = (value["height_px"] as Number).toInt(),
                 )
             }
         return ScreenshotSpec(
