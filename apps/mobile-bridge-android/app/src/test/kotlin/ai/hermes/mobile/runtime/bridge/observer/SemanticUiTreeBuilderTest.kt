@@ -40,6 +40,7 @@ class SemanticUiTreeBuilderTest {
         assertEquals("node-1", tree.actionTargets[0].nodeId)
         assertEquals("Sign in", tree.actionTargets[0].text)
         assertNull(tree.actionTargets[1].text)
+        assertEquals(listOf("Sign in"), tree.visibleText)
         assertTrue(tree.captureErrors.isEmpty())
         assertFalse(document["truncated"] as Boolean)
     }
@@ -58,6 +59,7 @@ class SemanticUiTreeBuilderTest {
         assertEquals("abcd", (nodes[0] as Map<*, *>)["text"])
         assertEquals("z", (nodes[1] as Map<*, *>)["text"])
         assertEquals("abcd😀", tree.actionTargets[0].text)
+        assertEquals(listOf("abcd", "z"), tree.visibleText)
         assertEquals(listOf("NODE_LIMIT_REACHED", "TEXT_LIMIT_REACHED"), tree.captureErrors)
         assertTrue(document["truncated"] as Boolean)
     }
