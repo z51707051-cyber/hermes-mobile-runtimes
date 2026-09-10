@@ -219,7 +219,7 @@ jobs:
         if: failure()
         run: |
           set -euo pipefail
-          mapfile -t reports < <(find app/build -name 'lint-results-*.txt' -type f -print | LC_ALL=C sort)
+          mapfile -t reports < <(find app/build fixture-app/build -name 'lint-results-*.txt' -type f -print | LC_ALL=C sort)
           for report in "${reports[@]}"; do
             echo "### $report"
             sed -n '1,400p' "$report"
@@ -375,6 +375,8 @@ jobs:
           find "$image_dir" -type f -name system.img -print -exec sha256sum {} \; \
             > "$report_dir/system-image.sha256"
           test -s "$report_dir/system-image.sha256"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/hmr-avd-${HMR_API_LEVEL}"
+          mkdir -p "$ANDROID_AVD_HOME"
           echo no | avdmanager create avd \
             --force \
             --name "hmr-api-${HMR_API_LEVEL}" \

@@ -22,6 +22,7 @@ android {
 
     lint {
         abortOnError = true
+        lintConfig = file("lint.xml")
         warningsAsErrors = true
     }
 }
