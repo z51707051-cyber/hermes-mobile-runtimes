@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Hermes Mobile Runtime</string>
+    <string name="trial_connection_pending">Developer preview · Not connected\nHermes task connection is not available in this build. Device permissions alone do not enable remote actions.</string>
+    <string name="trial_permissions_help">To test device observation, enable Hermes screen observer in Accessibility settings. Notification access is optional. You can revoke either permission in Android settings; this page refreshes when you return.</string>
+    <string name="open_accessibility_settings">Screen observation settings</string>
+    <string name="open_notification_settings">Notification access settings</string>
     <string name="bootstrap_title">%1$s bootstrap</string>
     <string name="bootstrap_status">%1$s</string>
     <string name="capabilities_disabled">No device capabilities are enabled.</string>

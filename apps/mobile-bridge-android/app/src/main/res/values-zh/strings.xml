@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hermes 手机运行时</string>
+    <string name="trial_connection_pending">开发预览版 · 未连接\n此版本尚未开放 Hermes 任务连接。授予手机权限后，也不会自动允许远程操作。</string>
+    <string name="trial_permissions_help">测试屏幕观察前，请在无障碍设置中启用「Hermes 屏幕观察」。通知读取为可选权限。你可以随时在系统设置中撤销权限，返回此页面后会刷新可用能力。</string>
+    <string name="open_accessibility_settings">设置屏幕观察权限</string>
+    <string name="open_notification_settings">设置通知读取权限</string>
+    <string name="bootstrap_title">%1$s 初始化</string>
+    <string name="bootstrap_status">%1$s</string>
+    <string name="capabilities_disabled">尚无可用的手机能力。</string>
+    <string name="capabilities_enabled">可用能力：%1$s</string>
+    <string name="current_app_accessibility_label">Hermes 屏幕观察</string>
+    <string name="current_app_accessibility_description">读取当前应用及有限范围的屏幕状态，仅执行经过 Hermes 手机运行时授权的导航操作。</string>
+    <string name="notification_listener_label">Hermes 通知观察</string>
+</resources>

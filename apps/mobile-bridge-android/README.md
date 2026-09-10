@@ -11,6 +11,11 @@ adds protected notification/device-state observation, and HMR-112 adds a
 bounded cancellable wait. HMR-113 adds isolated emulator contracts around the
 packaged bridge. It remains a bridge, not a general Android agent.
 
+Chinese installation and device acceptance instructions are in
+[`android-developer-preview-zh.md`](../../docs/testing/android-developer-preview-zh.md).
+The launcher provides system permission settings and refreshes capability
+availability on return. It explicitly shows that task connectivity is pending.
+
 ## HMR-112 bounded execution boundary
 
 The debug APK deliberately has:
