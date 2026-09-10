@@ -2,6 +2,7 @@ package ai.hermes.mobile.runtime.bridge
 
 import android.app.Activity
 import android.app.Instrumentation
+import android.app.UiAutomation
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
@@ -57,6 +58,19 @@ class EmulatorContractInstrumentation : Instrumentation() {
     }
 
     private fun verifyGrantedScenarios() {
+        // Starting instrumentation force-stops the target process, including its
+        // AccessibilityService. Rebind only after that restart, in this test APK.
+        val automation = getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
+        val service = "ai.hermes.mobile.runtime/ai.hermes.mobile.runtime.bridge.accessibility.CurrentAppAccessibilityService"
+        for (command in listOf(
+            "settings delete secure enabled_accessibility_services",
+            "settings put secure enabled_accessibility_services $service",
+            "settings put secure accessibility_enabled 1",
+        )) {
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use {
+                it.readBytes()
+            }
+        }
         launchScenario(SCENARIO_SLOW)
         awaitForeground()
         val slow = waitForText("Slow page ready", timeoutMillis = 5_000)
@@ -99,22 +113,25 @@ class EmulatorContractInstrumentation : Instrumentation() {
     }
 
     private fun awaitForeground() {
+        var lastStatus = "no result"
         repeat(FOREGROUND_ATTEMPTS) {
             try {
                 val result = execute("phone.current_app", emptyMap())
                 val after = result["after_state"] as? Map<*, *>
+                lastStatus = "status=${result["execution_status"]}, error=${result["error"]}"
                 if (
                     result["execution_status"] == "SUCCEEDED" &&
                     after?.get("foreground_package") == FIXTURE_PACKAGE
                 ) {
                     return
                 }
-            } catch (_: Exception) {
+            } catch (failure: Exception) {
+                lastStatus = "${failure.javaClass.simpleName}: ${failure.message}"
                 // The system may deliver the first window event after the process starts.
             }
             SystemClock.sleep(FOREGROUND_POLL_MILLIS)
         }
-        fail("fixture app did not become the observed foreground app")
+        fail("fixture app did not become the observed foreground app: $lastStatus")
     }
 
     private fun waitForText(
