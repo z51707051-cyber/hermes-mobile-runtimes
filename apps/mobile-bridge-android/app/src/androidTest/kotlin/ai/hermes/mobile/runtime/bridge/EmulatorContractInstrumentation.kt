@@ -132,7 +132,9 @@ class EmulatorContractInstrumentation : Instrumentation() {
                     result["execution_status"] == "SUCCEEDED" &&
                     after?.get("foreground_package") == FIXTURE_PACKAGE
                 ) {
-                    return
+                    val screen = execute("phone.read_screen", emptyMap())
+                    if (screen["execution_status"] == "SUCCEEDED") return
+                    lastStatus = "screen status=${screen["execution_status"]}, error=${screen["error"]}"
                 }
             } catch (failure: Exception) {
                 lastStatus = "${failure.javaClass.simpleName}: ${failure.message}"
@@ -204,7 +206,7 @@ class EmulatorContractInstrumentation : Instrumentation() {
         result: Map<String, Any?>,
         scenario: String,
     ) {
-        check(result["execution_status"] == "SUCCEEDED", "$scenario execution failed")
+        check(result["execution_status"] == "SUCCEEDED", "$scenario execution failed: ${result["error"]}")
         check(verification(result)["status"] in setOf("PASSED", "NOT_APPLICABLE"), "$scenario verification failed")
     }
 
