@@ -441,9 +441,7 @@ jobs:
             | tee "$report_dir/ungranted.txt"
           grep -Fq "HMR_CONTRACT_STATUS=PASSED" "$report_dir/ungranted.txt"
 
-          adb shell settings put secure enabled_accessibility_services "$service"
-          adb shell settings put secure accessibility_enabled 1
-          sleep 2
+          # The runner grants after instrumentation restarts the target process.
           adb shell am instrument -w -r -e mode granted "$runner" \
             | tee "$report_dir/granted.txt"
           grep -Fq "HMR_CONTRACT_STATUS=PASSED" "$report_dir/granted.txt"

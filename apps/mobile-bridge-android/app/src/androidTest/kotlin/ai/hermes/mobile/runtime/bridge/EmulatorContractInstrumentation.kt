@@ -12,6 +12,8 @@ import ai.hermes.mobile.runtime.bridge.protocol.ProtocolCodec
 import ai.hermes.mobile.runtime.bridge.runtime.AndroidPolicyEnforcementPoint
 import ai.hermes.mobile.runtime.bridge.runtime.BridgeRuntime
 import ai.hermes.mobile.runtime.bridge.runtime.PepDecision
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
+import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.time.Instant
@@ -70,6 +72,13 @@ class EmulatorContractInstrumentation : Instrumentation() {
             android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use {
                 it.readBytes()
             }
+            // Let the system consume each settings transition before the next.
+            SystemClock.sleep(1_000)
+        }
+        val bindDeadline = SystemClock.elapsedRealtime() + 20_000
+        while (PhoneStateStore.availability(5_000) == PhoneStateUnavailableReason.SERVICE_DISCONNECTED) {
+            check(SystemClock.elapsedRealtime() < bindDeadline, "Accessibility service did not bind")
+            SystemClock.sleep(100)
         }
         launchScenario(SCENARIO_SLOW)
         awaitForeground()
