@@ -256,7 +256,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                     )
                 }
                 try {
-                    observeAfterAction()
+                    observeAfterAction(verification)
                 } catch (exc: Exception) {
                     throw NavigationFailureException(
                         NavigationFailureReason.POST_ACTION_OBSERVATION_FAILED,
@@ -468,15 +468,25 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun observeAfterAction(): SemanticUiCapture {
+    private fun observeAfterAction(verification: NavigationVerificationRequest?): SemanticUiCapture {
         SystemClock.sleep(POST_ACTION_SETTLE_MILLIS)
         val deadline = SystemClock.elapsedRealtime() + POST_ACTION_OBSERVE_MILLIS
         var lastFailure: PhoneStateUnavailableException? = null
+        var lastCapture: SemanticUiCapture? = null
         do {
             try {
-                return captureSemanticUi(POST_ACTION_UI_LIMITS)
+                val capture = captureSemanticUi(POST_ACTION_UI_LIMITS)
+                lastCapture = capture
+                lastFailure = null
+                if (verification == null || NavigationVerifier.evaluate(capture, verification).status == "PASSED") {
+                    return capture
+                }
+                // Android can acknowledge Back before the dialog animation finishes.
+                // Observe again within the existing bound; never repeat the action.
+                SystemClock.sleep(POST_ACTION_POLL_MILLIS)
             } catch (exc: PhoneStateUnavailableException) {
                 lastFailure = exc
+                lastCapture = null
                 if (
                     exc.reason !in
                     setOf(
@@ -490,6 +500,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                 SystemClock.sleep(POST_ACTION_POLL_MILLIS)
             }
         } while (SystemClock.elapsedRealtime() < deadline)
+        lastCapture?.let { return it }
         throw lastFailure
             ?: PhoneStateUnavailableException(PhoneStateUnavailableReason.UI_CAPTURE_FAILED)
     }

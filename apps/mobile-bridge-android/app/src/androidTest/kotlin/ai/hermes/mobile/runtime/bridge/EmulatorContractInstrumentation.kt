@@ -148,15 +148,28 @@ class EmulatorContractInstrumentation : Instrumentation() {
     private fun waitForText(
         expected: String,
         timeoutMillis: Int,
-    ): Map<String, Any?> =
-        execute(
-            tool = "phone.wait",
-            parameters =
-                mapOf(
-                    "timeout_ms" to timeoutMillis,
+    ): Map<String, Any?> {
+        val deadline = SystemClock.elapsedRealtime() + timeoutMillis
+        while (true) {
+            val remaining = (deadline - SystemClock.elapsedRealtime()).coerceAtLeast(1).toInt()
+            val result = execute(
+                tool = "phone.wait",
+                parameters = mapOf(
+                    "timeout_ms" to remaining,
                     "condition" to mapOf("kind" to "TEXT_PRESENT", "expected" to expected),
                 ),
-        )
+            )
+            val error = result["error"] as? Map<*, *>
+            val details = error?.get("details") as? Map<*, *>
+            // Only retry read-only observation when the provider explicitly asks
+            // for it during a window transition. Keep one overall deadline.
+            if (error?.get("retry_disposition") != "REOBSERVE" ||
+                details?.get("reason") !in setOf("UI_WINDOW_MISMATCH", "ACTIVE_WINDOW_UNAVAILABLE", "NO_WINDOW_STATE") ||
+                SystemClock.elapsedRealtime() >= deadline
+            ) return result
+            SystemClock.sleep(100)
+        }
+    }
 
     private fun execute(
         tool: String,
@@ -207,7 +220,7 @@ class EmulatorContractInstrumentation : Instrumentation() {
         scenario: String,
     ) {
         check(result["execution_status"] == "SUCCEEDED", "$scenario execution failed: ${result["error"]}")
-        check(verification(result)["status"] in setOf("PASSED", "NOT_APPLICABLE"), "$scenario verification failed")
+        check(verification(result)["status"] in setOf("PASSED", "NOT_APPLICABLE"), "$scenario verification failed: ${verification(result)}")
     }
 
     @Suppress("UNCHECKED_CAST")
