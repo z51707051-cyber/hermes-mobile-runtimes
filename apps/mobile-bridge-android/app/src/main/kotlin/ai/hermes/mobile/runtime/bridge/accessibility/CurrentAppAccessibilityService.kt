@@ -485,6 +485,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         var lastCapture: SemanticUiCapture? = null
         do {
             try {
+                refreshPostActionWindow()
                 val capture = captureSemanticUi(POST_ACTION_UI_LIMITS)
                 lastCapture = capture
                 lastFailure = null
@@ -513,6 +514,30 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         lastCapture?.let { return it }
         throw lastFailure
             ?: PhoneStateUnavailableException(PhoneStateUnavailableReason.UI_CAPTURE_FAILED)
+    }
+
+    /** Closing a dialog need not send a new Activity window-state event on API 30. */
+    @Suppress("DEPRECATION")
+    private fun refreshPostActionWindow() {
+        val root = rootInActiveWindow
+            ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.ACTIVE_WINDOW_UNAVAILABLE)
+        try {
+            val packageName = root.packageName?.toString()
+                ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.ACTIVE_WINDOW_UNAVAILABLE)
+            try {
+                PhoneStateStore.visualCaptureAnchor(packageName, root.windowId)
+            } catch (exc: PhoneStateUnavailableException) {
+                if (exc.reason !in setOf(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH, PhoneStateUnavailableReason.NO_WINDOW_STATE)) {
+                    throw exc
+                }
+                // Establish only observed root identity after the authorized action.
+                // Activity identity is unknown; subsequent capture must match this
+                // exact package/window before it can publish semantic evidence.
+                PhoneStateStore.recordWindow(packageName, activityName = null, windowId = root.windowId)
+            }
+        } finally {
+            root.recycle()
+        }
     }
 
     private fun targetDescriptor(

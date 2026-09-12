@@ -10,6 +10,29 @@ import org.junit.Test
 
 class PhoneStateObserverTest {
     @Test
+    fun postActionRootIdentityDoesNotReuseDialogActivityOrAcceptOldWindowEvidence() {
+        var sequence = 0
+        val tracker = PhoneStateObserver(
+            elapsedClock = ElapsedRealtimeClock { 100L },
+            epochClock = EpochClock { 1_788_150_000_000L },
+            stateIds = StateIdGenerator { "state-${++sequence}" },
+        )
+        tracker.markConnected()
+        tracker.recordWindow("com.example.app", "android.app.Dialog", 2)
+        tracker.recordWindow("com.example.app", null, 1)
+        assertNull(tracker.current(1_000).activityName)
+        assertEquals(PhoneStateCaptureStatus.PARTIAL, tracker.current(1_000).captureStatus)
+        val stale = assertThrows(PhoneStateUnavailableException::class.java) {
+            tracker.recordUiTree("com.example.app", 2, artifact().digest, emptyList(), artifact())
+        }
+        assertEquals(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH, stale.reason)
+        val captured = tracker.recordUiTree("com.example.app", 1, artifact().digest, emptyList(), artifact())
+        assertNull(captured.activityName)
+        assertEquals(PhoneStateCaptureStatus.COMPLETE, captured.captureStatus)
+        assertEquals("state-2", captured.previousStateId)
+    }
+
+    @Test
     fun invalidatingDependentStateKeepsServiceConnectedButRequiresANewObservation() {
         var stateSequence = 0
         val tracker =
