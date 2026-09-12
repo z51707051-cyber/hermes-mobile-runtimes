@@ -72,14 +72,16 @@ class FixtureActivity : Activity() {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ),
         )
-        root.setOnApplyWindowInsetsListener { _, insets ->
+        // On API 30 the decor can consume IME insets before the content root.
+        // Observe at the decor, then preserve its normal inset dispatch.
+        window.decorView.setOnApplyWindowInsetsListener { view, insets ->
             status.text =
                 if (insets.isVisible(WindowInsets.Type.ime())) {
                     "Keyboard visible"
                 } else {
                     "Keyboard hidden"
                 }
-            insets
+            view.onApplyWindowInsets(insets)
         }
         setContentView(root)
         input.requestFocus()
