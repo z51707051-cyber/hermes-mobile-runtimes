@@ -81,11 +81,21 @@ class CurrentAppAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        PhoneStateStore.recordWindow(
-            packageName = event.packageName?.toString(),
-            activityName = event.className?.toString(),
-            windowId = event.windowId,
-        )
+        // IME and closing-dialog events can refer to a window other than the
+        // active root. Correlate identity only; do not traverse or retain UI here.
+        val root = rootInActiveWindow ?: return
+        try {
+            val activePackage = root.packageName?.toString() ?: return
+            if (activePackage != event.packageName?.toString()) return
+            PhoneStateStore.recordWindow(
+                packageName = activePackage,
+                activityName = event.className?.toString(),
+                windowId = root.windowId,
+            )
+        } finally {
+            @Suppress("DEPRECATION")
+            root.recycle()
+        }
     }
 
     @Suppress("DEPRECATION")
