@@ -925,7 +925,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         const val MAX_TARGET_TEXT_CHARS = 4_096
         const val MAX_TARGET_METADATA_CHARS = 512
         const val POST_ACTION_SETTLE_MILLIS = 200L
-        const val POST_ACTION_OBSERVE_MILLIS = 1_500L
+        const val POST_ACTION_OBSERVE_MILLIS = 5_000L
         const val POST_ACTION_POLL_MILLIS = 100L
         const val GESTURE_COMPLETION_GRACE_MILLIS = 1_000L
         const val MAX_GESTURE_WAIT_MILLIS = 6_000L
