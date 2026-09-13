@@ -81,11 +81,21 @@ class CurrentAppAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        PhoneStateStore.recordWindow(
-            packageName = event.packageName?.toString(),
-            activityName = event.className?.toString(),
-            windowId = event.windowId,
-        )
+        // IME and closing-dialog events can refer to a window other than the
+        // active root. Correlate identity only; do not traverse or retain UI here.
+        val root = rootInActiveWindow ?: return
+        try {
+            val activePackage = root.packageName?.toString() ?: return
+            if (activePackage != event.packageName?.toString()) return
+            PhoneStateStore.recordWindow(
+                packageName = activePackage,
+                activityName = event.className?.toString(),
+                windowId = root.windowId,
+            )
+        } finally {
+            @Suppress("DEPRECATION")
+            root.recycle()
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -256,7 +266,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                     )
                 }
                 try {
-                    observeAfterAction()
+                    observeAfterAction(verification)
                 } catch (exc: Exception) {
                     throw NavigationFailureException(
                         NavigationFailureReason.POST_ACTION_OBSERVATION_FAILED,
@@ -468,15 +478,26 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun observeAfterAction(): SemanticUiCapture {
+    private fun observeAfterAction(verification: NavigationVerificationRequest?): SemanticUiCapture {
         SystemClock.sleep(POST_ACTION_SETTLE_MILLIS)
         val deadline = SystemClock.elapsedRealtime() + POST_ACTION_OBSERVE_MILLIS
         var lastFailure: PhoneStateUnavailableException? = null
+        var lastCapture: SemanticUiCapture? = null
         do {
             try {
-                return captureSemanticUi(POST_ACTION_UI_LIMITS)
+                refreshPostActionWindow()
+                val capture = captureSemanticUi(POST_ACTION_UI_LIMITS)
+                lastCapture = capture
+                lastFailure = null
+                if (verification == null || NavigationVerifier.evaluate(capture, verification).status == "PASSED") {
+                    return capture
+                }
+                // Android can acknowledge Back before the dialog animation finishes.
+                // Observe again within the existing bound; never repeat the action.
+                SystemClock.sleep(POST_ACTION_POLL_MILLIS)
             } catch (exc: PhoneStateUnavailableException) {
                 lastFailure = exc
+                lastCapture = null
                 if (
                     exc.reason !in
                     setOf(
@@ -490,8 +511,33 @@ class CurrentAppAccessibilityService : AccessibilityService() {
                 SystemClock.sleep(POST_ACTION_POLL_MILLIS)
             }
         } while (SystemClock.elapsedRealtime() < deadline)
+        lastCapture?.let { return it }
         throw lastFailure
             ?: PhoneStateUnavailableException(PhoneStateUnavailableReason.UI_CAPTURE_FAILED)
+    }
+
+    /** Closing a dialog need not send a new Activity window-state event on API 30. */
+    @Suppress("DEPRECATION")
+    private fun refreshPostActionWindow() {
+        val root = rootInActiveWindow
+            ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.ACTIVE_WINDOW_UNAVAILABLE)
+        try {
+            val packageName = root.packageName?.toString()
+                ?: throw PhoneStateUnavailableException(PhoneStateUnavailableReason.ACTIVE_WINDOW_UNAVAILABLE)
+            try {
+                PhoneStateStore.visualCaptureAnchor(packageName, root.windowId)
+            } catch (exc: PhoneStateUnavailableException) {
+                if (exc.reason !in setOf(PhoneStateUnavailableReason.UI_WINDOW_MISMATCH, PhoneStateUnavailableReason.NO_WINDOW_STATE)) {
+                    throw exc
+                }
+                // Establish only observed root identity after the authorized action.
+                // Activity identity is unknown; subsequent capture must match this
+                // exact package/window before it can publish semantic evidence.
+                PhoneStateStore.recordWindow(packageName, activityName = null, windowId = root.windowId)
+            }
+        } finally {
+            root.recycle()
+        }
     }
 
     private fun targetDescriptor(
@@ -914,7 +960,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         const val MAX_TARGET_TEXT_CHARS = 4_096
         const val MAX_TARGET_METADATA_CHARS = 512
         const val POST_ACTION_SETTLE_MILLIS = 200L
-        const val POST_ACTION_OBSERVE_MILLIS = 1_500L
+        const val POST_ACTION_OBSERVE_MILLIS = 5_000L
         const val POST_ACTION_POLL_MILLIS = 100L
         const val GESTURE_COMPLETION_GRACE_MILLIS = 1_000L
         const val MAX_GESTURE_WAIT_MILLIS = 6_000L

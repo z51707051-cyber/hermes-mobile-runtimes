@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Match the reviewed HMR-006 API 36 lane used by the bridge app. -->
+    <issue id="OldTargetApi">
+        <ignore path="build.gradle.kts" />
+    </issue>
+    <issue id="GradleDependency">
+        <ignore regexp="compileSdk" />
+    </issue>
+    <!-- AGP 9.3.2 uses the reviewed Gradle 9.5.0 baseline. -->
+    <issue id="AndroidGradlePluginVersion">
+        <ignore regexp="Gradle than 9\.5\.0" />
+    </issue>
+</lint>

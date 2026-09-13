@@ -19,7 +19,8 @@ android {
         versionCode = 1
         versionName = "0.1.0-dev"
 
-        testInstrumentationRunner = "android.app.Instrumentation"
+        testInstrumentationRunner =
+            "ai.hermes.mobile.runtime.bridge.EmulatorContractInstrumentation"
     }
 
     buildTypes {

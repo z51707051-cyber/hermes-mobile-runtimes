@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "hermes-mobile-bridge"
 include(":app")
-
+include(":fixture-app")

@@ -143,6 +143,7 @@ Status values are `required`, `deferred` or `accepted`. All entries below are
 | HMR-T027 | Compromised planner exhausts screenshot/notification reads | Rate/size budgets and sensitivity policy at broker/device | Quota tests bound collection and audit denial |
 | HMR-T028 | Accessibility service is abused while device is locked | Lock-state policy, sensitive-app denylist and visible device indicator | Locked-device tests deny disallowed observation/action |
 | HMR-T029 | Conditional wait is used for unbounded polling or sensitive UI accumulation | 30 s schema bound, action/auth expiry, cancellation, artifact-free probes and 100 ms cadence | Deadline/cancel/partial/disconnect tests terminate with typed results and no artifacts |
+| HMR-T030 | Emulator fixture or allow-only test PEP leaks into the release APK | Separate fixture and `androidTest` APKs; release manifest/file inspection | Release APK inventory contains neither fixture Activity nor contract Instrumentation |
 
 ## 7. Permission and threat relationship
 

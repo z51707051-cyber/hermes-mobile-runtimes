@@ -89,7 +89,8 @@ developer snapshots are not acceptable evidence.
 
 The every-PR vertical slice is `phone.current_app` plus capability negotiation,
 permission denial, audit correlation and one verified navigation action. HMR-113
-defines the deterministic fixture app used by the full suite.
+provides the deterministic fixture app and clean API 30/API 36 grant/revoke,
+slow-page, dialog, IME and changed-UI contracts used by the full suite.
 
 Android 12 restricts starting foreground services from the background. Android
 14 requires declared foreground-service types and corresponding permissions;

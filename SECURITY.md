@@ -103,6 +103,13 @@ visible text or action target is retained or returned. Polling is limited to
 one capture per 100 ms, performs no action retry and cannot outlive the
 terminal Tool result.
 
+HMR-113 adds no production authority. Its exported synthetic Activity lives in
+a separately installed fixture APK, while its allow-only PEP delegate lives in
+the `androidTest` APK; neither source set is packaged in release. Emulator-only
+secure-setting commands grant and revoke exactly the reviewed Accessibility
+service. Tests use synthetic content and store system-image hashes plus bounded
+diagnostics for 14 days; no real account or user data is permitted in evidence.
+
 ---
 
 # Hermes Agent Security Policy

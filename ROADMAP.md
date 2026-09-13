@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Roadmap
 
-> Status: Phase 1 capability implementation in progress; bounded wait in review
+> Status: Phase 1 hardening in progress; emulator contract harness in review
 > Last updated: 2026-09-09
 
 ## 1. Delivery policy
@@ -71,8 +71,8 @@ Repository prerequisites now have the following status:
 | HMR-109 | Protected `phone.screenshot` artifact | Complete; bounded image, keyed fingerprint and encrypted ephemeral artifact |
 | HMR-110 | Navigation action set | Complete; state-bound semantic actions with device risk upgrade and post-observation |
 | HMR-111 | Notifications and device state | Complete; protected cursor/dedupe notifications and least-authority state projection |
-| HMR-112 | Bounded wait/transition policy | In review; deadline/authorization bound, cancellation and semantic conditions |
-| HMR-113 | Emulator contract-test harness | Dialog/keyboard/slow/UI-change fixtures |
+| HMR-112 | Bounded wait/transition policy | Complete; deadline/authorization bound, cancellation and semantic conditions |
+| HMR-113 | Emulator contract-test harness | In review; clean API 30/36 grant/revoke and dialog/keyboard/slow/UI-change fixtures |
 | HMR-114 | CI quality gates | Python/Kotlin/schema/lint/license/security |
 
 Detailed acceptance criteria are in the research report §13.

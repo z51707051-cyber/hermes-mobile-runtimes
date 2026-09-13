@@ -1,6 +1,6 @@
 # Hermes Mobile Runtime Architecture
 
-> Status: Phase 1 bounded wait implementation in review
+> Status: Phase 1 emulator contract harness in review
 > Last reviewed: 2026-09-09
 > The protected route now performs bounded navigation only against fresh semantic observations and verifies every accepted action.
 
@@ -34,6 +34,8 @@ Notification cursor/dedupe and least-authority device-state projection are
 fixed by [`ADR-0011`](docs/adr/0011-notification-and-device-state-observation.md).
 Bounded wait deadlines, cancellation and semantic conditions are fixed by
 [`ADR-0012`](docs/adr/0012-bounded-cancellable-wait.md).
+The isolated synthetic fixture and emulator evidence boundary are fixed by
+[`ADR-0013`](docs/adr/0013-deterministic-emulator-contract-harness.md).
 
 This decision separates two responsibilities:
 
@@ -195,6 +197,12 @@ HMAC-fingerprinted semantic probes; partial observations cannot pass and raw
 visible text never enters Tool results or Audit. The provider polls at a
 bounded cadence, performs no action retry and cannot continue in the
 background after returning.
+
+HMR-113 adds a test-only synthetic fixture APK and packaged Instrumentation
+contracts on clean API 30/API 36 emulators. The lanes prove Accessibility
+grant/revoke and real semantic re-observation for delayed content, dialogs,
+IME visibility and changed UI, including a verified Back action. Fixture
+control code and synthetic content do not enter the release APK.
 
 `INTERNET` and `ACCESS_NETWORK_STATE` are the only requested Android
 permissions. The production PEP
