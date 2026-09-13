@@ -82,6 +82,13 @@ class EmulatorContractInstrumentation : Instrumentation() {
         }
         launchScenario(SCENARIO_SLOW)
         awaitForeground()
+        checkSuccess(waitForText("Loading synthetic page", 5_000), "slow page baseline")
+        targetContext.startActivity(
+            Intent("ai.hermes.mobile.fixture.ARM_SLOW").apply {
+                component = ComponentName(FIXTURE_PACKAGE, FIXTURE_ACTIVITY)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            },
+        )
         val slow = waitForText("Slow page ready", timeoutMillis = 5_000)
         checkSuccess(slow, "slow page")
         check((slow["duration"] as Number).toLong() >= MINIMUM_SLOW_WAIT_MILLIS, "slow page was not re-observed")

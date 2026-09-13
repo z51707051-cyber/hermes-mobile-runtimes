@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -17,6 +18,18 @@ import android.widget.TextView
 /** Deterministic, synthetic UI states used only by the emulator contract lane. */
 @SuppressLint("SetTextI18n")
 class FixtureActivity : Activity() {
+    private var pendingSlowStatus: TextView? = null
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action == "ai.hermes.mobile.fixture.ARM_SLOW") {
+            pendingSlowStatus?.let { status ->
+                pendingSlowStatus = null
+                status.postDelayed({ status.text = "Slow page ready" }, SLOW_DELAY_MILLIS)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         when (intent.getStringExtra(EXTRA_SCENARIO)) {
@@ -31,7 +44,7 @@ class FixtureActivity : Activity() {
     private fun slowPage() {
         val status = label("Loading synthetic page")
         setContentView(status)
-        status.postDelayed({ status.text = "Slow page ready" }, SLOW_DELAY_MILLIS)
+        pendingSlowStatus = status
     }
 
     private fun delayedDialog() {
