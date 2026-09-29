@@ -18,6 +18,13 @@ class ModelEndpointValidatorTest {
                 "deepseek-chat",
             ).baseUrl,
         )
+        assertEquals(
+            ModelEndpoint("https://api.deepseek.com", "deepseek-chat"),
+            ModelEndpointValidator.validate(
+                "https://api.deepseek.com/",
+                "deepseek-chat",
+            ),
+        )
     }
 
     @Test
