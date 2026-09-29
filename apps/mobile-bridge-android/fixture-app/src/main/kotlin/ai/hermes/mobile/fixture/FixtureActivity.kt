@@ -19,6 +19,7 @@ import android.widget.TextView
 @SuppressLint("SetTextI18n")
 class FixtureActivity : Activity() {
     private var pendingSlowStatus: TextView? = null
+    private var pendingUiChangeTarget: TextView? = null
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -26,6 +27,18 @@ class FixtureActivity : Activity() {
             pendingSlowStatus?.let { status ->
                 pendingSlowStatus = null
                 status.postDelayed({ status.text = "Slow page ready" }, SLOW_DELAY_MILLIS)
+            }
+        }
+        if (intent.action == ACTION_ARM_UI_CHANGE) {
+            pendingUiChangeTarget?.let { target ->
+                pendingUiChangeTarget = null
+                target.postDelayed(
+                    {
+                        target.text = "Replacement element"
+                        target.contentDescription = "Replacement semantic target"
+                    },
+                    UI_CHANGE_DELAY_MILLIS,
+                )
             }
         }
     }
@@ -111,13 +124,7 @@ class FixtureActivity : Activity() {
     private fun changingPage() {
         val target = label("Original element")
         setContentView(target)
-        target.postDelayed(
-            {
-                target.text = "Replacement element"
-                target.contentDescription = "Replacement semantic target"
-            },
-            UI_CHANGE_DELAY_MILLIS,
-        )
+        pendingUiChangeTarget = target
     }
 
     private fun label(value: String): TextView =
@@ -136,6 +143,7 @@ class FixtureActivity : Activity() {
         const val SCENARIO_DIALOG = "dialog"
         const val SCENARIO_KEYBOARD = "keyboard"
         const val SCENARIO_UI_CHANGE = "ui_change"
+        const val ACTION_ARM_UI_CHANGE = "ai.hermes.mobile.fixture.ARM_UI_CHANGE"
         private const val SLOW_DELAY_MILLIS = 3_000L
         private const val DIALOG_DELAY_MILLIS = 2_000L
         private const val KEYBOARD_DELAY_MILLIS = 500L

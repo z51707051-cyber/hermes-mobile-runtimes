@@ -105,6 +105,13 @@ class EmulatorContractInstrumentation : Instrumentation() {
 
         launchScenario(SCENARIO_UI_CHANGE)
         awaitForeground()
+        checkSuccess(waitForText("Original element", 5_000), "UI change baseline")
+        targetContext.startActivity(
+            Intent(ACTION_ARM_UI_CHANGE).apply {
+                component = ComponentName(FIXTURE_PACKAGE, FIXTURE_ACTIVITY)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            },
+        )
         val changed =
             execute(
                 tool = "phone.wait",
@@ -269,6 +276,7 @@ class EmulatorContractInstrumentation : Instrumentation() {
         const val SCENARIO_DIALOG = "dialog"
         const val SCENARIO_KEYBOARD = "keyboard"
         const val SCENARIO_UI_CHANGE = "ui_change"
+        const val ACTION_ARM_UI_CHANGE = "ai.hermes.mobile.fixture.ARM_UI_CHANGE"
         const val ACTION_BOUND_SECONDS = 10L
         const val FOREGROUND_ATTEMPTS = 50
         const val FOREGROUND_POLL_MILLIS = 100L
