@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.app.UiAutomation
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
@@ -65,6 +66,13 @@ class EmulatorContractInstrumentation : Instrumentation() {
         )
         check(plaintext.all { it == '\u0000' }, "caller API key buffer was not erased")
         check(store.status().hasApiKey, "encrypted model API key was not persisted")
+        val persistedValues =
+            targetContext.getSharedPreferences("hermes_model_config", Context.MODE_PRIVATE)
+                .all.values.map(Any?::toString)
+        check(
+            persistedValues.none { "emulator-secret-value" in it },
+            "model API key was persisted as plaintext",
+        )
         val decrypted = store.readApiKey()
         try {
             check(
