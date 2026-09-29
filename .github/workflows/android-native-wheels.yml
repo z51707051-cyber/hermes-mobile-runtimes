@@ -156,7 +156,7 @@ jobs:
           set -euo pipefail
           target=experiments/android-hermes-import-probe/app/src/generated/python
           mkdir -p "$target"
-          cp -R agent tools hermes_cli "$target/"
+          cp -R agent tools hermes_cli plugins "$target/"
           find . -maxdepth 1 -type f -name '*.py' -exec cp '{}' "$target/" ';'
       - name: Package actual Hermes bootstrap set
         id: import-build
