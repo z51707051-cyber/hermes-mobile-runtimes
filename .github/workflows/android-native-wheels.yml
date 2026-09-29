@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [pydantic-core, jiter]
+        package: [cryptography, jiter, pydantic-core, pillow, psutil, ruamel-yaml-clib]
         arch: [arm64_v8a, x86_64]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -63,6 +63,7 @@ jobs:
           esac
           rustup target add "$rust_target"
       - name: Cross-compile CPython 3.13 Android wheel
+        id: wheel-build
         env:
           ANDROID_API_LEVEL: '24'
           CIBW_BUILD_FRONTEND: 'build[uv]'
@@ -71,18 +72,33 @@ jobs:
           SOURCE_PATH: ${{ steps.source.outputs.path }}
           TARGET_ARCH: ${{ matrix.arch }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           mkdir -p wheelhouse
+          mkdir -p wheel-evidence
+          set +e
           build-wheel-env/bin/python -m cibuildwheel \
             --only "cp313-android_${TARGET_ARCH}" \
             --output-dir wheelhouse \
-            "$SOURCE_PATH"
-          sha256sum wheelhouse/*.whl | tee wheelhouse/SHA256SUMS
+            "$SOURCE_PATH" 2>&1 | tee wheel-evidence/build.log
+          build_status=${PIPESTATUS[0]}
+          set -e
+          if [[ "$build_status" == 0 ]]; then
+            echo 'built=true' >> "$GITHUB_OUTPUT"
+            echo 'wheel_build=passed' > wheel-evidence/status.txt
+            sha256sum wheelhouse/*.whl | tee wheelhouse/SHA256SUMS
+          else
+            echo 'built=false' >> "$GITHUB_OUTPUT"
+            echo "wheel_build=failed exit=$build_status" > wheel-evidence/status.txt
+            echo '::warning::Exact Android wheel build failed; see the evidence artifact.'
+          fi
+          exit 0
       - name: Upload private wheel evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: android-wheel-${{ matrix.package }}-${{ matrix.arch }}
-          path: wheelhouse/
+          path: |
+            wheelhouse/
+            wheel-evidence/
           if-no-files-found: warn
           retention-days: 14
