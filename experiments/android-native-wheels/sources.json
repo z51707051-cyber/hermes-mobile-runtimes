@@ -29,6 +29,12 @@
     "sha256": "0746f5f8d406af344fd547f1c8daa5f5c33dbc293bb8d6a16d80b4bb88f59372",
     "size": 493740
   },
+  "rpds-py": {
+    "version": "0.30.0",
+    "url": "https://files.pythonhosted.org/packages/20/af/3f2f423103f1113b36230496629986e0ef7e199d2aa8392452b484b38ced/rpds_py-0.30.0.tar.gz",
+    "sha256": "dd8ff7cf90014af0c0f787eea34794ebf6415242ee1d6fa91eaba725cc441e84",
+    "size": 69469
+  },
   "ruamel-yaml-clib": {
     "version": "0.2.15",
     "url": "https://files.pythonhosted.org/packages/ea/97/60fda20e2fb54b83a61ae14648b0817c8f5d84a3821e40bfbdae1437026a/ruamel_yaml_clib-0.2.15.tar.gz",

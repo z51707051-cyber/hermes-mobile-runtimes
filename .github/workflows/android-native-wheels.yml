@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [cryptography, jiter, pydantic-core, pillow, psutil, ruamel-yaml-clib]
+        package: [cryptography, jiter, pydantic-core, pillow, psutil, rpds-py, ruamel-yaml-clib]
         arch: [arm64_v8a, x86_64]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -127,11 +127,11 @@ jobs:
           wheels = sorted(path.name for path in Path(
               "experiments/android-hermes-import-probe/app/android-wheelhouse"
           ).glob("*.whl"))
-          for package in ("jiter", "pydantic_core", "ruamel_yaml_clib"):
+          for package in ("jiter", "pydantic_core", "rpds_py", "ruamel_yaml_clib"):
               for abi in ("arm64_v8a", "x86_64"):
                   if not any(name.startswith(package + "-") and f"android_24_{abi}" in name for name in wheels):
                       raise SystemExit(f"missing exact bootstrap wheel: {package} {abi}")
-          if len(wheels) != 6:
+          if len(wheels) != 8:
               raise SystemExit(f"unexpected bootstrap wheel count: {len(wheels)}")
           PY
           sha256sum "$wheelhouse"/*.whl | tee "$evidence/bootstrap-wheel-sha256.txt"

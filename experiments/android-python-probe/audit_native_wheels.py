@@ -22,7 +22,7 @@ from urllib.request import Request, urlopen
 
 NATIVE_PACKAGES = {
     "cryptography", "jiter", "pillow", "psutil", "pydantic-core", "pyyaml",
-    "ruamel-yaml-clib",
+    "rpds-py", "ruamel-yaml-clib",
 }
 
 
