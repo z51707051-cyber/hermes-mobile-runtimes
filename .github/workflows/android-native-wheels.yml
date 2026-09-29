@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           uv venv --python 3.12 build-wheel-env
-          uv pip install --python build-wheel-env/bin/python --require-hashes \
+          uv pip install --no-config --python build-wheel-env/bin/python --require-hashes \
             -r experiments/android-native-wheels/build-requirements.lock
       - name: Fetch hash-pinned source
         id: source
