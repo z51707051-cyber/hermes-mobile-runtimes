@@ -23,6 +23,9 @@ android {
 chaquopy {
     defaultConfig {
         version = "3.13"
-        pip { install("-r", "requirements-hermes-core.txt") }
+        pip {
+            options("--find-links", "android-wheelhouse")
+            install("-r", "requirements-hermes-core.txt")
+        }
     }
 }
