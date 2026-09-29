@@ -13,6 +13,8 @@
     <string name="model_settings_title">模型 API 设置</string>
     <string name="model_key_configured">API Key 已使用 Android 密钥库加密保存。</string>
     <string name="model_key_missing">尚未配置 API Key。</string>
+    <string name="use_openai_preset">使用 OpenAI 默认配置</string>
+    <string name="use_deepseek_preset">使用 DeepSeek 默认配置</string>
     <string name="model_base_url_hint">HTTPS API 地址，例如 https://api.openai.com/v1</string>
     <string name="model_name_hint">模型名称</string>
     <string name="model_api_key_hint">API Key</string>
