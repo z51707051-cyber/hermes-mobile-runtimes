@@ -102,7 +102,7 @@ class MainActivity : Activity() {
         val model =
             EditText(this).apply {
                 hint = getString(R.string.model_name_hint)
-                setText(modelStatus.endpoint?.model.orEmpty())
+                setText(modelStatus.endpoint?.model ?: DEFAULT_MODEL)
                 inputType = InputType.TYPE_CLASS_TEXT
                 importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             }
@@ -117,6 +117,24 @@ class MainActivity : Activity() {
                 inputType =
                     InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             }
+        layout.addView(
+            Button(this).apply {
+                setText(R.string.use_openai_preset)
+                setOnClickListener {
+                    baseUrl.setText(OPENAI_BASE_URL)
+                    model.setText(OPENAI_MODEL)
+                }
+            },
+        )
+        layout.addView(
+            Button(this).apply {
+                setText(R.string.use_deepseek_preset)
+                setOnClickListener {
+                    baseUrl.setText(DEEPSEEK_BASE_URL)
+                    model.setText(DEEPSEEK_MODEL)
+                }
+            },
+        )
         layout.addView(baseUrl)
         layout.addView(model)
         layout.addView(apiKey)
@@ -191,6 +209,11 @@ class MainActivity : Activity() {
     }
 
     private companion object {
-        const val DEFAULT_BASE_URL = "https://api.openai.com/v1"
+        const val OPENAI_BASE_URL = "https://api.openai.com/v1"
+        const val OPENAI_MODEL = "gpt-5"
+        const val DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+        const val DEEPSEEK_MODEL = "deepseek-chat"
+        const val DEFAULT_BASE_URL = OPENAI_BASE_URL
+        const val DEFAULT_MODEL = OPENAI_MODEL
     }
 }
