@@ -26,6 +26,13 @@ jobs:
         with:
           version: '0.9.28'
       - run: uv python install 3.11
+      - name: Inventory exact native dependency wheels
+        run: |
+          set -euo pipefail
+          mkdir -p experiments/android-python-probe/evidence
+          python3 experiments/android-python-probe/audit_native_wheels.py --online \
+            > experiments/android-python-probe/evidence/native-wheels.json
+          python3 -m json.tool experiments/android-python-probe/evidence/native-wheels.json >/dev/null
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
       - name: Install Android 15 test environment
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'emulator' 'system-images;android-35;google_apis;x86_64'
