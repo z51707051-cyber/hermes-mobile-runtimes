@@ -5,6 +5,8 @@ import android.app.Instrumentation;
 import android.os.Bundle;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import org.json.JSONObject;
 
 public final class ImportInstrumentation extends Instrumentation {
@@ -24,7 +26,9 @@ public final class ImportInstrumentation extends Instrumentation {
             results.putString("stream", "HERMES_AGENT_IMPORT_PASS " + report);
             finish(Activity.RESULT_OK, results);
         } catch (Throwable error) {
-            results.putString("stream", "HERMES_AGENT_IMPORT_FAIL " + error.toString());
+            StringWriter trace = new StringWriter();
+            error.printStackTrace(new PrintWriter(trace));
+            results.putString("stream", "HERMES_AGENT_IMPORT_FAIL " + trace);
             finish(Activity.RESULT_CANCELED, results);
         }
     }
