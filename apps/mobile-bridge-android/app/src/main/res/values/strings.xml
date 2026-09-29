@@ -13,6 +13,8 @@
     <string name="model_settings_title">Model API settings</string>
     <string name="model_key_configured">API key is stored using Android Keystore encryption.</string>
     <string name="model_key_missing">API key has not been configured.</string>
+    <string name="use_openai_preset">Use OpenAI defaults</string>
+    <string name="use_deepseek_preset">Use DeepSeek defaults</string>
     <string name="model_base_url_hint">HTTPS base URL, for example https://api.openai.com/v1</string>
     <string name="model_name_hint">Model name</string>
     <string name="model_api_key_hint">API key</string>
