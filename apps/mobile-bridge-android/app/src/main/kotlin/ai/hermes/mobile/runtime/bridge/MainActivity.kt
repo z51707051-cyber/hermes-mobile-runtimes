@@ -130,7 +130,8 @@ class MainActivity : Activity() {
                                 baseUrl.text.toString(),
                                 model.text.toString(),
                             )
-                        val key = apiKey.text?.toString()?.takeIf(String::isNotBlank)?.toCharArray()
+                        val key =
+                            apiKey.text.toString().takeIf { it.isNotBlank() }?.toCharArray()
                         modelConfigStore.save(endpoint, key)
                         apiKey.text?.clear()
                         Toast.makeText(

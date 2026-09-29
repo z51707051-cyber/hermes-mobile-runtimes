@@ -92,8 +92,8 @@ class ModelConfigStore(private val context: Context) {
         require(buffer.get() == FORMAT_VERSION) { "unsupported encrypted API key format" }
         val ivLength = buffer.get().toInt() and 0xff
         require(ivLength in 12..32 && buffer.remaining() > ivLength) { "invalid encrypted API key" }
-        val iv = ByteArray(ivLength).also(buffer::get)
-        val ciphertext = ByteArray(buffer.remaining()).also(buffer::get)
+        val iv = ByteArray(ivLength).also { buffer.get(it) }
+        val ciphertext = ByteArray(buffer.remaining()).also { buffer.get(it) }
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(128, iv))
         cipher.updateAAD(AAD)
