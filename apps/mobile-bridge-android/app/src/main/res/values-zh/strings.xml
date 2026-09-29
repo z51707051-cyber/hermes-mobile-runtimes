@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Hermes 手机运行时</string>
-    <string name="trial_connection_pending">开发预览版 · 未连接\n此版本尚未开放 Hermes 任务连接。授予手机权限后，也不会自动允许远程操作。</string>
+    <string name="runtime_integration_status">开发预览版 · 正在接入手机内运行时\n当前版本尚未启动 Hermes Agent。</string>
     <string name="trial_permissions_help">测试屏幕观察前，请在无障碍设置中启用「Hermes 屏幕观察」。通知读取为可选权限。你可以随时在系统设置中撤销权限，返回此页面后会刷新可用能力。</string>
     <string name="open_accessibility_settings">设置屏幕观察权限</string>
     <string name="open_notification_settings">设置通知读取权限</string>
@@ -10,4 +10,16 @@
     <string name="current_app_accessibility_label">Hermes 屏幕观察</string>
     <string name="current_app_accessibility_description">读取当前应用及有限范围的屏幕状态，仅执行经过 Hermes 手机运行时授权的导航操作。</string>
     <string name="notification_listener_label">Hermes 通知观察</string>
+    <string name="model_settings_title">模型 API 设置</string>
+    <string name="model_key_configured">API Key 已使用 Android 密钥库加密保存。</string>
+    <string name="model_key_missing">尚未配置 API Key。</string>
+    <string name="model_base_url_hint">HTTPS API 地址，例如 https://api.openai.com/v1</string>
+    <string name="model_name_hint">模型名称</string>
+    <string name="model_api_key_hint">API Key</string>
+    <string name="model_api_key_keep_hint">留空将保留已经保存的 API Key</string>
+    <string name="save_model_settings">保存模型设置</string>
+    <string name="clear_model_api_key">清除已保存的 API Key</string>
+    <string name="model_settings_saved">模型设置已保存。</string>
+    <string name="model_settings_invalid">请输入 HTTPS API 地址和模型名称。</string>
+    <string name="model_settings_store_failed">无法安全保存模型设置。</string>
 </resources>

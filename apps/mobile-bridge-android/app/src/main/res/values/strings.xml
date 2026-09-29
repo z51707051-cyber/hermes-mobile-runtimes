@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Hermes Mobile Runtime</string>
-    <string name="trial_connection_pending">Developer preview · Not connected\nHermes task connection is not available in this build. Device permissions alone do not enable remote actions.</string>
+    <string name="runtime_integration_status">Developer preview · On-device runtime integration in progress\nThe current build does not start Hermes Agent yet.</string>
     <string name="trial_permissions_help">To test device observation, enable Hermes screen observer in Accessibility settings. Notification access is optional. You can revoke either permission in Android settings; this page refreshes when you return.</string>
     <string name="open_accessibility_settings">Screen observation settings</string>
     <string name="open_notification_settings">Notification access settings</string>
@@ -10,4 +10,16 @@
     <string name="current_app_accessibility_label">Hermes screen observer</string>
     <string name="current_app_accessibility_description">Reads the active app and bounded screen state, and performs only authorized Hermes Mobile Runtime navigation.</string>
     <string name="notification_listener_label">Hermes notification observer</string>
+    <string name="model_settings_title">Model API settings</string>
+    <string name="model_key_configured">API key is stored using Android Keystore encryption.</string>
+    <string name="model_key_missing">API key has not been configured.</string>
+    <string name="model_base_url_hint">HTTPS base URL, for example https://api.openai.com/v1</string>
+    <string name="model_name_hint">Model name</string>
+    <string name="model_api_key_hint">API key</string>
+    <string name="model_api_key_keep_hint">Leave blank to keep the stored API key</string>
+    <string name="save_model_settings">Save model settings</string>
+    <string name="clear_model_api_key">Clear stored API key</string>
+    <string name="model_settings_saved">Model settings saved.</string>
+    <string name="model_settings_invalid">Enter an HTTPS API address and model name.</string>
+    <string name="model_settings_store_failed">Model settings could not be stored securely.</string>
 </resources>

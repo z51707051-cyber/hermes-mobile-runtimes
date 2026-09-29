@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.app.UiAutomation
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
@@ -14,6 +15,8 @@ import ai.hermes.mobile.runtime.bridge.runtime.BridgeRuntime
 import ai.hermes.mobile.runtime.bridge.runtime.PepDecision
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
+import ai.hermes.mobile.runtime.bridge.model.ModelConfigStore
+import ai.hermes.mobile.runtime.bridge.model.ModelEndpoint
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.time.Instant
@@ -37,6 +40,7 @@ class EmulatorContractInstrumentation : Instrumentation() {
     override fun onStart() {
         val mode = arguments.getString(ARG_MODE, MODE_GRANTED)
         try {
+            verifyModelConfigEncryption()
             when (mode) {
                 MODE_UNGRANTED -> verifyAccessibilityUnavailable()
                 MODE_GRANTED -> verifyGrantedScenarios()
@@ -49,6 +53,35 @@ class EmulatorContractInstrumentation : Instrumentation() {
                 Activity.RESULT_CANCELED,
                 "HMR_CONTRACT_STATUS=FAILED mode=$mode\n$trace",
             )
+        }
+    }
+
+    private fun verifyModelConfigEncryption() {
+        val store = ModelConfigStore(targetContext)
+        store.clearApiKey()
+        val plaintext = "emulator-secret-value".toCharArray()
+        store.save(
+            ModelEndpoint("https://api.example.com/v1", "example-model"),
+            plaintext,
+        )
+        check(plaintext.all { it == '\u0000' }, "caller API key buffer was not erased")
+        check(store.status().hasApiKey, "encrypted model API key was not persisted")
+        val persistedValues =
+            targetContext.getSharedPreferences("hermes_model_config", Context.MODE_PRIVATE)
+                .all.values.map(Any?::toString)
+        check(
+            persistedValues.none { "emulator-secret-value" in it },
+            "model API key was persisted as plaintext",
+        )
+        val decrypted = store.readApiKey()
+        try {
+            check(
+                decrypted?.concatToString() == "emulator-secret-value",
+                "Android Keystore model API key round-trip failed",
+            )
+        } finally {
+            decrypted?.fill('\u0000')
+            store.clearApiKey()
         }
     }
 
@@ -105,6 +138,13 @@ class EmulatorContractInstrumentation : Instrumentation() {
 
         launchScenario(SCENARIO_UI_CHANGE)
         awaitForeground()
+        checkSuccess(waitForText("Original element", 5_000), "UI change baseline")
+        targetContext.startActivity(
+            Intent(ACTION_ARM_UI_CHANGE).apply {
+                component = ComponentName(FIXTURE_PACKAGE, FIXTURE_ACTIVITY)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            },
+        )
         val changed =
             execute(
                 tool = "phone.wait",
@@ -269,6 +309,7 @@ class EmulatorContractInstrumentation : Instrumentation() {
         const val SCENARIO_DIALOG = "dialog"
         const val SCENARIO_KEYBOARD = "keyboard"
         const val SCENARIO_UI_CHANGE = "ui_change"
+        const val ACTION_ARM_UI_CHANGE = "ai.hermes.mobile.fixture.ARM_UI_CHANGE"
         const val ACTION_BOUND_SECONDS = 10L
         const val FOREGROUND_ATTEMPTS = 50
         const val FOREGROUND_POLL_MILLIS = 100L
