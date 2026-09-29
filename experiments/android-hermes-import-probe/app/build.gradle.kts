@@ -21,6 +21,11 @@ android {
     }
 }
 chaquopy {
+    sourceSets {
+        getByName("main") {
+            srcDir("src/generated/python")
+        }
+    }
     defaultConfig {
         version = "3.13"
         pip {
