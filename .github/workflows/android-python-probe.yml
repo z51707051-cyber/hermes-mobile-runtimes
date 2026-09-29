@@ -136,11 +136,13 @@ jobs:
           probe_dir=experiments/android-hermes-import-probe
           mkdir -p "$probe_dir/evidence"
           export PATH="$(dirname "$(uv python find 3.13)"):$PATH"
+          set +e
           apps/mobile-bridge-android/gradlew -p "$probe_dir" --no-daemon \
             --write-locks --write-verification-metadata sha256 \
             :app:assembleDebug :app:assembleDebugAndroidTest \
             2>&1 | tee "$probe_dir/evidence/build.log"
           build_status=${PIPESTATUS[0]}
+          set -e
           if [[ "$build_status" == 0 ]]; then
             echo 'built=true' >> "$GITHUB_OUTPUT"
             echo 'dependency_resolution=passed' > "$probe_dir/evidence/status.txt"
