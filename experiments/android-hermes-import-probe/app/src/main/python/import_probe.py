@@ -13,8 +13,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 _API_KEY = "android-ci-key"
 _MODEL = "hermes-android-probe"
-_PROMPT = "Return exactly ANDROID_HERMES_AGENT_TURN_PASS"
-_RESPONSE = "ANDROID_HERMES_AGENT_TURN_PASS"
+_PROMPT = "Use phone_wait for 1 millisecond, then return exactly ANDROID_HERMES_TOOL_ROUTE_PASS"
+_RESPONSE = "ANDROID_HERMES_TOOL_ROUTE_PASS"
 
 
 def _start_model_endpoint():
@@ -65,6 +65,16 @@ def _start_model_endpoint():
                     for item in messages
                     if isinstance(item, dict) and item.get("role") == "user"
                 ]
+                tool_names = [
+                    item.get("function", {}).get("name")
+                    for item in payload.get("tools") or []
+                    if isinstance(item, dict)
+                ]
+                tool_messages = [
+                    item
+                    for item in messages
+                    if isinstance(item, dict) and item.get("role") == "tool"
+                ]
                 request_evidence = {
                     "request_index": len(evidence) + 1,
                     "path": self.path,
@@ -78,6 +88,8 @@ def _start_model_endpoint():
                         if isinstance(item, dict)
                     ],
                     "tools_present": bool(payload.get("tools")),
+                    "tool_names": tool_names,
+                    "tool_message_count": len(tool_messages),
                     "sdk_retry_count": self.headers.get(
                         "x-stainless-retry-count", "missing"
                     ),
@@ -86,52 +98,103 @@ def _start_model_endpoint():
                     "prompt_verified": _PROMPT in user_messages,
                 }
                 evidence.append(request_evidence)
-
-                chunks = (
-                    {
-                        "id": "chatcmpl-android-probe",
-                        "object": "chat.completion.chunk",
-                        "created": 0,
-                        "model": _MODEL,
-                        "choices": [
-                            {
+                if len(evidence) == 1:
+                    if "phone_wait" not in tool_names:
+                        raise AssertionError(f"phone_wait schema missing: {tool_names!r}")
+                    chunks = (
+                        {
+                            "id": "chatcmpl-android-tool",
+                            "object": "chat.completion.chunk",
+                            "created": 0,
+                            "model": _MODEL,
+                            "choices": [{
                                 "index": 0,
                                 "delta": {
                                     "role": "assistant",
-                                    "content": _RESPONSE,
+                                    "tool_calls": [{
+                                        "index": 0,
+                                        "id": "call_android_wait",
+                                        "type": "function",
+                                        "function": {"name": "phone_wait", "arguments": ""},
+                                    }],
                                 },
                                 "logprobs": None,
                                 "finish_reason": None,
-                            }
-                        ],
-                    },
-                    {
-                        "id": "chatcmpl-android-probe",
-                        "object": "chat.completion.chunk",
-                        "created": 0,
-                        "model": _MODEL,
-                        "choices": [
-                            {
+                            }],
+                        },
+                        {
+                            "id": "chatcmpl-android-tool",
+                            "object": "chat.completion.chunk",
+                            "created": 0,
+                            "model": _MODEL,
+                            "choices": [{
+                                "index": 0,
+                                "delta": {"tool_calls": [{
+                                    "index": 0,
+                                    "function": {"arguments": "{\"timeout_ms\":1}"},
+                                }]},
+                                "logprobs": None,
+                                "finish_reason": None,
+                            }],
+                        },
+                        {
+                            "id": "chatcmpl-android-tool",
+                            "object": "chat.completion.chunk",
+                            "created": 0,
+                            "model": _MODEL,
+                            "choices": [{
+                                "index": 0,
+                                "delta": {},
+                                "logprobs": None,
+                                "finish_reason": "tool_calls",
+                            }],
+                        },
+                    )
+                elif len(evidence) == 2:
+                    if len(tool_messages) != 1:
+                        raise AssertionError(f"expected one Android tool result: {messages!r}")
+                    tool_result = json.loads(tool_messages[0].get("content") or "{}")
+                    if (
+                        tool_result.get("execution_status") != "SUCCEEDED"
+                        or tool_result.get("tool") != "phone.wait"
+                    ):
+                        raise AssertionError(f"unexpected Android tool result: {tool_result!r}")
+                    chunks = (
+                        {
+                            "id": "chatcmpl-android-final",
+                            "object": "chat.completion.chunk",
+                            "created": 0,
+                            "model": _MODEL,
+                            "choices": [{
+                                "index": 0,
+                                "delta": {"role": "assistant", "content": _RESPONSE},
+                                "logprobs": None,
+                                "finish_reason": None,
+                            }],
+                        },
+                        {
+                            "id": "chatcmpl-android-final",
+                            "object": "chat.completion.chunk",
+                            "created": 0,
+                            "model": _MODEL,
+                            "choices": [{
                                 "index": 0,
                                 "delta": {},
                                 "logprobs": None,
                                 "finish_reason": "stop",
-                            }
-                        ],
-                    },
-                    {
-                        "id": "chatcmpl-android-probe",
-                        "object": "chat.completion.chunk",
-                        "created": 0,
-                        "model": _MODEL,
-                        "choices": [],
-                        "usage": {
-                            "prompt_tokens": 1,
-                            "completion_tokens": 1,
-                            "total_tokens": 2,
+                            }],
                         },
-                    },
-                )
+                    )
+                else:
+                    raise AssertionError(f"unexpected model request count: {len(evidence)}")
+                chunks += ({
+                    "id": "chatcmpl-android-usage",
+                    "object": "chat.completion.chunk",
+                    "created": 0,
+                    "model": _MODEL,
+                    "choices": [],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+                },)
                 body = "".join(
                     f"data: {json.dumps(chunk, separators=(',', ':'))}\n\n"
                     for chunk in chunks
@@ -161,12 +224,13 @@ def _start_model_endpoint():
     return endpoint, thread, evidence, discovery_probes, handler_errors
 
 
-def run():
+def run(android_bridge):
     module = None
     agent_type = None
     endpoint = None
     endpoint_thread = None
     agent = None
+    phone_tools = None
     requests = []
     discovery_probes = []
     handler_errors = []
@@ -186,6 +250,8 @@ def run():
         # modules cache profile-scoped paths at import time.
         module = importlib.import_module("run_agent")
         agent_type = getattr(module, "AIAgent")
+        phone_tools = importlib.import_module("tools.android_phone_tools")
+        phone_tools.configure_android_tool_transport(android_bridge)
         (
             endpoint,
             endpoint_thread,
@@ -200,8 +266,8 @@ def run():
             provider="custom",
             api_mode="chat_completions",
             model=_MODEL,
-            max_iterations=1,
-            enabled_toolsets=[],
+            max_iterations=3,
+            enabled_toolsets=["mobile"],
             quiet_mode=True,
             skip_context_files=True,
             load_soul_identity=False,
@@ -214,9 +280,9 @@ def run():
             raise AssertionError(f"Local model endpoint failed: {handler_errors}")
         if response.strip() != _RESPONSE:
             raise AssertionError(f"Unexpected Agent response: {response!r}")
-        if len(requests) != 1:
+        if len(requests) != 2:
             raise AssertionError(
-                f"Expected one model request, got {len(requests)}: {requests!r}"
+                f"Expected two model requests, got {len(requests)}: {requests!r}"
             )
         expected_discovery = [
             {"path": "/api/show", "authorization_verified": True}
@@ -226,7 +292,7 @@ def run():
                 f"Unexpected model discovery probes: {discovery_probes!r}"
             )
 
-        request = requests[0]
+        first_request = requests[0]
         expected_request = {
             "path": "/v1/chat/completions",
             "model": _MODEL,
@@ -235,16 +301,20 @@ def run():
             "prompt_verified": True,
         }
         unexpected = {
-            key: request.get(key)
+            key: first_request.get(key)
             for key, expected in expected_request.items()
-            if request.get(key) != expected
+            if first_request.get(key) != expected
         }
         if unexpected:
-            raise AssertionError(f"Unexpected model request evidence: {request!r}")
+            raise AssertionError(f"Unexpected model request evidence: {first_request!r}")
+
+        second_request = requests[1]
+        tool_schema_verified = "phone_wait" in first_request.get("tool_names", [])
+        tool_result_verified = second_request.get("tool_message_count") == 1
 
         return json.dumps(
             {
-                "stage": "actual_agent_model_turn",
+                "stage": "actual_agent_android_tool_route",
                 "python": sys.version.split()[0],
                 "machine": platform.machine(),
                 "module": module.__name__,
@@ -253,11 +323,20 @@ def run():
                 "response": response.strip(),
                 "request_count": len(requests),
                 "discovery_probe_count": len(discovery_probes),
-                **request,
+                "tool_schema_verified": tool_schema_verified,
+                "tool_result_verified": tool_result_verified,
+                "authorization_verified": all(
+                    request.get("authorization_verified") for request in requests
+                ),
             },
             ensure_ascii=False,
         )
     finally:
+        if phone_tools is not None:
+            try:
+                phone_tools.clear_android_tool_transport()
+            except Exception:
+                pass
         if agent is not None:
             try:
                 agent.close()
