@@ -6,6 +6,7 @@ import android.os.Bundle;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
 import ai.hermes.mobile.runtime.bridge.runtime.HermesAndroidToolBridge;
+import ai.hermes.mobile.runtime.bridge.runtime.ChaquopyHermesTaskRuntime;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.json.JSONObject;
@@ -16,12 +17,15 @@ public final class ImportInstrumentation extends Instrumentation {
         Bundle results = new Bundle();
         try (HermesAndroidToolBridge bridge = HermesAndroidToolBridge.createForUserTask()) {
             Python.start(new AndroidPlatform(getTargetContext()));
+            ChaquopyHermesTaskRuntime runtime =
+                new ChaquopyHermesTaskRuntime(getTargetContext());
             String report = Python.getInstance().getModule("import_probe")
-                .callAttr("run", bridge).toString();
+                .callAttr("run_with_launcher", bridge, runtime).toString();
             JSONObject data = new JSONObject(report);
-            if (!"actual_agent_android_tool_route".equals(data.getString("stage"))
+            if (!"launcher_embedded_agent_android_tool_route".equals(data.getString("stage"))
                     || !"AIAgent".equals(data.getString("agent_type"))
                     || !data.getBoolean("model_turn_completed")
+                    || !data.getBoolean("launcher_runtime_verified")
                     || !"ANDROID_HERMES_TOOL_ROUTE_PASS".equals(data.getString("response"))
                     || data.getInt("request_count") != 4
                     || data.getInt("discovery_probe_count") != 1
