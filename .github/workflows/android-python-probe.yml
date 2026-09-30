@@ -164,7 +164,7 @@ jobs:
             echo '::warning::Exact Hermes core dependencies did not resolve for Android; see the evidence artifact.'
           fi
           exit 0
-      - name: Execute one actual Hermes Agent Android tool route on Android 15
+      - name: Execute the launcher embedded-runtime route on Android 15
         if: steps.import-build.outputs.built == 'true'
         run: |
           set -euo pipefail
@@ -198,6 +198,7 @@ jobs:
           grep -q 'HERMES_AGENT_ANDROID_TOOL_ROUTE_PASS' "$probe_dir/evidence/instrumentation.txt"
           ! grep -q 'HERMES_AGENT_ANDROID_TOOL_ROUTE_FAIL' "$probe_dir/evidence/instrumentation.txt"
           echo 'agent_android_tool_route=passed' >> "$probe_dir/evidence/status.txt"
+          echo 'launcher_embedded_runtime=passed' >> "$probe_dir/evidence/status.txt"
           sha256sum "$probe_dir/app/build/outputs/apk/debug/app-debug.apk" > "$probe_dir/evidence/apk.sha256"
       - name: Upload exact dependency and import evidence
         if: always()
