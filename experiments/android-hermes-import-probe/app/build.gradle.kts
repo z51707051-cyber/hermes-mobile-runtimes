@@ -3,7 +3,7 @@ plugins {
     id("com.chaquo.python")
 }
 android {
-    namespace = "ai.hermes.runtime.importprobe"
+    namespace = "ai.hermes.mobile.runtime.bridge"
     compileSdk = 36
     buildToolsVersion = "36.0.0"
     defaultConfig {
@@ -19,6 +19,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    sourceSets {
+        getByName("main") {
+            java.srcDir("../../../apps/mobile-bridge-android/app/src/main/kotlin")
+            res.srcDir("../../../apps/mobile-bridge-android/app/src/main/res")
+        }
+    }
 }
 chaquopy {
     sourceSets {
@@ -33,4 +39,7 @@ chaquopy {
             install("-r", "requirements-hermes-core.txt")
         }
     }
+}
+dependencies {
+    implementation("com.squareup.moshi:moshi:1.15.2")
 }
