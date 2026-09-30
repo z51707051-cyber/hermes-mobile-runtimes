@@ -160,9 +160,17 @@ jobs:
           set -euo pipefail
           target=experiments/android-hermes-import-probe/app/src/generated/python
           mkdir -p "$target"
-          # browser_tool imports the provider plugins at module load time.
-          cp -R agent tools hermes_cli plugins providers "$target/"
+          # Stage every first-party package reachable from the Agent runtime.
+          # Several paths (including tool execution) import gateway session
+          # context lazily, so an import-only smoke test is not sufficient.
+          runtime_packages=(
+            acp_adapter agent cron gateway hermes_cli hermes_mobile
+            plugins providers tools tui_gateway
+          )
+          cp -R "${runtime_packages[@]}" "$target/"
           find . -maxdepth 1 -type f -name '*.py' -exec cp '{}' "$target/" ';'
+          test -f "$target/gateway/session_context.py"
+          test -f "$target/tools/tool_search.py"
           kotlin_target=experiments/android-hermes-import-probe/app/src/main/kotlin
           mkdir -p "$kotlin_target"
           cp -R apps/mobile-bridge-android/app/src/main/kotlin/. "$kotlin_target/"
