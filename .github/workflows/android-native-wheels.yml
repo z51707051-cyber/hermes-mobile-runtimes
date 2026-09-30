@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'experiments/android-native-wheels/**'
+      - 'experiments/android-hermes-import-probe/**'
       - '.github/workflows/android-native-wheels.yml'
   workflow_dispatch:
 permissions:
@@ -181,7 +182,7 @@ jobs:
             echo '::warning::Hermes bootstrap package failed; see import evidence.'
           fi
           exit 0
-      - name: Import run_agent on Android 15
+      - name: Execute one actual Hermes Agent model turn on Android 15
         if: steps.import-build.outputs.built == 'true'
         run: |
           set -euo pipefail
@@ -212,9 +213,9 @@ jobs:
           timeout 120s adb shell am instrument -w \
             ai.hermes.runtime.importprobe.test/ai.hermes.runtime.importprobe.ImportInstrumentation \
             | tee "$probe_dir/evidence/instrumentation.txt"
-          grep -q 'HERMES_AGENT_IMPORT_PASS' "$probe_dir/evidence/instrumentation.txt"
-          ! grep -q 'HERMES_AGENT_IMPORT_FAIL' "$probe_dir/evidence/instrumentation.txt"
-          echo 'run_agent_import=passed' >> "$probe_dir/evidence/import-status.txt"
+          grep -q 'HERMES_AGENT_MODEL_TURN_PASS' "$probe_dir/evidence/instrumentation.txt"
+          ! grep -q 'HERMES_AGENT_MODEL_TURN_FAIL' "$probe_dir/evidence/instrumentation.txt"
+          echo 'agent_model_turn=passed' >> "$probe_dir/evidence/import-status.txt"
       - name: Upload Hermes import evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
