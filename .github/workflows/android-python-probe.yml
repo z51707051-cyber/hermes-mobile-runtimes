@@ -132,6 +132,9 @@ jobs:
           mkdir -p "$target"
           cp -R agent tools hermes_cli plugins providers "$target/"
           find . -maxdepth 1 -type f -name '*.py' -exec cp '{}' "$target/" ';'
+          kotlin_target=experiments/android-hermes-import-probe/app/src/main/kotlin
+          mkdir -p "$kotlin_target"
+          cp -R apps/mobile-bridge-android/app/src/main/kotlin/. "$kotlin_target/"
       - name: Resolve pinned core dependencies and build import APK
         id: import-build
         run: |
