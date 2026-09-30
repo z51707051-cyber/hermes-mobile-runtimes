@@ -8,6 +8,8 @@ on:
       - "scripts/android/**"
       - "scripts/mobile/**"
       - "tests/mobile/**"
+      - "tools/android_phone_tools.py"
+      - "toolsets.py"
       - "third_party/**"
       - "docs/testing/android-bootstrap.md"
       - "docs/testing/hmr-102-device-security.md"
@@ -43,6 +45,8 @@ on:
       - "scripts/android/**"
       - "scripts/mobile/**"
       - "tests/mobile/**"
+      - "tools/android_phone_tools.py"
+      - "toolsets.py"
       - "third_party/**"
       - "docs/testing/android-bootstrap.md"
       - "docs/testing/hmr-102-device-security.md"
@@ -110,6 +114,8 @@ jobs:
           set -euo pipefail
           uv run python scripts/mobile/generate_protocol_manifest.py --check
           uv run ruff check hermes_mobile tests/mobile/contract \
+            tools/android_phone_tools.py \
+            tests/mobile/unit/test_android_phone_tools.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py \
@@ -123,6 +129,7 @@ jobs:
       - name: Run protocol and routing contract tests
         run: |
           scripts/run_tests.sh -j 4 tests/mobile/contract \
+            tests/mobile/unit/test_android_phone_tools.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py -q
