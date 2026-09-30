@@ -1,4 +1,4 @@
-# Actual Hermes Agent model-turn probe
+# Actual Hermes Agent Android tool-route probe
 
 This experiment packages the repository's real `run_agent` entry point with
 the core dependency constraints from `pyproject.toml`. It uses Python 3.13 so
@@ -16,18 +16,21 @@ wheels before a complete-runtime claim.
 CI records dependency resolution separately from runtime execution. Resolution
 failure is retained as evidence and does not get hidden by looser versions or
 security downgrades. If the APK builds, Android 15 instrumentation imports and
-instantiates `run_agent.AIAgent`, then performs one real OpenAI-compatible
-streaming turn against a loopback model endpoint hosted inside the same APK.
-The endpoint validates the bearer header, model, prompt, route, and streaming
-request before returning a deterministic SSE completion. This proves the
-Hermes request/response path without requiring an external API key, consuming
-paid model tokens, or weakening the production UI's HTTPS-only endpoint rule.
-The harness separately answers Hermes' non-billable local `/api/show` metadata
-probe and requires exactly one `/v1/chat/completions` model request with no SDK
-retry.
+instantiates `run_agent.AIAgent`. A deterministic OpenAI-compatible endpoint
+then asks the real Agent to call `phone_wait`. That call crosses the Python
+registration shim, a scoped and signed Android task authorization, the
+production policy/router path, and the real wait provider. Its structured
+result is returned to the Agent for a second streaming model turn.
 
-This gate does not yet claim that phone automation tools are wired to Android
-accessibility or notification services. Those remain later acceptance gates.
+The endpoint validates bearer authentication, model, prompt, tool schema and
+the returned Android execution result. This proves the first complete
+Agent-tool-to-Android-result loop without an external API key or paid tokens.
+The harness separately answers Hermes' non-billable local `/api/show` metadata
+probe and requires exactly two `/v1/chat/completions` model requests with no
+SDK retry.
+
+This gate proves one non-UI capability. Accessibility gestures, file sharing
+and notification summarization remain later acceptance gates.
 
 `src/generated/python` is created only in CI from the checked-out Hermes source
 and is ignored. No generated copy is committed.
