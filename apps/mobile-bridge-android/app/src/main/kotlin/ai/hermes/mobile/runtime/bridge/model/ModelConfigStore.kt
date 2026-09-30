@@ -16,6 +16,11 @@ data class ModelConfigStatus(
     val hasApiKey: Boolean,
 )
 
+internal data class ModelRuntimeConfig(
+    val endpoint: ModelEndpoint,
+    val apiKey: CharArray,
+)
+
 class ModelConfigStore(private val context: Context) {
     private val preferences =
         context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
@@ -51,7 +56,17 @@ class ModelConfigStore(private val context: Context) {
         check(editor.commit()) { "model configuration could not be stored" }
     }
 
-    internal fun readApiKey(): CharArray? {
+    internal fun <T> withRuntimeConfig(block: (ModelRuntimeConfig) -> T): T {
+        val endpoint = status().endpoint ?: error("model endpoint is not configured")
+        val apiKey = readApiKey() ?: error("model API key is not configured")
+        return try {
+            block(ModelRuntimeConfig(endpoint, apiKey))
+        } finally {
+            apiKey.fill('\u0000')
+        }
+    }
+
+    private fun readApiKey(): CharArray? {
         val encoded = preferences.getString(API_KEY_CIPHERTEXT, null) ?: return null
         return runCatching { decrypt(encoded) }.getOrElse { error ->
             throw IllegalStateException("model API key decryption failed", error)
