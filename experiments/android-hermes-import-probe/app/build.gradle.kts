@@ -21,7 +21,6 @@ android {
     }
     sourceSets {
         getByName("main") {
-            java.srcDir("../../../apps/mobile-bridge-android/app/src/main/kotlin")
             res.srcDir("../../../apps/mobile-bridge-android/app/src/main/res")
         }
     }
