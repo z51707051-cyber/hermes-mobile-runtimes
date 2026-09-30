@@ -18,16 +18,19 @@ failure is retained as evidence and does not get hidden by looser versions or
 security downgrades. If the APK builds, Android 15 instrumentation imports and
 instantiates `run_agent.AIAgent`. A deterministic OpenAI-compatible endpoint
 then asks the real Agent to call `phone_wait`. That call crosses the Python
-registration shim, a scoped and signed Android task authorization, the
-production policy/router path, and the real wait provider. Its structured
-result is returned to the Agent for a second streaming model turn.
+tool-search bridge, deferred schema loader, registration shim, a scoped and
+signed Android task authorization, the production policy/router path, and the
+real wait provider. Its structured result is returned to the Agent for a final
+streaming model turn.
 
 The endpoint validates bearer authentication, model, prompt, tool schema and
 the returned Android execution result. This proves the first complete
 Agent-tool-to-Android-result loop without an external API key or paid tokens.
 The harness separately answers Hermes' non-billable local `/api/show` metadata
-probe and requires exactly two `/v1/chat/completions` model requests with no
-SDK retry.
+probe and requires exactly four `/v1/chat/completions` model requests—search,
+describe, call, final response—with no SDK retry. CI stages all first-party
+runtime packages reachable from the Agent, including the lazily imported
+gateway session context used during tool execution.
 
 This gate proves one non-UI capability. Accessibility gestures, file sharing
 and notification summarization remain later acceptance gates.
