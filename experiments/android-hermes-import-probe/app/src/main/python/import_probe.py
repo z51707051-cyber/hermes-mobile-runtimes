@@ -17,6 +17,46 @@ _PROMPT = "Use phone_wait for 1 millisecond, then return exactly ANDROID_HERMES_
 _RESPONSE = "ANDROID_HERMES_TOOL_ROUTE_PASS"
 
 
+def _tool_call_chunks(completion_id, call_id, name, arguments):
+    return (
+        {
+            "id": completion_id,
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": _MODEL,
+            "choices": [{
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "tool_calls": [{
+                        "index": 0,
+                        "id": call_id,
+                        "type": "function",
+                        "function": {
+                            "name": name,
+                            "arguments": json.dumps(arguments, separators=(",", ":")),
+                        },
+                    }],
+                },
+                "logprobs": None,
+                "finish_reason": None,
+            }],
+        },
+        {
+            "id": completion_id,
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": _MODEL,
+            "choices": [{
+                "index": 0,
+                "delta": {},
+                "logprobs": None,
+                "finish_reason": "tool_calls",
+            }],
+        },
+    )
+
+
 def _start_model_endpoint():
     evidence = []
     discovery_probes = []
@@ -99,61 +139,56 @@ def _start_model_endpoint():
                 }
                 evidence.append(request_evidence)
                 if len(evidence) == 1:
-                    if "phone_wait" not in tool_names:
-                        raise AssertionError(f"phone_wait schema missing: {tool_names!r}")
-                    chunks = (
-                        {
-                            "id": "chatcmpl-android-tool",
-                            "object": "chat.completion.chunk",
-                            "created": 0,
-                            "model": _MODEL,
-                            "choices": [{
-                                "index": 0,
-                                "delta": {
-                                    "role": "assistant",
-                                    "tool_calls": [{
-                                        "index": 0,
-                                        "id": "call_android_wait",
-                                        "type": "function",
-                                        "function": {"name": "phone_wait", "arguments": ""},
-                                    }],
-                                },
-                                "logprobs": None,
-                                "finish_reason": None,
-                            }],
-                        },
-                        {
-                            "id": "chatcmpl-android-tool",
-                            "object": "chat.completion.chunk",
-                            "created": 0,
-                            "model": _MODEL,
-                            "choices": [{
-                                "index": 0,
-                                "delta": {"tool_calls": [{
-                                    "index": 0,
-                                    "function": {"arguments": "{\"timeout_ms\":1}"},
-                                }]},
-                                "logprobs": None,
-                                "finish_reason": None,
-                            }],
-                        },
-                        {
-                            "id": "chatcmpl-android-tool",
-                            "object": "chat.completion.chunk",
-                            "created": 0,
-                            "model": _MODEL,
-                            "choices": [{
-                                "index": 0,
-                                "delta": {},
-                                "logprobs": None,
-                                "finish_reason": "tool_calls",
-                            }],
-                        },
+                    expected_bridge_tools = {"tool_search", "tool_describe", "tool_call"}
+                    if set(tool_names) != expected_bridge_tools:
+                        raise AssertionError(f"tool-search bridge schema mismatch: {tool_names!r}")
+                    chunks = _tool_call_chunks(
+                        "chatcmpl-android-search",
+                        "call_android_search",
+                        "tool_search",
+                        {"queries": ["wait on Android phone"], "limit": 5},
                     )
                 elif len(evidence) == 2:
                     if len(tool_messages) != 1:
-                        raise AssertionError(f"expected one Android tool result: {messages!r}")
-                    tool_result = json.loads(tool_messages[0].get("content") or "{}")
+                        raise AssertionError(f"expected one tool-search result: {messages!r}")
+                    search_result = json.loads(tool_messages[-1].get("content") or "{}")
+                    matched_names = {
+                        name
+                        for result in search_result.get("results") or []
+                        for name in result.get("matches") or []
+                    }
+                    if (
+                        "phone_wait" not in matched_names
+                        or "phone_wait" not in (search_result.get("tools") or {})
+                    ):
+                        raise AssertionError(f"phone_wait search miss: {search_result!r}")
+                    chunks = _tool_call_chunks(
+                        "chatcmpl-android-describe",
+                        "call_android_describe",
+                        "tool_describe",
+                        {"names": ["phone_wait"]},
+                    )
+                elif len(evidence) == 3:
+                    if len(tool_messages) != 2:
+                        raise AssertionError(f"expected search and describe results: {messages!r}")
+                    describe_result = json.loads(tool_messages[-1].get("content") or "{}")
+                    parameters = (
+                        (describe_result.get("tools") or {})
+                        .get("phone_wait", {})
+                        .get("parameters", {})
+                    )
+                    if "timeout_ms" not in (parameters.get("required") or []):
+                        raise AssertionError(f"phone_wait schema missing: {describe_result!r}")
+                    chunks = _tool_call_chunks(
+                        "chatcmpl-android-call",
+                        "call_android_wait",
+                        "tool_call",
+                        {"name": "phone_wait", "arguments": {"timeout_ms": 1}},
+                    )
+                elif len(evidence) == 4:
+                    if len(tool_messages) != 3:
+                        raise AssertionError(f"expected three tool results: {messages!r}")
+                    tool_result = json.loads(tool_messages[-1].get("content") or "{}")
                     if (
                         tool_result.get("execution_status") != "SUCCEEDED"
                         or tool_result.get("tool") != "phone.wait"
@@ -266,7 +301,7 @@ def run(android_bridge):
             provider="custom",
             api_mode="chat_completions",
             model=_MODEL,
-            max_iterations=3,
+            max_iterations=5,
             enabled_toolsets=["mobile"],
             quiet_mode=True,
             skip_context_files=True,
@@ -280,9 +315,9 @@ def run(android_bridge):
             raise AssertionError(f"Local model endpoint failed: {handler_errors}")
         if response.strip() != _RESPONSE:
             raise AssertionError(f"Unexpected Agent response: {response!r}")
-        if len(requests) != 2:
+        if len(requests) != 4:
             raise AssertionError(
-                f"Expected two model requests, got {len(requests)}: {requests!r}"
+                f"Expected four model requests, got {len(requests)}: {requests!r}"
             )
         expected_discovery = [
             {"path": "/api/show", "authorization_verified": True}
@@ -308,9 +343,12 @@ def run(android_bridge):
         if unexpected:
             raise AssertionError(f"Unexpected model request evidence: {first_request!r}")
 
-        second_request = requests[1]
-        tool_schema_verified = "phone_wait" in first_request.get("tool_names", [])
-        tool_result_verified = second_request.get("tool_message_count") == 1
+        bridge_schema_verified = set(first_request.get("tool_names", [])) == {
+            "tool_search", "tool_describe", "tool_call"
+        }
+        tool_search_result_verified = requests[1].get("tool_message_count") == 1
+        tool_description_verified = requests[2].get("tool_message_count") == 2
+        tool_result_verified = requests[3].get("tool_message_count") == 3
 
         return json.dumps(
             {
@@ -323,7 +361,9 @@ def run(android_bridge):
                 "response": response.strip(),
                 "request_count": len(requests),
                 "discovery_probe_count": len(discovery_probes),
-                "tool_schema_verified": tool_schema_verified,
+                "bridge_schema_verified": bridge_schema_verified,
+                "tool_search_result_verified": tool_search_result_verified,
+                "tool_description_verified": tool_description_verified,
                 "tool_result_verified": tool_result_verified,
                 "authorization_verified": all(
                     request.get("authorization_verified") for request in requests
