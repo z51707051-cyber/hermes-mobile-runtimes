@@ -22,6 +22,7 @@ android {
     sourceSets {
         getByName("main") {
             res.srcDir("../../../apps/mobile-bridge-android/app/src/main/res")
+            java.srcDir("src/main/java")
         }
     }
 }
@@ -29,6 +30,7 @@ chaquopy {
     sourceSets {
         getByName("main") {
             srcDir("src/generated/python")
+            srcDir("../../../apps/mobile-bridge-android/app/src/main/python")
         }
     }
     defaultConfig {
