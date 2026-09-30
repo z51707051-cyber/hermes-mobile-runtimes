@@ -23,6 +23,7 @@ public final class ImportInstrumentation extends Instrumentation {
                     || !data.getBoolean("model_turn_completed")
                     || !"ANDROID_HERMES_AGENT_TURN_PASS".equals(data.getString("response"))
                     || data.getInt("request_count") != 1
+                    || data.getInt("discovery_probe_count") != 1
                     || !"/v1/chat/completions".equals(data.getString("path"))
                     || !"hermes-android-probe".equals(data.getString("model"))
                     || !data.getBoolean("stream")
