@@ -23,9 +23,11 @@ public final class ImportInstrumentation extends Instrumentation {
                     || !"AIAgent".equals(data.getString("agent_type"))
                     || !data.getBoolean("model_turn_completed")
                     || !"ANDROID_HERMES_TOOL_ROUTE_PASS".equals(data.getString("response"))
-                    || data.getInt("request_count") != 2
+                    || data.getInt("request_count") != 4
                     || data.getInt("discovery_probe_count") != 1
-                    || !data.getBoolean("tool_schema_verified")
+                    || !data.getBoolean("bridge_schema_verified")
+                    || !data.getBoolean("tool_search_result_verified")
+                    || !data.getBoolean("tool_description_verified")
                     || !data.getBoolean("tool_result_verified")
                     || !data.getBoolean("authorization_verified")) {
                 throw new AssertionError("Unexpected Hermes Agent Android tool evidence");
