@@ -34,8 +34,9 @@ describe, call, final response—with no SDK retry. CI stages all first-party
 runtime packages reachable from the Agent, including the lazily imported
 gateway session context used during tool execution.
 
-This gate proves one non-UI capability. Accessibility gestures, file sharing
-and notification summarization remain later acceptance gates.
+This gate proves one non-UI capability and packages the same private foreground
+task service used by the launcher. Accessibility gestures, file sharing and
+notification summarization remain later acceptance gates.
 
 `src/generated/python` and the ignored probe-local Kotlin staging directory are
 created only in CI from the checked-out Hermes and Android bridge sources. No

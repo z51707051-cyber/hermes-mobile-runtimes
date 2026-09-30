@@ -16,6 +16,13 @@
     <string name="task_failed_configuration">开始任务前，请配置 HTTPS 模型地址和 API Key。</string>
     <string name="task_failed_runtime">开始任务前，请安装包含 Hermes 完整运行时的版本。</string>
     <string name="task_failed_execution">任务执行失败，模型凭据未被显示。请检查网络后重试。</string>
+    <string name="task_notification_channel">正在执行的 Hermes 任务</string>
+    <string name="task_notification_channel_description">当你明确启动的 Hermes 任务在后台继续时，显示不含任务内容的状态。</string>
+    <string name="task_notification_title">Hermes 任务正在执行</string>
+    <string name="task_notification_running">正在本手机执行，通知中不会显示任务详情。</string>
+    <string name="task_notification_stopping">正在停止并撤销 Android 工具授权…</string>
+    <string name="task_notification_stop">停止并撤销授权</string>
+    <string name="task_notification_permission_required">请允许任务通知，Hermes 才能在关闭本页面后透明地继续执行。</string>
     <string name="permissions_title">手机权限</string>
     <string name="trial_permissions_help">测试屏幕观察前，请在无障碍设置中启用「Hermes 屏幕观察」。通知读取为可选权限。你可以随时在系统设置中撤销权限，返回此页面后会刷新可用能力。</string>
     <string name="open_accessibility_settings">设置屏幕观察权限</string>

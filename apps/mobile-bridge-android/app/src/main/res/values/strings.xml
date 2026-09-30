@@ -16,6 +16,13 @@
     <string name="task_failed_configuration">Configure an HTTPS model endpoint and API key before starting a task.</string>
     <string name="task_failed_runtime">Install the complete Hermes runtime build before starting a task.</string>
     <string name="task_failed_execution">The task failed without exposing model credentials. Check connectivity and try again.</string>
+    <string name="task_notification_channel">Active Hermes tasks</string>
+    <string name="task_notification_channel_description">Shows a private status while an explicitly started Hermes task continues in the background.</string>
+    <string name="task_notification_title">Hermes task is active</string>
+    <string name="task_notification_running">Running on this phone. Task details stay hidden.</string>
+    <string name="task_notification_stopping">Stopping and revoking Android tool access…</string>
+    <string name="task_notification_stop">Stop and revoke</string>
+    <string name="task_notification_permission_required">Allow task notifications so Hermes can run transparently while this screen is closed.</string>
     <string name="permissions_title">Phone permissions</string>
     <string name="trial_permissions_help">To test device observation, enable Hermes screen observer in Accessibility settings. Notification access is optional. You can revoke either permission in Android settings; this page refreshes when you return.</string>
     <string name="open_accessibility_settings">Screen observation settings</string>

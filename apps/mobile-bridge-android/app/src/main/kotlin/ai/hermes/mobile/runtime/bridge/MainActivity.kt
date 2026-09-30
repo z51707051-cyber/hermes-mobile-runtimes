@@ -1,7 +1,10 @@
 package ai.hermes.mobile.runtime.bridge
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
@@ -15,15 +18,15 @@ import android.widget.TextView
 import android.widget.Toast
 import ai.hermes.mobile.runtime.bridge.model.ModelConfigStore
 import ai.hermes.mobile.runtime.bridge.model.ModelEndpointValidator
-import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskController
+import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskCoordinator
 import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskFailure
 import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskPhase
-import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskRuntimeLoader
 import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskSession
 
 class MainActivity : Activity() {
     private val modelConfigStore by lazy { ModelConfigStore(applicationContext) }
-    private lateinit var taskController: HermesTaskController
+    private lateinit var taskCoordinator: HermesTaskCoordinator
+    private val taskStateListener: (HermesTaskSession) -> Unit = { state -> renderTaskState(state) }
     private lateinit var capabilityStatus: TextView
     private lateinit var runtimeStatus: TextView
     private lateinit var conversation: TextView
@@ -37,26 +40,25 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val runtime = HermesTaskRuntimeLoader.load(applicationContext)
-        taskController =
-            HermesTaskController(
-                modelConfigStore = modelConfigStore,
-                runtime = runtime,
-                onStateChanged = { state -> renderTaskState(state) },
-            )
+        taskCoordinator = (application as HermesMobileApplication).taskCoordinator
         buildUi()
         refreshConfigurationStatus()
-        renderTaskState(taskController.currentState())
+        renderTaskState(taskCoordinator.currentState())
+    }
+
+    override fun onStart() {
+        super.onStart()
+        taskCoordinator.addListener(taskStateListener)
+    }
+
+    override fun onStop() {
+        taskCoordinator.removeListener(taskStateListener)
+        super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
         if (::capabilityStatus.isInitialized) refreshConfigurationStatus()
-    }
-
-    override fun onDestroy() {
-        if (::taskController.isInitialized) taskController.close()
-        super.onDestroy()
     }
 
     private fun buildUi() {
@@ -105,17 +107,13 @@ class MainActivity : Activity() {
         sendButton =
             Button(this).apply {
                 setText(R.string.task_send)
-                setOnClickListener {
-                    if (taskController.submit(taskInput.text.toString())) {
-                        taskInput.text?.clear()
-                    }
-                }
+                setOnClickListener { submitTaskWithNotificationPermission() }
             }
         stopButton =
             Button(this).apply {
                 setText(R.string.task_stop)
                 isEnabled = false
-                setOnClickListener { taskController.cancel() }
+                setOnClickListener { taskCoordinator.cancel() }
             }
         val taskButtons =
             LinearLayout(this).apply {
@@ -208,7 +206,7 @@ class MainActivity : Activity() {
         val bootstrap = BootstrapStatusProvider.current()
         val modelStatus = modelConfigStore.status()
         runtimeStatus.setText(
-            if (taskController.isRuntimeAvailable) {
+            if (taskCoordinator.isRuntimeAvailable) {
                 R.string.embedded_runtime_ready
             } else {
                 R.string.embedded_runtime_missing
@@ -290,6 +288,41 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun submitTaskWithNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST,
+            )
+            return
+        }
+        submitCurrentTask()
+    }
+
+    private fun submitCurrentTask() {
+        if (taskCoordinator.submit(taskInput.text.toString())) {
+            taskInput.text?.clear()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != NOTIFICATION_PERMISSION_REQUEST) return
+        if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            submitCurrentTask()
+        } else {
+            Toast.makeText(this, R.string.task_notification_permission_required, Toast.LENGTH_LONG)
+                .show()
+        }
+    }
+
     private fun addSettingsButton(
         layout: LinearLayout,
         label: Int,
@@ -312,5 +345,6 @@ class MainActivity : Activity() {
         const val DEEPSEEK_MODEL = "deepseek-chat"
         const val DEFAULT_BASE_URL = OPENAI_BASE_URL
         const val DEFAULT_MODEL = OPENAI_MODEL
+        const val NOTIFICATION_PERMISSION_REQUEST = 1101
     }
 }

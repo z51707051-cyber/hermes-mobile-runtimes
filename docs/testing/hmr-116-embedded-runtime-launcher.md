@@ -4,10 +4,11 @@ HMR-116 graduates the proven Android Hermes runtime route behind the exported
 launcher without weakening the existing execution boundary.
 
 The launcher owns one foreground task at a time. Starting a task creates a new
-`HermesAndroidToolBridge`; stopping, destroying the Activity, completing or
-failing closes that bridge. A stale worker completion cannot overwrite a newer
-or cancelled task. Prompts and model responses remain memory-only in this
-stage, and API keys remain encrypted at rest by `ModelConfigStore`.
+`HermesAndroidToolBridge`; stopping, completing or failing closes that bridge.
+A stale worker completion cannot overwrite a newer or cancelled task. Prompts
+and model responses remain memory-only in this stage, and API keys remain
+encrypted at rest by `ModelConfigStore`. HMR-117 subsequently moved ownership
+out of the Activity so configuration changes no longer cancel the task.
 
 The bridge-only APK contains no Python engine and therefore reports the runtime
 as unavailable. The complete integration APK adds the Chaquopy implementation
@@ -24,6 +25,6 @@ Acceptance requires:
    canonical Android provider and its final model response;
 5. all prior API 30/API 36 routing and security contracts to remain green.
 
-This stage does not claim lock-screen background execution or production
-WeChat/file-sharing flows. Those require the foreground-service and OEM
-lifecycle work in the following stage.
+This stage did not claim lock-screen background execution or production
+WeChat/file-sharing flows. HMR-117 adds the foreground-service lifecycle;
+file/photo sharing and app-specific physical-device flows remain later gates.
