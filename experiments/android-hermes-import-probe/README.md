@@ -1,4 +1,4 @@
-# Actual Hermes Agent Android tool-route probe
+# Actual Hermes launcher and Android tool-route probe
 
 This experiment packages the repository's real `run_agent` entry point with
 the core dependency constraints from `pyproject.toml`. It uses Python 3.13 so
@@ -15,7 +15,9 @@ wheels before a complete-runtime claim.
 
 CI records dependency resolution separately from runtime execution. Resolution
 failure is retained as evidence and does not get hidden by looser versions or
-security downgrades. If the APK builds, Android 15 instrumentation imports and
+security downgrades. If the APK builds, Android 15 instrumentation loads the
+same reflective runtime boundary used by the production launcher. Its Chaquopy
+backend calls the packaged `hermes_mobile_runtime` entry point, which
 instantiates `run_agent.AIAgent`. A deterministic OpenAI-compatible endpoint
 then asks the real Agent to call `phone_wait`. That call crosses the Python
 tool-search bridge, deferred schema loader, registration shim, a scoped and
