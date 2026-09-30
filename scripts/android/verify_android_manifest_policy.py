@@ -31,6 +31,7 @@ NOTIFICATION_SERVICE_PERMISSION = (
 )
 NOTIFICATION_SERVICE_ACTION = "android.service.notification.NotificationListenerService"
 FOREGROUND_SERVICE_TYPE = "dataSync"
+FOREGROUND_SERVICE_COMPILED_TYPES = {"1", "0x1", "0x00000001"}
 COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
 LAUNCHER_QUERY_ACTION = "android.intent.action.MAIN"
@@ -329,10 +330,11 @@ def validate_manifest(
             errors.append("the task foreground service must set android:exported=false")
         if _android(foreground_service, "permission"):
             errors.append("task foreground service custom permissions are forbidden")
-        if (
-            _android(foreground_service, "foregroundServiceType")
-            != FOREGROUND_SERVICE_TYPE
-        ):
+        foreground_type = _android(foreground_service, "foregroundServiceType")
+        if foreground_type not in {
+            FOREGROUND_SERVICE_TYPE,
+            *FOREGROUND_SERVICE_COMPILED_TYPES,
+        }:
             errors.append("the task foreground service type must be exactly dataSync")
         if list(foreground_service):
             errors.append("the task foreground service must not contain child elements")
