@@ -22,6 +22,9 @@ The endpoint validates the bearer header, model, prompt, route, and streaming
 request before returning a deterministic SSE completion. This proves the
 Hermes request/response path without requiring an external API key, consuming
 paid model tokens, or weakening the production UI's HTTPS-only endpoint rule.
+The harness separately answers Hermes' non-billable local `/api/show` metadata
+probe and requires exactly one `/v1/chat/completions` model request with no SDK
+retry.
 
 This gate does not yet claim that phone automation tools are wired to Android
 accessibility or notification services. Those remain later acceptance gates.
