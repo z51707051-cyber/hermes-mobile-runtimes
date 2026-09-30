@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Hermes Mobile Runtime</string>
-    <string name="runtime_integration_status">Developer preview · On-device runtime integration in progress\nThe current build does not start Hermes Agent yet.</string>
+    <string name="runtime_integration_status">Developer preview · Hermes runs on this Android device</string>
+    <string name="embedded_runtime_ready">Embedded Hermes Agent is ready.</string>
+    <string name="embedded_runtime_missing">This bridge-only build does not contain the embedded Agent bundle.</string>
+    <string name="task_title">Hermes task</string>
+    <string name="task_idle">Configure a model API, grant the permissions you need, then enter a task.</string>
+    <string name="task_prompt_hint">Describe one task for Hermes to perform on this phone</string>
+    <string name="task_send">Run task</string>
+    <string name="task_stop">Stop and revoke</string>
+    <string name="task_running">You:\n%1$s\n\nHermes is working…</string>
+    <string name="task_stopping">You:\n%1$s\n\nTool authorization is revoked. Waiting for the model request to stop…</string>
+    <string name="task_completed">You:\n%1$s\n\nHermes:\n%2$s</string>
+    <string name="task_cancelled">You:\n%1$s\n\nTask stopped. Android tool authorization was revoked.</string>
+    <string name="task_failed_configuration">Configure an HTTPS model endpoint and API key before starting a task.</string>
+    <string name="task_failed_runtime">Install the complete Hermes runtime build before starting a task.</string>
+    <string name="task_failed_execution">The task failed without exposing model credentials. Check connectivity and try again.</string>
+    <string name="permissions_title">Phone permissions</string>
     <string name="trial_permissions_help">To test device observation, enable Hermes screen observer in Accessibility settings. Notification access is optional. You can revoke either permission in Android settings; this page refreshes when you return.</string>
     <string name="open_accessibility_settings">Screen observation settings</string>
     <string name="open_notification_settings">Notification access settings</string>
