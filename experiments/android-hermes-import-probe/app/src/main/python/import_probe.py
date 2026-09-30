@@ -260,6 +260,14 @@ def _start_model_endpoint():
 
 
 def run(android_bridge):
+    return _run(android_bridge, runtime_backend=None)
+
+
+def run_with_launcher(android_bridge, runtime_backend):
+    return _run(android_bridge, runtime_backend=runtime_backend)
+
+
+def _run(android_bridge, runtime_backend):
     module = None
     agent_type = None
     endpoint = None
@@ -286,7 +294,8 @@ def run(android_bridge):
         module = importlib.import_module("run_agent")
         agent_type = getattr(module, "AIAgent")
         phone_tools = importlib.import_module("tools.android_phone_tools")
-        phone_tools.configure_android_tool_transport(android_bridge)
+        if runtime_backend is None:
+            phone_tools.configure_android_tool_transport(android_bridge)
         (
             endpoint,
             endpoint_thread,
@@ -295,22 +304,31 @@ def run(android_bridge):
             handler_errors,
         ) = _start_model_endpoint()
         port = endpoint.server_address[1]
-        agent = agent_type(
-            base_url=f"http://127.0.0.1:{port}/v1",
-            api_key=_API_KEY,
-            provider="custom",
-            api_mode="chat_completions",
-            model=_MODEL,
-            max_iterations=5,
-            enabled_toolsets=["mobile"],
-            quiet_mode=True,
-            skip_context_files=True,
-            load_soul_identity=False,
-            skip_memory=True,
-            skip_background_review=True,
-            run_budget_seconds=30,
-        )
-        response = agent.chat(_PROMPT)
+        if runtime_backend is None:
+            agent = agent_type(
+                base_url=f"http://127.0.0.1:{port}/v1",
+                api_key=_API_KEY,
+                provider="custom",
+                api_mode="chat_completions",
+                model=_MODEL,
+                max_iterations=5,
+                enabled_toolsets=["mobile"],
+                quiet_mode=True,
+                skip_context_files=True,
+                load_soul_identity=False,
+                skip_memory=True,
+                skip_background_review=True,
+                run_budget_seconds=30,
+            )
+            response = agent.chat(_PROMPT)
+        else:
+            response = runtime_backend.runForProbe(
+                f"http://127.0.0.1:{port}/v1",
+                _API_KEY,
+                _MODEL,
+                _PROMPT,
+                android_bridge,
+            )
         if handler_errors:
             raise AssertionError(f"Local model endpoint failed: {handler_errors}")
         if response.strip() != _RESPONSE:
@@ -352,12 +370,13 @@ def run(android_bridge):
 
         return json.dumps(
             {
-                "stage": "actual_agent_android_tool_route",
+                "stage": "launcher_embedded_agent_android_tool_route",
                 "python": sys.version.split()[0],
                 "machine": platform.machine(),
                 "module": module.__name__,
                 "agent_type": agent_type.__name__,
                 "model_turn_completed": True,
+                "launcher_runtime_verified": runtime_backend is not None,
                 "response": response.strip(),
                 "request_count": len(requests),
                 "discovery_probe_count": len(discovery_probes),
