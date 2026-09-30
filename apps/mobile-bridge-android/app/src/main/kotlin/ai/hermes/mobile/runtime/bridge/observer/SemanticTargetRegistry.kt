@@ -194,6 +194,11 @@ internal object SemanticRiskClassifier {
             "install",
             "uninstall",
             "factory reset",
+            "change password",
+            "reset password",
+            "security settings",
+            "two-factor",
+            "2fa",
             "删除",
             "移除",
             "购买",
@@ -202,6 +207,11 @@ internal object SemanticRiskClassifier {
             "安装",
             "卸载",
             "清除数据",
+            "修改密码",
+            "重置密码",
+            "安全设置",
+            "两步验证",
+            "双重验证",
         )
     private val level3 =
         listOf(
