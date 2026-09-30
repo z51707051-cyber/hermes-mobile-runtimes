@@ -32,5 +32,6 @@ SDK retry.
 This gate proves one non-UI capability. Accessibility gestures, file sharing
 and notification summarization remain later acceptance gates.
 
-`src/generated/python` is created only in CI from the checked-out Hermes source
-and is ignored. No generated copy is committed.
+`src/generated/python` and the ignored probe-local Kotlin staging directory are
+created only in CI from the checked-out Hermes and Android bridge sources. No
+generated copy is committed.
