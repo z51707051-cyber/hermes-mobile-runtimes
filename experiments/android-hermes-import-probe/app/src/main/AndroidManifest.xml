@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Cleartext is enabled only in this isolated CI probe so its in-APK
+         loopback model endpoint can exercise the real HTTP client. -->
     <application android:label="Hermes 导入探针" android:allowBackup="false"
-        android:usesCleartextTraffic="false" />
+        android:usesCleartextTraffic="true" />
 </manifest>
