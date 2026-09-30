@@ -112,6 +112,32 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
     ]
 
 
+def test_accepts_exact_compiled_data_sync_foreground_service_value(
+    tmp_path: Path,
+) -> None:
+    source = (
+        REPO_ROOT
+        / "apps"
+        / "mobile-bridge-android"
+        / "app"
+        / "src"
+        / "main"
+        / "AndroidManifest.xml"
+    )
+    tree = ET.parse(source)
+    android = "{http://schemas.android.com/apk/res/android}"
+    service = next(
+        node
+        for node in tree.getroot().find("application").findall("service")
+        if node.get(f"{android}name") == ".runtime.HermesTaskForegroundService"
+    )
+    service.set(f"{android}foregroundServiceType", "0x00000001")
+    manifest = tmp_path / "AndroidManifest.xml"
+    tree.write(manifest, encoding="utf-8", xml_declaration=True)
+
+    assert VERIFIER.validate_manifest(manifest) == []
+
+
 def test_rejects_any_permission_beyond_reviewed_minimum(tmp_path: Path) -> None:
     manifest = _write_xml(
         tmp_path,
