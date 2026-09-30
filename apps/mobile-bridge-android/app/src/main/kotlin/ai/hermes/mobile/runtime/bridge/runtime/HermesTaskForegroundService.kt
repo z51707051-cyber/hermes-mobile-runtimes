@@ -1,7 +1,7 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
 import android.Manifest
-import android.annotation.RequiresApi
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -49,7 +49,8 @@ class HermesTaskForegroundService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    @RequiresApi(35)
+    // Framework callback: only Android 15+ can invoke this override.
+    @SuppressLint("NewApi")
     override fun onTimeout(
         startId: Int,
         fgsType: Int,
