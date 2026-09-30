@@ -39,9 +39,21 @@ def _start_model_endpoint():
                     if isinstance(item, dict) and item.get("role") == "user"
                 ]
                 request_evidence = {
+                    "request_index": len(evidence) + 1,
                     "path": self.path,
                     "model": payload.get("model"),
                     "stream": payload.get("stream") is True,
+                    "stream_options_present": bool(payload.get("stream_options")),
+                    "message_count": len(messages),
+                    "message_roles": [
+                        item.get("role")
+                        for item in messages
+                        if isinstance(item, dict)
+                    ],
+                    "tools_present": bool(payload.get("tools")),
+                    "sdk_retry_count": self.headers.get(
+                        "x-stainless-retry-count", "missing"
+                    ),
                     "authorization_verified": self.headers.get("Authorization")
                     == f"Bearer {_API_KEY}",
                     "prompt_verified": _PROMPT in user_messages,
@@ -169,7 +181,9 @@ def run():
         if response.strip() != _RESPONSE:
             raise AssertionError(f"Unexpected Agent response: {response!r}")
         if len(requests) != 1:
-            raise AssertionError(f"Expected one model request, got {len(requests)}")
+            raise AssertionError(
+                f"Expected one model request, got {len(requests)}: {requests!r}"
+            )
 
         request = requests[0]
         expected_request = {
@@ -179,7 +193,12 @@ def run():
             "authorization_verified": True,
             "prompt_verified": True,
         }
-        if request != expected_request:
+        unexpected = {
+            key: request.get(key)
+            for key, expected in expected_request.items()
+            if request.get(key) != expected
+        }
+        if unexpected:
             raise AssertionError(f"Unexpected model request evidence: {request!r}")
 
         return json.dumps(
