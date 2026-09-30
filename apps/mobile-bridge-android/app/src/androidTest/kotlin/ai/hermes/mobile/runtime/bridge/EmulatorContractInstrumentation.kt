@@ -73,16 +73,23 @@ class EmulatorContractInstrumentation : Instrumentation() {
             persistedValues.none { "emulator-secret-value" in it },
             "model API key was persisted as plaintext",
         )
-        val decrypted = store.readApiKey()
-        try {
+        var borrowedApiKey: CharArray? = null
+        store.withRuntimeConfig { config ->
+            borrowedApiKey = config.apiKey
             check(
-                decrypted?.concatToString() == "emulator-secret-value",
+                config.endpoint == ModelEndpoint("https://api.example.com/v1", "example-model"),
+                "runtime model endpoint round-trip failed",
+            )
+            check(
+                config.apiKey.concatToString() == "emulator-secret-value",
                 "Android Keystore model API key round-trip failed",
             )
-        } finally {
-            decrypted?.fill('\u0000')
-            store.clearApiKey()
         }
+        check(
+            borrowedApiKey?.all { it == '\u0000' } == true,
+            "runtime API key buffer was not erased after use",
+        )
+        store.clearApiKey()
     }
 
     private fun verifyAccessibilityUnavailable() {
