@@ -37,6 +37,8 @@ class SemanticTargetRegistryTest {
     @Test
     fun destructiveAndUnknownTargetsAreConservativelyClassified() {
         assertEquals("L4", SemanticRiskClassifier.requiredRisk(target(text = "确认支付")))
+        assertEquals("L4", SemanticRiskClassifier.requiredRisk(target(text = "修改密码")))
+        assertEquals("L4", SemanticRiskClassifier.requiredRisk(target(text = "Enable two-factor")))
         assertEquals("L4", SemanticRiskClassifier.requiredRisk(target(text = null, resourceId = null)))
         assertEquals(
             "L4",
