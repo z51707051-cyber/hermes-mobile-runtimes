@@ -152,7 +152,7 @@ jobs:
             echo '::warning::Exact Hermes core dependencies did not resolve for Android; see the evidence artifact.'
           fi
           exit 0
-      - name: Execute actual run_agent import on Android 15
+      - name: Execute one actual Hermes Agent model turn on Android 15
         if: steps.import-build.outputs.built == 'true'
         run: |
           set -euo pipefail
@@ -183,9 +183,9 @@ jobs:
           timeout 120s adb shell am instrument -w \
             ai.hermes.runtime.importprobe.test/ai.hermes.runtime.importprobe.ImportInstrumentation \
             | tee "$probe_dir/evidence/instrumentation.txt"
-          grep -q 'HERMES_AGENT_IMPORT_PASS' "$probe_dir/evidence/instrumentation.txt"
-          ! grep -q 'HERMES_AGENT_IMPORT_FAIL' "$probe_dir/evidence/instrumentation.txt"
-          echo 'run_agent_import=passed' >> "$probe_dir/evidence/status.txt"
+          grep -q 'HERMES_AGENT_MODEL_TURN_PASS' "$probe_dir/evidence/instrumentation.txt"
+          ! grep -q 'HERMES_AGENT_MODEL_TURN_FAIL' "$probe_dir/evidence/instrumentation.txt"
+          echo 'agent_model_turn=passed' >> "$probe_dir/evidence/status.txt"
           sha256sum "$probe_dir/app/build/outputs/apk/debug/app-debug.apk" > "$probe_dir/evidence/apk.sha256"
       - name: Upload exact dependency and import evidence
         if: always()
