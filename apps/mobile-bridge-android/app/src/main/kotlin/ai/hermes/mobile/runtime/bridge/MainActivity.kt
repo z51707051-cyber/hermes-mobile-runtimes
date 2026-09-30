@@ -39,9 +39,11 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         val runtime = HermesTaskRuntimeLoader.load(applicationContext)
         taskController =
-            HermesTaskController(modelConfigStore, runtime) { state ->
-                renderTaskState(state)
-            }
+            HermesTaskController(
+                modelConfigStore = modelConfigStore,
+                runtime = runtime,
+                onStateChanged = { state -> renderTaskState(state) },
+            )
         buildUi()
         refreshConfigurationStatus()
         renderTaskState(taskController.currentState())
