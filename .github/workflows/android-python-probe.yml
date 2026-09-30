@@ -130,8 +130,14 @@ jobs:
           set -euo pipefail
           target=experiments/android-hermes-import-probe/app/src/generated/python
           mkdir -p "$target"
-          cp -R agent tools hermes_cli plugins providers "$target/"
+          runtime_packages=(
+            acp_adapter agent cron gateway hermes_cli hermes_mobile
+            plugins providers tools tui_gateway
+          )
+          cp -R "${runtime_packages[@]}" "$target/"
           find . -maxdepth 1 -type f -name '*.py' -exec cp '{}' "$target/" ';'
+          test -f "$target/gateway/session_context.py"
+          test -f "$target/tools/tool_search.py"
           kotlin_target=experiments/android-hermes-import-probe/app/src/main/kotlin
           mkdir -p "$kotlin_target"
           cp -R apps/mobile-bridge-android/app/src/main/kotlin/. "$kotlin_target/"
