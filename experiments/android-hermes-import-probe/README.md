@@ -1,4 +1,4 @@
-# Actual Hermes import probe
+# Actual Hermes Agent model-turn probe
 
 This experiment packages the repository's real `run_agent` entry point with
 the core dependency constraints from `pyproject.toml`. It uses Python 3.13 so
@@ -13,11 +13,18 @@ JWT signing, process management, image recovery, and standard Uvicorn extras
 remain acceptance blockers and must receive Android implementations or exact
 wheels before a complete-runtime claim.
 
-CI records dependency resolution separately from runtime import. Resolution
+CI records dependency resolution separately from runtime execution. Resolution
 failure is retained as evidence and does not get hidden by looser versions or
-security downgrades. If the APK builds, Android 15 instrumentation imports
-`run_agent.AIAgent`. A successful import still does not claim a model turn or
-phone workflow; those are later gates.
+security downgrades. If the APK builds, Android 15 instrumentation imports and
+instantiates `run_agent.AIAgent`, then performs one real OpenAI-compatible
+streaming turn against a loopback model endpoint hosted inside the same APK.
+The endpoint validates the bearer header, model, prompt, route, and streaming
+request before returning a deterministic SSE completion. This proves the
+Hermes request/response path without requiring an external API key, consuming
+paid model tokens, or weakening the production UI's HTTPS-only endpoint rule.
+
+This gate does not yet claim that phone automation tools are wired to Android
+accessibility or notification services. Those remain later acceptance gates.
 
 `src/generated/python` is created only in CI from the checked-out Hermes source
 and is ignored. No generated copy is committed.
