@@ -9,17 +9,17 @@ adds bounded `phone.read_screen`, HMR-109 adds protected screenshot capture,
 HMR-110 adds state-bound navigation with post-action verification, HMR-111
 adds protected notification/device-state observation, and HMR-112 adds a
 bounded cancellable wait. HMR-113 adds isolated emulator contracts around the
-packaged bridge, HMR-114 adds blocking CI gates, and HMR-115 adds the first
-scoped in-process Hermes Agent tool route. The production launcher does not
-start a general Android agent yet.
+packaged bridge, HMR-114 adds blocking CI gates, HMR-115 adds the first scoped
+in-process Hermes Agent tool route, and HMR-116 adds the launcher task session
+and embedded-runtime boundary.
 
 Chinese installation and device acceptance instructions are in
 [`android-developer-preview-zh.md`](../../docs/testing/android-developer-preview-zh.md).
-The launcher provides system permission settings and refreshes capability
-availability on return. It explicitly shows that task connectivity is pending.
-The separate HMR-115 integration APK now proves one real Agent `phone_wait`
-tool call through the production Router on Android 15; graduating the embedded
-runtime and task UI into the launcher remains the next packaging step.
+The launcher provides an in-memory chat task surface, model settings, explicit
+stop-and-revoke control and system permission settings. The ordinary bridge APK
+fails closed when the embedded bundle is absent. The complete HMR-116 APK loads
+the Chaquopy backend through the same launcher boundary and proves one real
+Agent `phone_wait` call through the production Router on Android 15.
 
 ## HMR-112 bounded execution boundary
 
@@ -71,7 +71,7 @@ The debug APK deliberately has:
   a 1,024-action session bound;
 - 13 provider-safe `phone_*` Hermes tool registrations which remain invisible
   until Android injects the current task bridge;
-- one exported launcher activity that displays bootstrap status;
+- one exported launcher activity with a bounded single-task chat session;
 - no code copied or adapted from `hermes-android`.
 
 The current-app Provider emits a schema-valid `ToolExecutionResult` with the
@@ -103,19 +103,21 @@ remain unavailable. Every accepted mutation observes again; observation
 failure becomes `UNKNOWN_OUTCOME` rather than an automatic retry.
 
 The APK exposes no listener or Binder command surface. The default PEP still
-denies every action. HMR-115 can inject only its process-local, revocable
-user-task verifier; the model receives a narrow JSON tool object, never the
-signing key or serialized `AuthorizedAction`.
+denies every action. HMR-115/HMR-116 can inject only a process-local, revocable
+user-task verifier; stopping a task closes the bridge immediately. The model
+receives a narrow JSON tool object, never the signing key or serialized
+`AuthorizedAction`.
 
 The `fixture-app` module and `app/src/androidTest` runner exist only for
 HMR-113 CI. They use synthetic text, are built as separate test APKs and are
 never included in the release bridge. API 30/API 36 clean emulator lanes grant
 and revoke the exact Accessibility service, then exercise slow content,
 dialogs, a verified Back action, IME visibility and semantic UI drift through
-the real Router/PEP path. The separate HMR-115 probe composes the production
-bridge sources with the real embedded `AIAgent`; its deterministic model asks
-for `phone_wait`, verifies the structured Android result and completes a
-second model turn without external credentials or paid tokens.
+the real Router/PEP path. The HMR-116 probe composes the production launcher,
+task-runtime interface and Chaquopy backend with the real embedded `AIAgent`;
+its deterministic model searches and describes `phone_wait`, invokes it,
+verifies the structured Android result and completes the final model turn
+without external credentials or paid tokens.
 
 The Kotlin codec depends on the pinned stable Moshi `1.15.2` release. Normative
 schemas and cross-language fixtures remain in the repository root; Android
