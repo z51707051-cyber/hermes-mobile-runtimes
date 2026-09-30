@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
 import android.view.Gravity
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -14,23 +15,50 @@ import android.widget.TextView
 import android.widget.Toast
 import ai.hermes.mobile.runtime.bridge.model.ModelConfigStore
 import ai.hermes.mobile.runtime.bridge.model.ModelEndpointValidator
+import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskController
+import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskFailure
+import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskPhase
+import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskRuntimeLoader
+import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskSession
 
 class MainActivity : Activity() {
     private val modelConfigStore by lazy { ModelConfigStore(applicationContext) }
+    private lateinit var taskController: HermesTaskController
+    private lateinit var capabilityStatus: TextView
+    private lateinit var runtimeStatus: TextView
+    private lateinit var conversation: TextView
+    private lateinit var taskInput: EditText
+    private lateinit var sendButton: Button
+    private lateinit var stopButton: Button
+    private lateinit var modelKeyStatus: TextView
+    private lateinit var baseUrlInput: EditText
+    private lateinit var modelInput: EditText
+    private lateinit var apiKeyInput: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val runtime = HermesTaskRuntimeLoader.load(applicationContext)
+        taskController =
+            HermesTaskController(modelConfigStore, runtime) { state ->
+                renderTaskState(state)
+            }
+        buildUi()
+        refreshConfigurationStatus()
+        renderTaskState(taskController.currentState())
     }
 
     override fun onResume() {
         super.onResume()
-        renderUi()
+        if (::capabilityStatus.isInitialized) refreshConfigurationStatus()
     }
 
-    private fun renderUi() {
-        val status = BootstrapStatusProvider.current()
-        val modelStatus = modelConfigStore.status()
-        val spacing = (24 * resources.displayMetrics.density).toInt()
+    override fun onDestroy() {
+        if (::taskController.isInitialized) taskController.close()
+        super.onDestroy()
+    }
+
+    private fun buildUi() {
+        val spacing = (20 * resources.displayMetrics.density).toInt()
         val layout =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -48,81 +76,87 @@ class MainActivity : Activity() {
         layout.addView(
             TextView(this).apply {
                 text = getString(R.string.runtime_integration_status)
-                textSize = 16f
+                textSize = 15f
                 gravity = Gravity.CENTER
             },
         )
-        layout.addView(
-            TextView(this).apply {
-                text =
-                    if (status.enabledCapabilities.isEmpty()) {
-                        getString(R.string.capabilities_disabled)
-                    } else {
-                        getString(
-                            R.string.capabilities_enabled,
-                            status.enabledCapabilities.joinToString(),
-                        )
-                    }
-                textSize = 14f
-                gravity = Gravity.CENTER
-            },
-        )
+        runtimeStatus = TextView(this).apply { gravity = Gravity.CENTER }
+        capabilityStatus = TextView(this).apply { gravity = Gravity.CENTER }
+        layout.addView(runtimeStatus)
+        layout.addView(capabilityStatus)
 
-        layout.addView(
+        layout.addView(sectionTitle(R.string.task_title, spacing))
+        conversation =
             TextView(this).apply {
-                text = getString(R.string.trial_permissions_help)
+                minHeight = (160 * resources.displayMetrics.density).toInt()
                 textSize = 16f
-                setPadding(0, spacing, 0, spacing)
-            },
-        )
-        layout.addView(
-            TextView(this).apply {
-                text = getString(R.string.model_settings_title)
-                textSize = 20f
-                setPadding(0, spacing, 0, 0)
-            },
-        )
-        layout.addView(
-            TextView(this).apply {
-                text =
-                    if (modelStatus.hasApiKey) {
-                        getString(R.string.model_key_configured)
-                    } else {
-                        getString(R.string.model_key_missing)
+                setPadding(0, spacing / 2, 0, spacing / 2)
+                setTextIsSelectable(true)
+            }
+        taskInput =
+            EditText(this).apply {
+                hint = getString(R.string.task_prompt_hint)
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                minLines = 3
+                maxLines = 7
+            }
+        sendButton =
+            Button(this).apply {
+                setText(R.string.task_send)
+                setOnClickListener {
+                    if (taskController.submit(taskInput.text.toString())) {
+                        taskInput.text?.clear()
                     }
-            },
-        )
-        val baseUrl =
+                }
+            }
+        stopButton =
+            Button(this).apply {
+                setText(R.string.task_stop)
+                isEnabled = false
+                setOnClickListener { taskController.cancel() }
+            }
+        val taskButtons =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                addView(
+                    sendButton,
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+                )
+                addView(
+                    stopButton,
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+                )
+            }
+        layout.addView(conversation)
+        layout.addView(taskInput)
+        layout.addView(taskButtons)
+
+        layout.addView(sectionTitle(R.string.model_settings_title, spacing))
+        modelKeyStatus = TextView(this)
+        baseUrlInput =
             EditText(this).apply {
                 hint = getString(R.string.model_base_url_hint)
-                setText(modelStatus.endpoint?.baseUrl ?: DEFAULT_BASE_URL)
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-                importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+                importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             }
-        val model =
+        modelInput =
             EditText(this).apply {
                 hint = getString(R.string.model_name_hint)
-                setText(modelStatus.endpoint?.model ?: DEFAULT_MODEL)
                 inputType = InputType.TYPE_CLASS_TEXT
-                importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+                importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             }
-        val apiKey =
+        apiKeyInput =
             EditText(this).apply {
-                hint =
-                    if (modelStatus.hasApiKey) {
-                        getString(R.string.model_api_key_keep_hint)
-                    } else {
-                        getString(R.string.model_api_key_hint)
-                    }
-                inputType =
-                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                hint = getString(R.string.model_api_key_hint)
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             }
+        layout.addView(modelKeyStatus)
         layout.addView(
             Button(this).apply {
                 setText(R.string.use_openai_preset)
                 setOnClickListener {
-                    baseUrl.setText(OPENAI_BASE_URL)
-                    model.setText(OPENAI_MODEL)
+                    baseUrlInput.setText(OPENAI_BASE_URL)
+                    modelInput.setText(OPENAI_MODEL)
                 }
             },
         )
@@ -130,74 +164,135 @@ class MainActivity : Activity() {
             Button(this).apply {
                 setText(R.string.use_deepseek_preset)
                 setOnClickListener {
-                    baseUrl.setText(DEEPSEEK_BASE_URL)
-                    model.setText(DEEPSEEK_MODEL)
+                    baseUrlInput.setText(DEEPSEEK_BASE_URL)
+                    modelInput.setText(DEEPSEEK_MODEL)
                 }
             },
         )
-        layout.addView(baseUrl)
-        layout.addView(model)
-        layout.addView(apiKey)
+        layout.addView(baseUrlInput)
+        layout.addView(modelInput)
+        layout.addView(apiKeyInput)
         layout.addView(
             Button(this).apply {
                 setText(R.string.save_model_settings)
-                setOnClickListener {
-                    try {
-                        val endpoint =
-                            ModelEndpointValidator.validate(
-                                baseUrl.text.toString(),
-                                model.text.toString(),
-                            )
-                        val key =
-                            apiKey.text.toString().takeIf { it.isNotBlank() }?.toCharArray()
-                        modelConfigStore.save(endpoint, key)
-                        apiKey.text?.clear()
-                        Toast.makeText(
-                            this@MainActivity,
-                            R.string.model_settings_saved,
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                        renderUi()
-                    } catch (_: IllegalArgumentException) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            R.string.model_settings_invalid,
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    } catch (_: IllegalStateException) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            R.string.model_settings_store_failed,
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    }
-                }
+                setOnClickListener { saveModelSettings() }
             },
         )
         layout.addView(
             Button(this).apply {
                 setText(R.string.clear_model_api_key)
-                isEnabled = modelStatus.hasApiKey
-                setOnClickListener {
-                    try {
-                        modelConfigStore.clearApiKey()
-                        renderUi()
-                    } catch (_: IllegalStateException) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            R.string.model_settings_store_failed,
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    }
-                }
+                setOnClickListener { clearModelApiKey() }
             },
         )
+
+        layout.addView(sectionTitle(R.string.permissions_title, spacing))
+        layout.addView(TextView(this).apply { setText(R.string.trial_permissions_help) })
         addSettingsButton(layout, R.string.open_accessibility_settings, Settings.ACTION_ACCESSIBILITY_SETTINGS)
         addSettingsButton(layout, R.string.open_notification_settings, Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         setContentView(ScrollView(this).apply { addView(layout) })
     }
 
-    private fun addSettingsButton(layout: LinearLayout, label: Int, action: String) {
+    private fun sectionTitle(
+        label: Int,
+        spacing: Int,
+    ): TextView =
+        TextView(this).apply {
+            setText(label)
+            textSize = 20f
+            setPadding(0, spacing, 0, spacing / 4)
+        }
+
+    private fun refreshConfigurationStatus() {
+        val bootstrap = BootstrapStatusProvider.current()
+        val modelStatus = modelConfigStore.status()
+        runtimeStatus.setText(
+            if (taskController.isRuntimeAvailable) {
+                R.string.embedded_runtime_ready
+            } else {
+                R.string.embedded_runtime_missing
+            },
+        )
+        capabilityStatus.text =
+            if (bootstrap.enabledCapabilities.isEmpty()) {
+                getString(R.string.capabilities_disabled)
+            } else {
+                getString(R.string.capabilities_enabled, bootstrap.enabledCapabilities.joinToString())
+            }
+        modelKeyStatus.setText(
+            if (modelStatus.hasApiKey) {
+                R.string.model_key_configured
+            } else {
+                R.string.model_key_missing
+            },
+        )
+        baseUrlInput.setText(modelStatus.endpoint?.baseUrl ?: DEFAULT_BASE_URL)
+        modelInput.setText(modelStatus.endpoint?.model ?: DEFAULT_MODEL)
+        apiKeyInput.hint =
+            getString(
+                if (modelStatus.hasApiKey) {
+                    R.string.model_api_key_keep_hint
+                } else {
+                    R.string.model_api_key_hint
+                },
+            )
+    }
+
+    private fun renderTaskState(state: HermesTaskSession) {
+        val busy = state.phase == HermesTaskPhase.RUNNING || state.phase == HermesTaskPhase.STOPPING
+        sendButton.isEnabled = !busy
+        stopButton.isEnabled = state.phase == HermesTaskPhase.RUNNING
+        conversation.text =
+            when (state.phase) {
+                HermesTaskPhase.IDLE -> getString(R.string.task_idle)
+                HermesTaskPhase.RUNNING -> getString(R.string.task_running, state.prompt)
+                HermesTaskPhase.STOPPING -> getString(R.string.task_stopping, state.prompt)
+                HermesTaskPhase.COMPLETED ->
+                    getString(R.string.task_completed, state.prompt, state.response)
+                HermesTaskPhase.CANCELLED -> getString(R.string.task_cancelled, state.prompt)
+                HermesTaskPhase.FAILED ->
+                    getString(
+                        when (state.failure) {
+                            HermesTaskFailure.CONFIGURATION -> R.string.task_failed_configuration
+                            HermesTaskFailure.RUNTIME_UNAVAILABLE -> R.string.task_failed_runtime
+                            else -> R.string.task_failed_execution
+                        },
+                    )
+            }
+    }
+
+    private fun saveModelSettings() {
+        try {
+            val endpoint =
+                ModelEndpointValidator.validate(
+                    baseUrlInput.text.toString(),
+                    modelInput.text.toString(),
+                )
+            val key = apiKeyInput.text.toString().takeIf { it.isNotBlank() }?.toCharArray()
+            modelConfigStore.save(endpoint, key)
+            apiKeyInput.text?.clear()
+            Toast.makeText(this, R.string.model_settings_saved, Toast.LENGTH_SHORT).show()
+            refreshConfigurationStatus()
+        } catch (_: IllegalArgumentException) {
+            Toast.makeText(this, R.string.model_settings_invalid, Toast.LENGTH_LONG).show()
+        } catch (_: IllegalStateException) {
+            Toast.makeText(this, R.string.model_settings_store_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun clearModelApiKey() {
+        try {
+            modelConfigStore.clearApiKey()
+            refreshConfigurationStatus()
+        } catch (_: IllegalStateException) {
+            Toast.makeText(this, R.string.model_settings_store_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun addSettingsButton(
+        layout: LinearLayout,
+        label: Int,
+        action: String,
+    ) {
         val intent = Intent(action)
         layout.addView(
             Button(this).apply {
