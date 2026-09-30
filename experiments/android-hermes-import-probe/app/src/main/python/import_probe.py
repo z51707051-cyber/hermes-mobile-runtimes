@@ -19,6 +19,7 @@ _RESPONSE = "ANDROID_HERMES_AGENT_TURN_PASS"
 
 def _start_model_endpoint():
     evidence = []
+    discovery_probes = []
     handler_errors = []
 
     class Handler(BaseHTTPRequestHandler):
@@ -32,6 +33,32 @@ def _start_model_endpoint():
             try:
                 length = int(self.headers.get("Content-Length", "0"))
                 payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                if self.path == "/api/show":
+                    # A loopback OpenAI-compatible endpoint is conservatively
+                    # probed for Ollama metadata. Return an explicit non-Ollama
+                    # result and keep it separate from billable model calls.
+                    discovery_probes.append(
+                        {
+                            "path": self.path,
+                            "authorization_verified": self.headers.get(
+                                "Authorization"
+                            )
+                            == f"Bearer {_API_KEY}",
+                        }
+                    )
+                    encoded = b"{}"
+                    self.send_response(404)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Connection", "close")
+                    self.send_header("Content-Length", str(len(encoded)))
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    self.wfile.flush()
+                    self.close_connection = True
+                    return
+                if self.path != "/v1/chat/completions":
+                    raise AssertionError(f"Unexpected endpoint path: {self.path}")
+
                 messages = payload.get("messages") or []
                 user_messages = [
                     item.get("content")
@@ -131,7 +158,7 @@ def _start_model_endpoint():
         daemon=True,
     )
     thread.start()
-    return endpoint, thread, evidence, handler_errors
+    return endpoint, thread, evidence, discovery_probes, handler_errors
 
 
 def run():
@@ -141,6 +168,7 @@ def run():
     endpoint_thread = None
     agent = None
     requests = []
+    discovery_probes = []
     handler_errors = []
     hermes_home = tempfile.mkdtemp(prefix="hermes-android-probe-")
     changed_environment = {
@@ -158,7 +186,13 @@ def run():
         # modules cache profile-scoped paths at import time.
         module = importlib.import_module("run_agent")
         agent_type = getattr(module, "AIAgent")
-        endpoint, endpoint_thread, requests, handler_errors = _start_model_endpoint()
+        (
+            endpoint,
+            endpoint_thread,
+            requests,
+            discovery_probes,
+            handler_errors,
+        ) = _start_model_endpoint()
         port = endpoint.server_address[1]
         agent = agent_type(
             base_url=f"http://127.0.0.1:{port}/v1",
@@ -183,6 +217,13 @@ def run():
         if len(requests) != 1:
             raise AssertionError(
                 f"Expected one model request, got {len(requests)}: {requests!r}"
+            )
+        expected_discovery = [
+            {"path": "/api/show", "authorization_verified": True}
+        ]
+        if discovery_probes != expected_discovery:
+            raise AssertionError(
+                f"Unexpected model discovery probes: {discovery_probes!r}"
             )
 
         request = requests[0]
@@ -211,6 +252,7 @@ def run():
                 "model_turn_completed": True,
                 "response": response.strip(),
                 "request_count": len(requests),
+                "discovery_probe_count": len(discovery_probes),
                 **request,
             },
             ensure_ascii=False,
