@@ -29,7 +29,7 @@ def test_internal_apk_reuses_the_reviewed_manifest_and_bridge() -> None:
         'manifest.srcFile("../../mobile-bridge-android/app/src/main/AndroidManifest.xml")'
         in build
     )
-    assert 'java.srcDir("../../mobile-bridge-android/app/src/main/kotlin")' in build
+    assert 'kotlin.srcDir("../../mobile-bridge-android/app/src/main/kotlin")' in build
     assert 'res.srcDir("../../mobile-bridge-android/app/src/main/res")' in build
     assert not (APP_ROOT / "src" / "main" / "AndroidManifest.xml").exists()
 

@@ -35,7 +35,7 @@ android {
     sourceSets {
         getByName("main") {
             manifest.srcFile("../../mobile-bridge-android/app/src/main/AndroidManifest.xml")
-            java.srcDir("../../mobile-bridge-android/app/src/main/kotlin")
+            kotlin.srcDir("../../mobile-bridge-android/app/src/main/kotlin")
             res.srcDir("../../mobile-bridge-android/app/src/main/res")
         }
     }
