@@ -354,7 +354,9 @@ jobs:
             echo 'unexpected non-ARM64 native library in internal APK' >&2
             exit 1
           fi
-          if grep -Ei '(\.env($|/)|\.pem$|\.key$|\.p12$|\.jks$|\.keystore$|credentials\.json$|secrets\.json$)' "$evidence/apk/packaged-files.txt"; then
+          # Chaquopy's public CA bundle is required for HTTPS certificate validation.
+          if grep -Ei '(\.env($|/)|\.pem$|\.key$|\.p12$|\.jks$|\.keystore$|credentials\.json$|secrets\.json$)' "$evidence/apk/packaged-files.txt" \
+            | grep -Fvx '/assets/chaquopy/cacert.pem'; then
             echo 'forbidden secret-bearing file type found in internal APK' >&2
             exit 1
           fi
