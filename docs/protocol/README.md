@@ -30,10 +30,15 @@ pending.
 phone.read_screen       phone.screenshot       phone.tap
 phone.long_press        phone.type             phone.swipe
 phone.back              phone.home             phone.open_app
-phone.wait              phone.notifications    phone.current_app
-phone.device_state
+phone.share_attachment  phone.wait              phone.notifications
+phone.current_app       phone.device_state
 ```
 
-Any additional operation requires a versioned schema, capability negotiation,
-risk classification and contract fixtures. Shizuku, Shell, arbitrary Intent,
-APK installation, payments and transfers are excluded from V0.1.
+`phone.share_attachment` is not an arbitrary URI or Intent surface. It can use
+only the single content URI chosen through Android's system picker for the
+current task, targets only the reviewed WeChat/QQ package allowlist, and
+success means the exact-package share UI opened—not that a recipient received
+the content. Any additional operation requires a versioned
+schema, capability negotiation, risk classification and contract fixtures.
+Shizuku, Shell, arbitrary Intent, APK installation, payments and transfers are
+excluded from V0.1.

@@ -1,5 +1,7 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
+import ai.hermes.mobile.runtime.bridge.attachment.AndroidAttachmentShareSource
+import ai.hermes.mobile.runtime.bridge.attachment.SelectedAttachment
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
@@ -309,11 +311,14 @@ class HermesAndroidToolBridge internal constructor(
     companion object {
         /** Called only by the Android UI when the user starts a concrete task. */
         @JvmStatic
-        fun createForUserTask(): HermesAndroidToolBridge {
+        internal fun createForUserTask(
+            selectedAttachment: SelectedAttachment? = null,
+        ): HermesAndroidToolBridge {
             val authorization = AgentTaskAuthorizationSession()
+            val attachmentShareSource = selectedAttachment?.let(::AndroidAttachmentShareSource)
             return HermesAndroidToolBridge(
                 authorization = authorization,
-                router = BridgeRuntime.router(authorization),
+                router = BridgeRuntime.router(authorization, attachmentShareSource),
             )
         }
 

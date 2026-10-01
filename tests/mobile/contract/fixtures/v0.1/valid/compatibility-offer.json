@@ -2,7 +2,7 @@
   "message_type": "compatibility.offer",
   "protocol_min": "0.1.1",
   "protocol_max": "0.1.1",
-  "schema_bundle_digest": "sha256:df3139480b04d89b133b46b062100ad544d2403a790818aa7399baf426b5d3e1",
+  "schema_bundle_digest": "sha256:1013a1f4833772d87dd72105a480a23ec6dce0fbd390005bc202b95a8d70f98b",
   "tool_schema_digests": {
     "phone.back": "sha256:bbb16cd0cae2b84c370fa93d70637d16c2f2cbb9b19d1964745ca11c80e4d5a7",
     "phone.current_app": "sha256:e963fd126873c0bd547b1168ccea9d1f51bf95bea8b48eea264d438e0fa91597",
@@ -13,6 +13,7 @@
     "phone.open_app": "sha256:624ab06e2e05a266c036d180543fb23ff22cb7785f507b3f8ac42719197d00a8",
     "phone.read_screen": "sha256:a7fea4454b17d833f7266283da99c6bfdff00a6ad693a099951da6557012da11",
     "phone.screenshot": "sha256:60a8b302e5e29c4c218168622d9da9a952f2ce246cdc4cc20478bee9e8437b1c",
+    "phone.share_attachment": "sha256:8d8b7e06ead2ed1cffcf2ebff2ef5aeaaa865b5ac854050828c19c24daef0b8d",
     "phone.swipe": "sha256:5c73a452a9cb41813dd65bc4538cab41ccf748d16af1a4a0b96347219250c22d",
     "phone.tap": "sha256:ad56d0d6c37fbf79c5f533bb09e3cb3515c61bed0795f6b8bfca4a7958d0f346",
     "phone.type": "sha256:39311e1aec376e4e80774cbe509ed43c417b0ca9ce60bcab4aec3869d2e0a00a",

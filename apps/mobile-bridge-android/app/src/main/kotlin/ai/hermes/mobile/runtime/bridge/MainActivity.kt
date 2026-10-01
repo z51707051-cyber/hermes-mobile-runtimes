@@ -2,6 +2,7 @@ package ai.hermes.mobile.runtime.bridge
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -25,6 +26,9 @@ import ai.hermes.mobile.runtime.bridge.runtime.HermesTaskSession
 
 class MainActivity : Activity() {
     private val modelConfigStore by lazy { ModelConfigStore(applicationContext) }
+    private val attachmentSelectionStore by lazy {
+        (application as HermesMobileApplication).attachmentSelectionStore
+    }
     private lateinit var taskCoordinator: HermesTaskCoordinator
     private val taskStateListener: (HermesTaskSession) -> Unit = { state -> renderTaskState(state) }
     private lateinit var capabilityStatus: TextView
@@ -33,6 +37,9 @@ class MainActivity : Activity() {
     private lateinit var taskInput: EditText
     private lateinit var sendButton: Button
     private lateinit var stopButton: Button
+    private lateinit var attachmentStatus: TextView
+    private lateinit var selectAttachmentButton: Button
+    private lateinit var clearAttachmentButton: Button
     private lateinit var modelKeyStatus: TextView
     private lateinit var baseUrlInput: EditText
     private lateinit var modelInput: EditText
@@ -90,6 +97,34 @@ class MainActivity : Activity() {
         layout.addView(capabilityStatus)
 
         layout.addView(sectionTitle(R.string.task_title, spacing))
+        attachmentStatus = TextView(this)
+        selectAttachmentButton =
+            Button(this).apply {
+                setText(R.string.select_attachment)
+                setOnClickListener { selectAttachment() }
+            }
+        clearAttachmentButton =
+            Button(this).apply {
+                setText(R.string.clear_attachment)
+                setOnClickListener {
+                    attachmentSelectionStore.clear()
+                    refreshAttachmentStatus()
+                }
+            }
+        val attachmentButtons =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                addView(
+                    selectAttachmentButton,
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+                )
+                addView(
+                    clearAttachmentButton,
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+                )
+            }
+        layout.addView(attachmentStatus)
+        layout.addView(attachmentButtons)
         conversation =
             TextView(this).apply {
                 minHeight = (160 * resources.displayMetrics.density).toInt()
@@ -235,12 +270,15 @@ class MainActivity : Activity() {
                     R.string.model_api_key_hint
                 },
             )
+        refreshAttachmentStatus()
     }
 
     private fun renderTaskState(state: HermesTaskSession) {
         val busy = state.phase == HermesTaskPhase.RUNNING || state.phase == HermesTaskPhase.STOPPING
         sendButton.isEnabled = !busy
         stopButton.isEnabled = state.phase == HermesTaskPhase.RUNNING
+        selectAttachmentButton.isEnabled = !busy
+        clearAttachmentButton.isEnabled = !busy && attachmentSelectionStore.current() != null
         conversation.text =
             when (state.phase) {
                 HermesTaskPhase.IDLE -> getString(R.string.task_idle)
@@ -305,6 +343,65 @@ class MainActivity : Activity() {
     private fun submitCurrentTask() {
         if (taskCoordinator.submit(taskInput.text.toString())) {
             taskInput.text?.clear()
+            refreshAttachmentStatus()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun selectAttachment() {
+        val intent =
+            Intent(Intent.ACTION_OPEN_DOCUMENT)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .setType("*/*")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            startActivityForResult(intent, ATTACHMENT_PICK_REQUEST)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.attachment_picker_unavailable, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?,
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != ATTACHMENT_PICK_REQUEST || resultCode != RESULT_OK) return
+        val uri = data?.data
+        if (uri == null) {
+            Toast.makeText(this, R.string.attachment_selection_failed, Toast.LENGTH_LONG).show()
+            return
+        }
+        try {
+            attachmentSelectionStore.select(uri)
+            refreshAttachmentStatus()
+        } catch (_: IllegalArgumentException) {
+            Toast.makeText(this, R.string.attachment_selection_failed, Toast.LENGTH_LONG).show()
+        } catch (_: SecurityException) {
+            Toast.makeText(this, R.string.attachment_selection_failed, Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, R.string.attachment_selection_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun refreshAttachmentStatus() {
+        val selected = attachmentSelectionStore.current()
+        attachmentStatus.text =
+            if (selected == null) {
+                getString(R.string.attachment_not_selected)
+            } else {
+                getString(
+                    R.string.attachment_selected,
+                    selected.displayName,
+                    selected.mimeType,
+                )
+            }
+        if (::clearAttachmentButton.isInitialized) {
+            clearAttachmentButton.isEnabled =
+                selected != null && taskCoordinator.currentState().phase !in
+                setOf(HermesTaskPhase.RUNNING, HermesTaskPhase.STOPPING)
         }
     }
 
@@ -346,5 +443,6 @@ class MainActivity : Activity() {
         const val DEFAULT_BASE_URL = OPENAI_BASE_URL
         const val DEFAULT_MODEL = OPENAI_MODEL
         const val NOTIFICATION_PERMISSION_REQUEST = 1101
+        const val ATTACHMENT_PICK_REQUEST = 1102
     }
 }

@@ -2,13 +2,15 @@ package ai.hermes.mobile.runtime.bridge.runtime
 
 import android.content.Context
 import android.content.Intent
+import ai.hermes.mobile.runtime.bridge.attachment.AttachmentSelectionStore
 import ai.hermes.mobile.runtime.bridge.model.ModelConfigStore
 import java.util.concurrent.CopyOnWriteArraySet
 
-class HermesTaskCoordinator(
+internal class HermesTaskCoordinator(
     context: Context,
     modelConfigStore: ModelConfigStore,
     runtime: HermesTaskRuntime,
+    attachmentSelectionStore: AttachmentSelectionStore? = null,
 ) : AutoCloseable {
     private val appContext = context.applicationContext
     private val listeners = CopyOnWriteArraySet<(HermesTaskSession) -> Unit>()
@@ -21,6 +23,7 @@ class HermesTaskCoordinator(
             modelConfigStore = modelConfigStore,
             runtime = runtime,
             onStateChanged = ::publish,
+            selectedAttachmentProvider = { attachmentSelectionStore?.takeForTask() },
         )
 
     val isRuntimeAvailable: Boolean

@@ -26,6 +26,7 @@ CANONICAL_CAPABILITIES = (
     CapabilityDefinition("phone.back", "L1", True),
     CapabilityDefinition("phone.home", "L1", True),
     CapabilityDefinition("phone.open_app", "L1", True),
+    CapabilityDefinition("phone.share_attachment", "L3", True),
     CapabilityDefinition("phone.wait", "L0", False),
     CapabilityDefinition("phone.notifications", "L0", False),
     CapabilityDefinition("phone.current_app", "L0", False),

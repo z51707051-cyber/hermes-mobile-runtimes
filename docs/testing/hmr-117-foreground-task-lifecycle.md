@@ -50,5 +50,6 @@ Acceptance requires:
 5. a physical iQOO Z10x run verifies screen-off model execution, notification
    visibility, notification-stop revocation and return-to-launcher state.
 
-This gate does not add reboot persistence, hidden background starts, battery
-optimization exemptions, file/photo sharing, or production WeChat flows.
+This gate does not add reboot persistence, hidden background starts or battery
+optimization exemptions. File/photo sharing is a separate HMR-118 gate;
+production WeChat flows still require physical-device acceptance.

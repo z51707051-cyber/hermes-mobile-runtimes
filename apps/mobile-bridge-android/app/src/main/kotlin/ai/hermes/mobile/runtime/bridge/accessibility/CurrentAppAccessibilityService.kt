@@ -2,6 +2,8 @@ package ai.hermes.mobile.runtime.bridge.accessibility
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Path
@@ -17,6 +19,10 @@ import android.view.accessibility.AccessibilityNodeInfo.ACTION_FOCUS
 import android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT
 import ai.hermes.mobile.runtime.bridge.artifact.ArtifactWriteRequest
 import ai.hermes.mobile.runtime.bridge.artifact.RuntimeArtifactStore
+import ai.hermes.mobile.runtime.bridge.attachment.SelectedAttachment
+import ai.hermes.mobile.runtime.bridge.observer.AttachmentShareException
+import ai.hermes.mobile.runtime.bridge.observer.AttachmentShareFailureReason
+import ai.hermes.mobile.runtime.bridge.observer.AttachmentShareLaunch
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableException
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateUnavailableReason
@@ -77,6 +83,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         SemanticUiCaptureGateway.connect(this)
         ScreenshotCaptureGateway.connect(this)
         NavigationActionGateway.connect(this)
+        AttachmentShareGateway.connect(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -424,6 +431,33 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         } catch (exc: Exception) {
             throw NavigationFailureException(NavigationFailureReason.APP_LAUNCH_DENIED)
         }
+    }
+
+    /** Opens only the exact package share surface with one picker-granted URI. */
+    internal fun launchAttachmentShare(
+        attachment: SelectedAttachment,
+        packageName: String,
+    ): AttachmentShareLaunch {
+        if (packageName !in ATTACHMENT_SHARE_PACKAGES) {
+            throw AttachmentShareException(AttachmentShareFailureReason.LAUNCH_REJECTED)
+        }
+        val intent =
+            Intent(Intent.ACTION_SEND)
+                .setPackage(packageName)
+                .setType(attachment.mimeType)
+                .putExtra(Intent.EXTRA_STREAM, attachment.uri)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.clipData = ClipData.newRawUri(attachment.displayName, attachment.uri)
+        try {
+            startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            throw AttachmentShareException(AttachmentShareFailureReason.TARGET_UNAVAILABLE)
+        } catch (_: SecurityException) {
+            throw AttachmentShareException(AttachmentShareFailureReason.LAUNCH_REJECTED)
+        } catch (_: RuntimeException) {
+            throw AttachmentShareException(AttachmentShareFailureReason.LAUNCH_REJECTED)
+        }
+        return AttachmentShareLaunch(packageName)
     }
 
     private fun dispatchPath(
@@ -922,6 +956,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     override fun onUnbind(intent: Intent?): Boolean {
+        AttachmentShareGateway.disconnect(this)
         NavigationActionGateway.disconnect(this)
         ScreenshotCaptureGateway.disconnect(this)
         SemanticUiCaptureGateway.disconnect(this)
@@ -931,6 +966,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        AttachmentShareGateway.disconnect(this)
         NavigationActionGateway.disconnect(this)
         ScreenshotCaptureGateway.disconnect(this)
         SemanticUiCaptureGateway.disconnect(this)
@@ -975,6 +1011,7 @@ class CurrentAppAccessibilityService : AccessibilityService() {
         val SCREENSHOT_CALLBACK_EXECUTOR = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "hmr-screenshot-callback").apply { isDaemon = true }
         }
+        val ATTACHMENT_SHARE_PACKAGES = setOf("com.tencent.mm", "com.tencent.mobileqq")
     }
 }
 

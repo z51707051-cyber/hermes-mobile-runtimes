@@ -13,7 +13,9 @@ packaged bridge, HMR-114 adds blocking CI gates, HMR-115 adds the first scoped
 in-process Hermes Agent tool route, and HMR-116 adds the launcher task session
 and embedded-runtime boundary. HMR-117 moves that session into a private,
 user-visible foreground lifecycle so it can continue after the launcher is
-covered or the screen turns off.
+covered or the screen turns off. HMR-118 adds one task-scoped system-picker
+attachment grant and an exact-package share-flow launcher without exposing an
+arbitrary URI or Intent surface. The initial target allowlist is WeChat and QQ.
 
 Chinese installation and device acceptance instructions are in
 [`android-developer-preview-zh.md`](../../docs/testing/android-developer-preview-zh.md).
@@ -39,7 +41,7 @@ The debug APK deliberately has:
 - strict bounded JSON parsing with duplicate-key rejection;
 - fail-closed compatibility negotiation and canonical action digests;
 - verification of the normative Python schema-bundle manifest;
-- a closed 13-tool capability catalog with immutable minimum risk levels;
+- a closed 14-tool capability catalog with immutable minimum risk levels;
 - an Android Router that accepts only `AuthorizedAction` and calls its PEP
   before provider resolution;
 - a deny-all default authorization PEP and a live capability check immediately
@@ -75,8 +77,11 @@ The debug APK deliberately has:
 - a revocable per-user-task Agent bridge with an in-memory P-256 signing key,
   ten-second action authorization, strict sequence/nonce replay rejection and
   a 1,024-action session bound;
-- 13 provider-safe `phone_*` Hermes tool registrations which remain invisible
+- 14 provider-safe `phone_*` Hermes tool registrations which remain invisible
   until Android injects the current task bridge;
+- one in-memory, one-task attachment selection consumed by
+  `phone_share_attachment`; the model can choose only the reviewed WeChat/QQ
+  target package, never a path, URI, MIME type or arbitrary Intent field;
 - one exported launcher activity with a bounded single-task chat session;
 - one non-exported `dataSync` task service, a private persistent notification,
   and a non-reference-counted wake lock capped at 16 minutes;

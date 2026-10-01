@@ -9,6 +9,12 @@
     <string name="task_prompt_hint">描述一个需要 Hermes 在本手机执行的任务</string>
     <string name="task_send">执行任务</string>
     <string name="task_stop">停止并撤销授权</string>
+    <string name="attachment_not_selected">尚未为下一项任务选择文件或图片。</string>
+    <string name="attachment_selected">下一项任务可使用：%1$s（%2$s）。该授权仅供这一次任务使用。</string>
+    <string name="select_attachment">选择文件或图片</string>
+    <string name="clear_attachment">清除选择</string>
+    <string name="attachment_selection_failed">无法读取该项目，请选择 128 MiB 以内的本地文件或图片。</string>
+    <string name="attachment_picker_unavailable">系统文件选择器不可用。</string>
     <string name="task_running">你：\n%1$s\n\nHermes 正在执行…</string>
     <string name="task_stopping">你：\n%1$s\n\n手机工具授权已撤销，正在等待模型请求停止…</string>
     <string name="task_completed">你：\n%1$s\n\nHermes：\n%2$s</string>

@@ -9,6 +9,12 @@
     <string name="task_prompt_hint">Describe one task for Hermes to perform on this phone</string>
     <string name="task_send">Run task</string>
     <string name="task_stop">Stop and revoke</string>
+    <string name="attachment_not_selected">No file or photo is selected for the next task.</string>
+    <string name="attachment_selected">Selected for the next task: %1$s (%2$s). It is consumed by that task only.</string>
+    <string name="select_attachment">Select file or photo</string>
+    <string name="clear_attachment">Clear selection</string>
+    <string name="attachment_selection_failed">Hermes could not read that selection. Choose a local file or photo under 128 MiB.</string>
+    <string name="attachment_picker_unavailable">No system file picker is available.</string>
     <string name="task_running">You:\n%1$s\n\nHermes is working…</string>
     <string name="task_stopping">You:\n%1$s\n\nTool authorization is revoked. Waiting for the model request to stop…</string>
     <string name="task_completed">You:\n%1$s\n\nHermes:\n%2$s</string>

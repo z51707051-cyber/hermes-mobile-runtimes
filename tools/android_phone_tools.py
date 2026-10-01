@@ -38,6 +38,7 @@ MODEL_TO_CANONICAL = {
     "phone_back": "phone.back",
     "phone_home": "phone.home",
     "phone_open_app": "phone.open_app",
+    "phone_share_attachment": "phone.share_attachment",
     "phone_wait": "phone.wait",
     "phone_notifications": "phone.notifications",
     "phone_current_app": "phone.current_app",
@@ -213,6 +214,24 @@ registry.register(
         "package": {"type": "string", "pattern": r"^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$", "maxLength": 255},
     }, ["package"]),
     handler=lambda args, **_: _dispatch("phone_open_app", args),
+)
+registry.register(
+    name="phone_share_attachment", **_COMMON,
+    schema=_schema(
+        "Open the exact target app's share flow with the single file or photo "
+        "the user explicitly selected for this task. This does not claim the "
+        "recipient received it; use screen tools to choose the recipient and "
+        "verify the send step.",
+        {
+            "package": {
+                "type": "string",
+                "enum": ["com.tencent.mm", "com.tencent.mobileqq"],
+                "description": "Reviewed exact package for WeChat or QQ.",
+            },
+        },
+        ["package"],
+    ),
+    handler=lambda args, **_: _dispatch("phone_share_attachment", args),
 )
 registry.register(
     name="phone_wait", **_COMMON,

@@ -3,6 +3,7 @@ package ai.hermes.mobile.runtime.bridge.runtime
 import ai.hermes.mobile.runtime.bridge.accessibility.NavigationActionGateway
 import ai.hermes.mobile.runtime.bridge.accessibility.ScreenshotCaptureGateway
 import ai.hermes.mobile.runtime.bridge.accessibility.SemanticUiCaptureGateway
+import ai.hermes.mobile.runtime.bridge.observer.AttachmentShareSource
 import ai.hermes.mobile.runtime.bridge.device.AndroidDeviceStateGateway
 import ai.hermes.mobile.runtime.bridge.notification.NotificationCaptureGateway
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
@@ -27,23 +28,26 @@ internal object BridgeRuntime {
             "phone.home",
             "phone.open_app",
         ).map { tool -> NavigationProvider(tool, NavigationActionGateway) }
-    private val capabilities =
-        CapabilityRegistry(
-            listOf(
-                currentAppProvider,
-                readScreenProvider,
-                screenshotProvider,
-                notificationProvider,
-                deviceStateProvider,
-                waitProvider,
-            ) + navigationProviders,
-        )
+    private val baseProviders =
+        listOf(
+            currentAppProvider,
+            readScreenProvider,
+            screenshotProvider,
+            notificationProvider,
+            deviceStateProvider,
+            waitProvider,
+        ) + navigationProviders
 
     fun router(
         authorizationPep: AndroidPolicyEnforcementPoint = DenyAllPolicyEnforcementPoint,
+        attachmentShareSource: AttachmentShareSource? = null,
     ): AndroidToolRouter =
         AndroidToolRouter(
-            capabilities = capabilities,
+            capabilities =
+                CapabilityRegistry(
+                    baseProviders +
+                        listOfNotNull(attachmentShareSource?.let(::AttachmentShareProvider)),
+                ),
             policyEnforcementPoint =
                 CurrentAppPolicyEnforcementPoint(
                     authorizationDelegate = authorizationPep,
@@ -54,6 +58,7 @@ internal object BridgeRuntime {
                     navigationSource = NavigationActionGateway,
                     notificationSource = NotificationCaptureGateway,
                     deviceStateSource = AndroidDeviceStateGateway,
+                    attachmentShareSource = attachmentShareSource,
                 ),
         )
 

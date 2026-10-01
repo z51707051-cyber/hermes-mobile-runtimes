@@ -11,8 +11,8 @@
     "schema_bundle_digest": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/sha256_digest"},
     "tool_schema_digests": {
       "type": "object",
-      "minProperties": 13,
-      "maxProperties": 13,
+      "minProperties": 1,
+      "maxProperties": 64,
       "propertyNames": {"pattern": "^phone\\.[a-z_]+$"},
       "additionalProperties": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/sha256_digest"}
     },

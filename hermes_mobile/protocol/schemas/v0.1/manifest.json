@@ -1,5 +1,5 @@
 {
-  "bundle_digest": "sha256:df3139480b04d89b133b46b062100ad544d2403a790818aa7399baf426b5d3e1",
+  "bundle_digest": "sha256:1013a1f4833772d87dd72105a480a23ec6dce0fbd390005bc202b95a8d70f98b",
   "digest_algorithm": "SHA-256",
   "files": [
     {
@@ -11,11 +11,11 @@
       "path": "events/mobile-event.schema.json"
     },
     {
-      "digest": "sha256:95ad674fba9e7fa81ad9195fb5eeb6d21f4ab641433b9323309e157006233111",
+      "digest": "sha256:41a6a4d1ebff8cf2ce90f6e60ba16c0b7cd165c5f3f04d09715151d94a2a34a0",
       "path": "requests/authorized-action.schema.json"
     },
     {
-      "digest": "sha256:6d6da27166639d9fba0d1ff3a25abeca4dccbbfb15b3958745d4f36075bec4f7",
+      "digest": "sha256:66161e590a0865fcb4a79dcf3387c74cc290925d72a10b79182c8b5d124e478c",
       "path": "requests/compatibility-offer.schema.json"
     },
     {
@@ -23,7 +23,7 @@
       "path": "requests/compatibility-selection.schema.json"
     },
     {
-      "digest": "sha256:9b1ad98f7e66881e7c6027033389f10a347e52e631377b39fdafe88649fa3b0d",
+      "digest": "sha256:4ade9884c46ca8db17826c42c912331b78e4f0d870930e8ee27ace388837c975",
       "path": "requests/tool-execution-request.schema.json"
     },
     {
@@ -65,6 +65,10 @@
     {
       "digest": "sha256:60a8b302e5e29c4c218168622d9da9a952f2ce246cdc4cc20478bee9e8437b1c",
       "path": "tools/phone.screenshot.schema.json"
+    },
+    {
+      "digest": "sha256:8d8b7e06ead2ed1cffcf2ebff2ef5aeaaa865b5ac854050828c19c24daef0b8d",
+      "path": "tools/phone.share_attachment.schema.json"
     },
     {
       "digest": "sha256:5c73a452a9cb41813dd65bc4538cab41ccf748d16af1a4a0b96347219250c22d",

@@ -22,6 +22,7 @@ internal object ProtocolCodec {
             "phone.back",
             "phone.home",
             "phone.open_app",
+            "phone.share_attachment",
             "phone.wait",
             "phone.notifications",
             "phone.current_app",
@@ -111,6 +112,13 @@ internal object ProtocolCodec {
             "phone.open_app" -> {
                 parameters.closed(required = setOf("package"))
                 validatePackage(parameters.string("package"))
+            }
+            "phone.share_attachment" -> {
+                parameters.closed(required = setOf("package"))
+                parameters.string("package").requireEnum(
+                    setOf("com.tencent.mm", "com.tencent.mobileqq"),
+                    "package",
+                )
             }
             "phone.wait" -> {
                 parameters.closed(required = setOf("timeout_ms"), optional = setOf("condition"))

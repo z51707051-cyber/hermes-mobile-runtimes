@@ -2,16 +2,18 @@ package ai.hermes.mobile.runtime.bridge.runtime
 
 import android.os.Handler
 import android.os.Looper
+import ai.hermes.mobile.runtime.bridge.attachment.SelectedAttachment
 import ai.hermes.mobile.runtime.bridge.model.ModelConfigStore
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicLong
 
-class HermesTaskController(
+internal class HermesTaskController(
     private val modelConfigStore: ModelConfigStore,
     private val runtime: HermesTaskRuntime,
     private val onStateChanged: (HermesTaskSession) -> Unit,
+    private val selectedAttachmentProvider: () -> SelectedAttachment? = { null },
     private val executor: ExecutorService = Executors.newSingleThreadExecutor(),
     private val mainHandler: Handler = Handler(Looper.getMainLooper()),
 ) : AutoCloseable {
@@ -50,7 +52,7 @@ class HermesTaskController(
             return false
         }
 
-        val bridge = HermesAndroidToolBridge.createForUserTask()
+        val bridge = HermesAndroidToolBridge.createForUserTask(selectedAttachmentProvider())
         activeBridge = bridge
         activeWorkerStarted = false
         state = next

@@ -159,6 +159,7 @@ reason to add or remove tool definitions after every permission change.
 | `phone.back` | Accessibility global action | Connected service | Rejected action or unchanged state is reported and verified separately. |
 | `phone.home` | Accessibility global action | Connected service | Same separation of execution and verification. |
 | `phone.open_app` | Exact configured package launch/allowlisted Intent | Package visibility and launchable exact target | No `QUERY_ALL_PACKAGES`; unknown/unavailable target returns `APP_NOT_FOUND`. |
+| `phone.share_attachment` | One temporary system-picker `content://` grant | Exact target package plus one-shot task ownership | No caller URI/path/MIME/Intent fields; success means share UI opened, not delivery. |
 | `phone.wait` | Monotonic 100 ms bounded polling plus semantic probe | Active task/session; Accessibility only for conditions | Cancellable; capped by action deadline and authorization expiry; partial UI cannot satisfy a condition. |
 | `phone.notifications` | Notification listener cursor/dedupe | User grant and listener `onListenerConnected` | Disconnect is not an empty inbox; request safe rebind and return capability error until connected. |
 | `phone.current_app` | Accessibility window/event state | Connected Accessibility service | Stale data is marked with freshness; unavailable service returns typed error. |

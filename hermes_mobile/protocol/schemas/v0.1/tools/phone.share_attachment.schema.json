@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermesmobile.dev/schemas/v0.1/tools/phone.share_attachment.schema.json",
+  "type": "object",
+  "required": ["package"],
+  "properties": {
+    "package": {
+      "type": "string",
+      "enum": ["com.tencent.mm", "com.tencent.mobileqq"]
+    }
+  },
+  "additionalProperties": false
+}
