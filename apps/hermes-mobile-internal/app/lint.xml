@@ -12,4 +12,9 @@
     <issue id="AndroidGradlePluginVersion">
         <ignore regexp="Gradle than 9\.5\.0" />
     </issue>
+
+    <!-- The first internal package is intentionally limited to the ARM64 iQOO test lane. -->
+    <issue id="ChromeOsAbiSupport">
+        <ignore path="build.gradle.kts" />
+    </issue>
 </lint>

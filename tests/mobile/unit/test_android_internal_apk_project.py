@@ -34,6 +34,7 @@ def test_internal_apk_reuses_the_reviewed_manifest_and_bridge() -> None:
     assert 'lintConfig = file("lint.xml")' in build
     lint = (APP_ROOT / "lint.xml").read_text(encoding="utf-8")
     assert '<issue id="OldTargetApi">' in lint
+    assert '<issue id="ChromeOsAbiSupport">' in lint
     assert '<ignore path="build.gradle.kts" />' in lint
     assert not (APP_ROOT / "src" / "main" / "AndroidManifest.xml").exists()
 
