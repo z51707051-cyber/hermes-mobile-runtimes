@@ -43,7 +43,7 @@ android {
     lint {
         abortOnError = true
         checkDependencies = true
-        lintConfig = file("../../mobile-bridge-android/app/lint.xml")
+        lintConfig = file("lint.xml")
         warningsAsErrors = true
     }
 }

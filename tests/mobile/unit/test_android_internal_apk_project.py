@@ -31,6 +31,10 @@ def test_internal_apk_reuses_the_reviewed_manifest_and_bridge() -> None:
     )
     assert 'kotlin.srcDir("../../mobile-bridge-android/app/src/main/kotlin")' in build
     assert 'res.srcDir("../../mobile-bridge-android/app/src/main/res")' in build
+    assert 'lintConfig = file("lint.xml")' in build
+    lint = (APP_ROOT / "lint.xml").read_text(encoding="utf-8")
+    assert '<issue id="OldTargetApi">' in lint
+    assert '<ignore path="build.gradle.kts" />' in lint
     assert not (APP_ROOT / "src" / "main" / "AndroidManifest.xml").exists()
 
 
