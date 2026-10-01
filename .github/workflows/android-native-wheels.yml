@@ -360,9 +360,10 @@ jobs:
             echo 'forbidden secret-bearing file type found in internal APK' >&2
             exit 1
           fi
+          test -s "$project/gradle/verification-metadata.xml"
+          test -s "$project/app/gradle.lockfile"
           cp "$project/gradle/verification-metadata.xml" "$evidence/dependency-metadata/gradle/"
           cp "$project/app/gradle.lockfile" "$evidence/dependency-metadata/app/"
-          cp "$project/gradle.lockfile" "$evidence/dependency-metadata/"
           output="$evidence/Hermes-Mobile-alpha-arm64-v8a.apk"
           cp "$apk" "$output"
           sha256sum "$output" > "$evidence/Hermes-Mobile-alpha-arm64-v8a.apk.sha256"

@@ -84,5 +84,7 @@ def test_internal_apk_workflow_publishes_only_the_reviewed_arm64_artifact() -> N
     assert "verify_android_manifest_policy.py" in combined
     assert "lib/(x86|x86_64|armeabi|armeabi-v7a)" in combined
     assert "grep -Fvx '/assets/chaquopy/cacert.pem'" in combined
+    assert 'test -s "$project/app/gradle.lockfile"' in combined
+    assert 'cp "$project/gradle.lockfile"' not in combined
     assert artifact["with"]["name"] == "hermes-mobile-internal-arm64"
     assert artifact["with"]["if-no-files-found"] == "error"
