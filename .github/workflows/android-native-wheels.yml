@@ -4,6 +4,7 @@ on:
     paths:
       - 'experiments/android-native-wheels/**'
       - 'experiments/android-hermes-import-probe/**'
+      - 'apps/hermes-mobile-internal/**'
       - 'apps/mobile-bridge-android/app/src/main/**'
       - 'tools/android_phone_tools.py'
       - 'toolsets.py'
@@ -242,4 +243,132 @@ jobs:
             experiments/android-hermes-import-probe/gradle/verification-metadata.xml
             experiments/android-hermes-import-probe/app/gradle.lockfile
             experiments/android-hermes-import-probe/gradle.lockfile
+          retention-days: 14
+
+  build-internal-arm64-apk:
+    needs: build-wheel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: android-wheel-*-arm64_v8a
+          path: android-wheel-artifacts
+      - name: Collect and verify ARM64 bootstrap wheels
+        run: |
+          set -euo pipefail
+          project=apps/hermes-mobile-internal
+          wheelhouse="$project/app/android-wheelhouse"
+          evidence="$project/evidence"
+          mkdir -p "$wheelhouse" "$evidence"
+          find android-wheel-artifacts -type f -name '*.whl' -exec cp '{}' "$wheelhouse/" ';'
+          python3 - <<'PY'
+          from pathlib import Path
+
+          wheelhouse = Path("apps/hermes-mobile-internal/app/android-wheelhouse")
+          wheels = sorted(path.name for path in wheelhouse.glob("*.whl"))
+          required = ("jiter", "pydantic_core", "rpds_py", "ruamel_yaml_clib")
+          for package in required:
+              if not any(
+                  name.startswith(package + "-") and "android_24_arm64_v8a" in name
+                  for name in wheels
+              ):
+                  raise SystemExit(f"missing exact ARM64 bootstrap wheel: {package}")
+          if any("x86" in name or "armeabi" in name for name in wheels):
+              raise SystemExit("non-ARM64 wheel entered the internal package input")
+          PY
+          sha256sum "$wheelhouse"/*.whl | LC_ALL=C sort \
+            > "$evidence/bootstrap-wheel-sha256.txt"
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
+        with:
+          version: '0.9.28'
+      - run: uv python install 3.13
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          accept-android-sdk-licenses: false
+          packages: ''
+      - name: Install pinned Android build packages
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Stage reviewed Hermes runtime sources
+        run: |
+          set -euo pipefail
+          target=apps/hermes-mobile-internal/app/src/generated/python
+          mkdir -p "$target"
+          runtime_packages=(
+            acp_adapter agent cron gateway hermes_cli hermes_mobile
+            plugins providers tools tui_gateway
+          )
+          cp -R "${runtime_packages[@]}" "$target/"
+          find . -maxdepth 1 -type f -name '*.py' -exec cp '{}' "$target/" ';'
+          test -f "$target/run_agent.py"
+          test -f "$target/gateway/session_context.py"
+          test -f "$target/tools/android_phone_tools.py"
+          find "$target" -type f -name '*.pyc' -delete
+          find "$target" -type d -name '__pycache__' -empty -delete
+      - name: Build and strictly verify installable APK
+        run: |
+          set -euo pipefail
+          project=apps/hermes-mobile-internal
+          export PATH="$(dirname "$(uv python find 3.13)"):$PATH"
+          echo "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7  apps/mobile-bridge-android/gradle/wrapper/gradle-wrapper.jar" \
+            | sha256sum -c -
+          apps/mobile-bridge-android/gradlew -p "$project" --no-daemon \
+            --write-locks --write-verification-metadata sha256 \
+            :app:lintDebug :app:assembleDebug
+          apps/mobile-bridge-android/gradlew -p "$project" --no-daemon \
+            --dependency-verification=strict \
+            :app:lintDebug :app:assembleDebug
+      - name: Inspect authority, ABI and packaged runtime
+        run: |
+          set -euo pipefail
+          project=apps/hermes-mobile-internal
+          apk="$project/app/build/outputs/apk/debug/app-debug.apk"
+          evidence="$project/evidence"
+          mkdir -p "$evidence/apk" "$evidence/dependency-metadata/gradle" "$evidence/dependency-metadata/app"
+          test "$(apkanalyzer manifest application-id "$apk")" = 'ai.hermes.mobile.runtime'
+          apkanalyzer manifest print "$apk" > "$evidence/apk/AndroidManifest.xml"
+          apkanalyzer files list "$apk" | LC_ALL=C sort > "$evidence/apk/packaged-files.txt"
+          find "$project/app/build/reports" -type f -name 'lint-results-*' \
+            -exec cp '{}' "$evidence/apk/" ';'
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt2" dump resources "$apk" \
+            > "$evidence/apk/resource-table.txt"
+          python3 scripts/android/verify_android_manifest_policy.py \
+            --network-security-config apps/mobile-bridge-android/app/src/main/res/xml/network_security_config.xml \
+            --accessibility-service-config apps/mobile-bridge-android/app/src/main/res/xml/current_app_accessibility_service.xml \
+            --full-backup-rules apps/mobile-bridge-android/app/src/main/res/xml/backup_rules.xml \
+            --data-extraction-rules apps/mobile-bridge-android/app/src/main/res/xml/data_extraction_rules.xml \
+            --compiled-resource-table "$evidence/apk/resource-table.txt" \
+            "$evidence/apk/AndroidManifest.xml"
+          grep -Eq '(^|/)lib/arm64-v8a/.*(python|chaquopy)' "$evidence/apk/packaged-files.txt"
+          if grep -Eq '(^|/)lib/(x86|x86_64|armeabi|armeabi-v7a)/' "$evidence/apk/packaged-files.txt"; then
+            echo 'unexpected non-ARM64 native library in internal APK' >&2
+            exit 1
+          fi
+          if grep -Ei '(\.env($|/)|\.pem$|\.key$|\.p12$|\.jks$|\.keystore$|credentials\.json$|secrets\.json$)' "$evidence/apk/packaged-files.txt"; then
+            echo 'forbidden secret-bearing file type found in internal APK' >&2
+            exit 1
+          fi
+          cp "$project/gradle/verification-metadata.xml" "$evidence/dependency-metadata/gradle/"
+          cp "$project/app/gradle.lockfile" "$evidence/dependency-metadata/app/"
+          cp "$project/gradle.lockfile" "$evidence/dependency-metadata/"
+          output="$evidence/Hermes-Mobile-alpha-arm64-v8a.apk"
+          cp "$apk" "$output"
+          sha256sum "$output" > "$evidence/Hermes-Mobile-alpha-arm64-v8a.apk.sha256"
+          stat --printf='%s bytes\n' "$output" > "$evidence/Hermes-Mobile-alpha-arm64-v8a.apk.size"
+      - name: Upload installable ARM64 internal package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hermes-mobile-internal-arm64
+          path: apps/hermes-mobile-internal/evidence/
+          if-no-files-found: error
           retention-days: 14

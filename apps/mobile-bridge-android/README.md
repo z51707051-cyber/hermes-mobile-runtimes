@@ -16,6 +16,11 @@ user-visible foreground lifecycle so it can continue after the launcher is
 covered or the screen turns off. HMR-118 adds one task-scoped system-picker
 attachment grant and an exact-package share-flow launcher without exposing an
 arbitrary URI or Intent surface. The initial target allowlist is WeChat and QQ.
+HMR-119 packages the same reviewed bridge with the real Hermes Agent and an
+ARM64-only Chaquopy runtime as a separately built, installable internal alpha
+for the target iQOO Z10x. Its build definition lives in
+`apps/hermes-mobile-internal`; it reuses this module's production manifest,
+sources and resources rather than maintaining a second authority surface.
 
 Chinese installation and device acceptance instructions are in
 [`android-developer-preview-zh.md`](../../docs/testing/android-developer-preview-zh.md).
@@ -27,6 +32,11 @@ Agent `phone_wait` call through the production Router on Android 15. The
 HMR-117 foreground service keeps an accepted task alive across Activity
 recreation, while its private notification can stop the task and immediately
 revoke the Android tool bridge.
+
+The HMR-119 internal artifact is debug-signed and ARM64-only. It is the first
+package intended for physical-device acceptance, but it remains incomplete:
+`cryptography`, Pillow and psutil dependent paths are withheld until their
+exact Android wheels and behavior pass the same review gates.
 
 ## HMR-112 bounded execution boundary
 
