@@ -313,9 +313,10 @@ class HermesAndroidToolBridge internal constructor(
     companion object {
         /** Called only by the Android UI when the user starts a concrete task. */
         @JvmStatic
-        @JvmOverloads
-        fun createForUserTask(
-            selectedAttachment: SelectedAttachment? = null,
+        fun createForUserTask(): HermesAndroidToolBridge = createForUserTask(null)
+
+        internal fun createForUserTask(
+            selectedAttachment: SelectedAttachment?,
         ): HermesAndroidToolBridge {
             val authorization = AgentTaskAuthorizationSession()
             val attachmentShareSource = selectedAttachment?.let(::AndroidAttachmentShareSource)
