@@ -210,9 +210,10 @@ class HermesAndroidToolBridgeTest {
     private fun decode(value: String): Map<String, Any?> =
         StrictJson.decodeObject(value.toByteArray())
 
-    private fun artifactId(result: Map<String, Any?>): String =
-        ((result.getValue("artifacts") as List<*>).single() as Map<*, *>)
-            .getValue("artifact_id") as String
+    private fun artifactId(result: Map<String, Any?>): String {
+        val artifact = (result.getValue("artifacts") as List<*>).single() as Map<*, *>
+        return artifact["artifact_id"] as String
+    }
 
     @Suppress("UNCHECKED_CAST")
     private fun errorCode(result: Map<String, Any?>): String =
