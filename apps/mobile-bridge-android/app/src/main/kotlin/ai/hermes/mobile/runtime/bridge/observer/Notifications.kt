@@ -4,6 +4,7 @@ import ai.hermes.mobile.runtime.bridge.artifact.ArtifactReference
 import ai.hermes.mobile.runtime.bridge.protocol.CanonicalJson
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Locale
 import java.util.UUID
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -152,7 +153,7 @@ internal class NotificationLedger(
             }
         return NotificationBatch(
             payload = CanonicalJson.encode(document),
-            redactions = listOf(FIELDS_MINIMIZED),
+            redactions = listOf(FIELDS_MINIMIZED, AUTHENTICATION_SECRETS_WITHHELD),
         )
     }
 
@@ -257,29 +258,33 @@ internal class NotificationLedger(
         val notificationId = notificationId(input)
         val observedAt = clock.nowMillis().coerceIn(0, MAX_SAFE_INTEGER)
         val postedAt = input.postedAtEpochMillis.coerceIn(0, MAX_SAFE_INTEGER)
-        val fields =
+        val title = boundedText(input.title)
+        val text = boundedText(input.text)
+        val subText = boundedText(input.subText)
+        val authenticationWithheld = containsAuthenticationSecret(title, text, subText)
+        val digestFields =
             linkedMapOf<String, Any?>(
                 "notification_id" to notificationId,
                 "source_package" to input.sourcePackage,
                 "posted_at_epoch_ms" to postedAt,
-                "title" to boundedText(input.title),
-                "text" to boundedText(input.text),
-                "sub_text" to boundedText(input.subText),
+                "title" to title,
+                "text" to text,
+                "sub_text" to subText,
                 "category" to boundedMetadata(input.category),
                 "ongoing" to input.ongoing,
                 "clearable" to input.clearable,
             )
-        val material = CanonicalJson.encode(fields)
+        val material = CanonicalJson.encode(digestFields)
         val digest = try { hmac(material) } finally { material.fill(0) }
         return Snapshot(
             notificationId,
             input.sourcePackage,
             postedAt,
             observedAt,
-            fields["title"] as String?,
-            fields["text"] as String?,
-            fields["sub_text"] as String?,
-            fields["category"] as String?,
+            title.unless(authenticationWithheld),
+            text.unless(authenticationWithheld),
+            subText.unless(authenticationWithheld),
+            digestFields["category"] as String?,
             input.ongoing,
             input.clearable,
             digest,
@@ -321,6 +326,13 @@ internal class NotificationLedger(
             )
 
     private fun boundedText(value: String?): String? = bounded(value, MAX_TEXT_CHARS)
+
+    private fun containsAuthenticationSecret(vararg values: String?): Boolean {
+        val semantic = values.filterNotNull().joinToString(" ").lowercase(Locale.ROOT)
+        return AUTHENTICATION_MARKERS.any(semantic::contains)
+    }
+
+    private fun String?.unless(condition: Boolean): String? = if (condition) null else this
 
     private fun boundedMetadata(value: String?): String? = bounded(value, MAX_METADATA_CHARS)
 
@@ -366,9 +378,29 @@ internal class NotificationLedger(
         const val MAX_SAFE_INTEGER = 9_007_199_254_740_991L
         const val CURSOR_PREFIX = "notifications"
         const val FIELDS_MINIMIZED = "NOTIFICATION_FIELDS_MINIMIZED"
+        const val AUTHENTICATION_SECRETS_WITHHELD = "AUTHENTICATION_SECRETS_WITHHELD"
         const val HMAC_ALGORITHM = "HmacSHA256"
         val OPAQUE_SESSION = Regex("[A-Za-z0-9][A-Za-z0-9._:-]{0,63}")
         val PACKAGE_NAME = Regex("[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+")
         val WHITESPACE = Regex("\\s+")
+        val AUTHENTICATION_MARKERS =
+            listOf(
+                "verification code",
+                "security code",
+                "one-time code",
+                "one time code",
+                "one-time password",
+                "one time password",
+                "otp",
+                "totp",
+                "mfa code",
+                "2fa code",
+                "验证码",
+                "校验码",
+                "动态码",
+                "短信码",
+                "安全码",
+                "登录码",
+            )
     }
 }

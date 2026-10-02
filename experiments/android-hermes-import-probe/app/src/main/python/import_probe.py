@@ -135,7 +135,11 @@ def _start_model_endpoint():
                     ),
                     "authorization_verified": self.headers.get("Authorization")
                     == f"Bearer {_API_KEY}",
-                    "prompt_verified": _PROMPT in user_messages,
+                    "prompt_verified": any(
+                        _PROMPT in content
+                        for content in user_messages
+                        if isinstance(content, str)
+                    ),
                 }
                 evidence.append(request_evidence)
                 if len(evidence) == 1:

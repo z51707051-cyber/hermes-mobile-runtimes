@@ -44,7 +44,21 @@ class SemanticTargetRegistryTest {
             "L4",
             SemanticRiskClassifier.requiredRisk(target(text = null, resourceId = "com.example:id/action")),
         )
-        assertEquals("L3", SemanticRiskClassifier.requiredRisk(target(text = "ordinary", password = true)))
+        assertEquals("L4", SemanticRiskClassifier.requiredRisk(target(text = "ordinary", password = true)))
+        assertEquals(
+            "L4",
+            SemanticRiskClassifier.requiredRisk(
+                target(
+                    text = null,
+                    resourceId = "com.example:id/sms_verification_code",
+                    editable = true,
+                ),
+            ),
+        )
+        assertEquals(
+            "L4",
+            SemanticRiskClassifier.requiredRisk(target(text = "输入验证码", editable = true)),
+        )
         assertEquals("L1", SemanticRiskClassifier.requiredRisk(target(text = "Work playlist")))
     }
 
@@ -52,6 +66,7 @@ class SemanticTargetRegistryTest {
         text: String?,
         resourceId: String? = "com.example:id/action",
         password: Boolean = false,
+        editable: Boolean = false,
     ): SemanticActionTargetDescriptor =
         SemanticActionTargetDescriptor(
             nodeId = "node-1",
@@ -62,7 +77,7 @@ class SemanticTargetRegistryTest {
             bounds = UiBounds(0, 0, 100, 100),
             clickable = true,
             longClickable = true,
-            editable = false,
+            editable = editable,
             enabled = true,
             visibleToUser = true,
             password = password,

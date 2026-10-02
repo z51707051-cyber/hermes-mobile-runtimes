@@ -161,9 +161,9 @@ jobs:
           else
             echo 'built=false' >> "$GITHUB_OUTPUT"
             echo "dependency_resolution=failed exit=$build_status" > "$probe_dir/evidence/status.txt"
-            echo '::warning::Exact Hermes core dependencies did not resolve for Android; see the evidence artifact.'
+            echo '::error::Exact Hermes core dependencies did not resolve for Android; see the evidence artifact.'
           fi
-          exit 0
+          exit "$build_status"
       - name: Execute the launcher embedded-runtime route on Android 15
         if: steps.import-build.outputs.built == 'true'
         run: |

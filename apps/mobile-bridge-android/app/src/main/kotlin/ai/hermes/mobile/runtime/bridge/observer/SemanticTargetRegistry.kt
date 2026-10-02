@@ -183,6 +183,30 @@ internal class SemanticTargetRegistry(
 }
 
 internal object SemanticRiskClassifier {
+    private val authenticationFields =
+        listOf(
+            "password",
+            "passcode",
+            "verification code",
+            "security code",
+            "one-time code",
+            "one time code",
+            "one-time password",
+            "one time password",
+            "otp",
+            "totp",
+            "mfa code",
+            "2fa code",
+            "pin code",
+            "密码",
+            "口令",
+            "验证码",
+            "校验码",
+            "动态码",
+            "短信码",
+            "安全码",
+            "登录码",
+        )
     private val level4 =
         listOf(
             "delete",
@@ -244,7 +268,10 @@ internal object SemanticRiskClassifier {
         )
 
     fun requiredRisk(target: SemanticActionTargetDescriptor): String {
-        if (target.password) return "L3"
+        // Authentication challenges always require the user to take over.
+        // Password text is withheld from the semantic tree, so isPassword is
+        // the authoritative signal even when labels and resource IDs are blank.
+        if (target.password) return "L4"
         val accessibleSemantic =
             listOfNotNull(
                 target.text,
@@ -257,6 +284,7 @@ internal object SemanticRiskClassifier {
                 target.resourceId,
             ).joinToString(" ").lowercase(Locale.ROOT)
         return when {
+            target.editable && authenticationFields.any(semantic::contains) -> "L4"
             level4.any(semantic::contains) -> "L4"
             level3.any(semantic::contains) -> "L3"
             level2.any(semantic::contains) -> "L2"

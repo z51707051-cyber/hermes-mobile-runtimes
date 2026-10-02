@@ -5,6 +5,18 @@ import os
 from pathlib import Path
 
 
+_MOBILE_SAFETY_POLICY = """Android execution policy:
+- Never read, type, submit, or repeat a password, passcode, PIN,
+  SMS verification code, OTP, two-factor code, QR-login token, or biometric challenge.
+- If authentication is required, navigate only as far as the challenge, then
+  stop and tell the user exactly what they must complete manually. They can
+  start a new task after the account is logged in.
+- Never perform payments, transfers, purchases, app installation or removal,
+  password changes, two-factor changes, or security-setting changes.
+The Android policy layer will reject these actions even if requested.
+"""
+
+
 def run_task(base_url, api_key, model, prompt, android_bridge):
     """Run one bounded Agent task and always revoke its Python tool transport."""
     hermes_home = Path.home() / ".hermes-mobile"
@@ -31,7 +43,8 @@ def run_task(base_url, api_key, model, prompt, android_bridge):
             skip_background_review=True,
             run_budget_seconds=900,
         )
-        return agent.chat(prompt)
+        protected_prompt = f"{_MOBILE_SAFETY_POLICY}\nUser task:\n{prompt}"
+        return agent.chat(protected_prompt)
     finally:
         phone_tools.clear_android_tool_transport()
         if agent is not None:

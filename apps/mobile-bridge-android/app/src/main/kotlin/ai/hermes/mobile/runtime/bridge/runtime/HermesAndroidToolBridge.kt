@@ -300,7 +300,9 @@ class HermesAndroidToolBridge internal constructor(
                         "code" to code,
                         "message" to
                             if (code == "PERMISSION_DENIED") {
-                                "Android policy requires direct user confirmation"
+                                "Direct user action is required; Hermes cannot complete " +
+                                    "passwords, verification codes, payments, app installs, " +
+                                    "or security settings"
                             } else {
                                 "Android phone action was rejected"
                             },
@@ -311,6 +313,7 @@ class HermesAndroidToolBridge internal constructor(
     companion object {
         /** Called only by the Android UI when the user starts a concrete task. */
         @JvmStatic
+        @JvmOverloads
         internal fun createForUserTask(
             selectedAttachment: SelectedAttachment? = null,
         ): HermesAndroidToolBridge {

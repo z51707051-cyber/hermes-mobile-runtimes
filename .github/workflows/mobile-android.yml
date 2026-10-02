@@ -118,11 +118,13 @@ jobs:
           uv run ruff check hermes_mobile tests/mobile/contract \
             tools/android_phone_tools.py \
             tests/mobile/unit/test_android_phone_tools.py \
+            tests/mobile/unit/test_mobile_runtime_entry.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py \
             scripts/mobile scripts/android/verify_android_manifest_policy.py
           uv run ruff format --check hermes_mobile tests/mobile/contract \
+            tests/mobile/unit/test_mobile_runtime_entry.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py \
@@ -132,6 +134,7 @@ jobs:
         run: |
           scripts/run_tests.sh -j 4 tests/mobile/contract \
             tests/mobile/unit/test_android_phone_tools.py \
+            tests/mobile/unit/test_mobile_runtime_entry.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py -q

@@ -3,6 +3,16 @@ plugins {
     id("com.chaquo.python")
 }
 
+val signingStorePath = providers.environmentVariable("HERMES_ANDROID_KEYSTORE_PATH").orNull
+val signingStorePassword = providers.environmentVariable("HERMES_ANDROID_STORE_PASSWORD").orNull
+val signingKeyAlias = providers.environmentVariable("HERMES_ANDROID_KEY_ALIAS").orNull
+val signingKeyPassword = providers.environmentVariable("HERMES_ANDROID_KEY_PASSWORD").orNull
+val signingValues =
+    listOf(signingStorePath, signingStorePassword, signingKeyAlias, signingKeyPassword)
+require(signingValues.all { it == null } || signingValues.all { it != null }) {
+    "internal Android signing variables must be either all set or all unset"
+}
+
 android {
     namespace = "ai.hermes.mobile.runtime.bridge"
     compileSdk = 36
@@ -12,18 +22,32 @@ android {
         applicationId = "ai.hermes.mobile.runtime"
         minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-alpha.1"
+        versionCode = 2
+        versionName = "0.1.0-alpha.2"
         ndk {
             // The first installable package targets the user's ARM64 iQOO Z10x.
             abiFilters += "arm64-v8a"
         }
     }
 
+    val internalSigning =
+        if (signingStorePath != null) {
+            signingConfigs.create("internal") {
+                storeFile = file(signingStorePath)
+                storePassword = signingStorePassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
+                storeType = "PKCS12"
+            }
+        } else {
+            null
+        }
+
     buildTypes {
         release {
             isDebuggable = false
             isMinifyEnabled = false
+            signingConfig = internalSigning
         }
     }
 

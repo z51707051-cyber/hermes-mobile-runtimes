@@ -194,9 +194,9 @@ jobs:
           else
             echo 'built=false' >> "$GITHUB_OUTPUT"
             echo "bootstrap_package=failed exit=$build_status" > "$probe_dir/evidence/import-status.txt"
-            echo '::warning::Hermes bootstrap package failed; see import evidence.'
+            echo '::error::Hermes bootstrap package failed; see import evidence.'
           fi
-          exit 0
+          exit "$build_status"
       - name: Execute the launcher embedded-runtime route on Android 15
         if: steps.import-build.outputs.built == 'true'
         run: |
@@ -246,9 +246,15 @@ jobs:
           retention-days: 14
 
   build-internal-arm64-apk:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     needs: build-wheel
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      HERMES_ANDROID_KEYSTORE_BASE64: ${{ secrets.HERMES_ANDROID_KEYSTORE_BASE64 }}
+      HERMES_ANDROID_STORE_PASSWORD: ${{ secrets.HERMES_ANDROID_STORE_PASSWORD }}
+      HERMES_ANDROID_KEY_ALIAS: ${{ secrets.HERMES_ANDROID_KEY_ALIAS }}
+      HERMES_ANDROID_KEY_PASSWORD: ${{ secrets.HERMES_ANDROID_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -299,6 +305,18 @@ jobs:
           set -euo pipefail
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Restore fixed internal signing key
+        run: |
+          set -euo pipefail
+          test -n "$HERMES_ANDROID_KEYSTORE_BASE64"
+          test -n "$HERMES_ANDROID_STORE_PASSWORD"
+          test "$HERMES_ANDROID_KEY_ALIAS" = 'hermes-mobile-internal'
+          test -n "$HERMES_ANDROID_KEY_PASSWORD"
+          keystore="$RUNNER_TEMP/hermes-mobile-internal.p12"
+          printf '%s' "$HERMES_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          chmod 600 "$keystore"
+          test -s "$keystore"
+          echo "HERMES_ANDROID_KEYSTORE_PATH=$keystore" >> "$GITHUB_ENV"
       - name: Stage reviewed Hermes runtime sources
         run: |
           set -euo pipefail
@@ -324,18 +342,20 @@ jobs:
             | sha256sum -c -
           apps/mobile-bridge-android/gradlew -p "$project" --no-daemon \
             --write-locks --write-verification-metadata sha256 \
-            :app:lintDebug :app:assembleDebug
+            :app:lintRelease :app:assembleRelease
           apps/mobile-bridge-android/gradlew -p "$project" --no-daemon \
             --dependency-verification=strict \
-            :app:lintDebug :app:assembleDebug
+            :app:lintRelease :app:assembleRelease
       - name: Inspect authority, ABI and packaged runtime
         run: |
           set -euo pipefail
           project=apps/hermes-mobile-internal
-          apk="$project/app/build/outputs/apk/debug/app-debug.apk"
+          apk="$project/app/build/outputs/apk/release/app-release.apk"
           evidence="$project/evidence"
           mkdir -p "$evidence/apk" "$evidence/dependency-metadata/gradle" "$evidence/dependency-metadata/app"
           test "$(apkanalyzer manifest application-id "$apk")" = 'ai.hermes.mobile.runtime'
+          test "$(apkanalyzer manifest version-code "$apk")" = '2'
+          test "$(apkanalyzer manifest debuggable "$apk")" = 'false'
           apkanalyzer manifest print "$apk" > "$evidence/apk/AndroidManifest.xml"
           apkanalyzer files list "$apk" | LC_ALL=C sort > "$evidence/apk/packaged-files.txt"
           find "$project/app/build/reports" -type f -name 'lint-results-*' \
@@ -360,6 +380,15 @@ jobs:
             echo 'forbidden secret-bearing file type found in internal APK' >&2
             exit 1
           fi
+          apksigner_report="$evidence/apk/apksigner.txt"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$apk" \
+            | tee "$apksigner_report"
+          actual_certificate=$(
+            sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$apksigner_report" \
+              | tr '[:upper:]' '[:lower:]'
+          )
+          expected_certificate=$(tr -d '[:space:]' < "$project/signing-certificate.sha256")
+          test "$actual_certificate" = "$expected_certificate"
           test -s "$project/gradle/verification-metadata.xml"
           test -s "$project/app/gradle.lockfile"
           cp "$project/gradle/verification-metadata.xml" "$evidence/dependency-metadata/gradle/"

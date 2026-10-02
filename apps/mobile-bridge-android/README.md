@@ -33,7 +33,9 @@ HMR-117 foreground service keeps an accepted task alive across Activity
 recreation, while its private notification can stop the task and immediately
 revoke the Android tool bridge.
 
-The HMR-119 internal artifact is debug-signed and ARM64-only. It is the first
+The HMR-119 internal artifact is fixed-key-signed, non-debuggable and ARM64-only.
+CI verifies its public signing-certificate fingerprint so later internal builds
+remain Android upgrade-compatible. It is the first
 package intended for physical-device acceptance, but it remains incomplete:
 `cryptography`, Pillow and psutil dependent paths are withheld until their
 exact Android wheels and behavior pass the same review gates.
@@ -61,8 +63,10 @@ The debug APK deliberately has:
 - active-window content retrieval with only `flagReportViewIds`;
 - on-demand normalized semantic capture bounded to 500 nodes, 20,000 text
   characters, depth 64 and one active window;
-- mandatory password-content withholding and encrypted five-minute D3
-  in-memory artifacts with a separately keyed digest;
+- mandatory password-content withholding, L4 manual handoff for password and
+  verification-code fields, authentication-secret withholding in notification
+  capture, and encrypted five-minute D3 in-memory artifacts with a separately
+  keyed digest;
 - on-demand PNG/lossless-WebP screenshot capture with bounded crop, pixels,
   callback time and 16 MiB encoded output;
 - exact foreground-state correlation and typed secure-window, permission,
