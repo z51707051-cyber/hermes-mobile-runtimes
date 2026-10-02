@@ -354,7 +354,7 @@ jobs:
           evidence="$project/evidence"
           mkdir -p "$evidence/apk" "$evidence/dependency-metadata/gradle" "$evidence/dependency-metadata/app"
           test "$(apkanalyzer manifest application-id "$apk")" = 'ai.hermes.mobile.runtime'
-          test "$(apkanalyzer manifest version-code "$apk")" = '2'
+          test "$(apkanalyzer manifest version-code "$apk")" = '3'
           test "$(apkanalyzer manifest debuggable "$apk")" = 'false'
           apkanalyzer manifest print "$apk" > "$evidence/apk/AndroidManifest.xml"
           apkanalyzer files list "$apk" | LC_ALL=C sort > "$evidence/apk/packaged-files.txt"
