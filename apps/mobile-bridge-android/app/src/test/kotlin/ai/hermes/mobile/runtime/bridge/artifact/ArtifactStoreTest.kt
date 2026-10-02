@@ -37,6 +37,27 @@ class ArtifactStoreTest {
     }
 
     @Test
+    fun taskConsumerGetsPlaintextExactlyOnce() {
+        val store =
+            EncryptedInMemoryArtifactStore(
+                encryptionKey = ByteArray(32) { 1 },
+                digestKey = ByteArray(32) { 2 },
+                clock = ArtifactClock { 1_788_150_000_000L },
+                ids = ArtifactIdGenerator { "artifact-once" },
+                nonceSource = { ByteArray(it) { 3 } },
+            )
+        val reference = store.put(request("visible screen text"))
+
+        val consumed = requireNotNull(store.consume(reference.artifactId))
+
+        assertEquals(reference, consumed.reference)
+        assertEquals("visible screen text", consumed.content.toString(Charsets.UTF_8))
+        consumed.content.fill(0)
+        assertEquals(null, store.consume(reference.artifactId))
+        assertFalse(store.delete(reference.artifactId))
+    }
+
+    @Test
     fun keyedDigestChangesAcrossAuthoritiesAndNonceReuseIsRejected() {
         val first =
             EncryptedInMemoryArtifactStore(

@@ -64,8 +64,16 @@ internal data class ArtifactWriteRequest(
     val timeToLiveMillis: Long,
 )
 
+/** Plaintext returned only to the task-scoped Agent bridge for one-shot delivery. */
+internal data class ConsumedArtifact(
+    val reference: ArtifactReference,
+    val content: ByteArray,
+)
+
 internal interface ArtifactStore {
     fun put(request: ArtifactWriteRequest): ArtifactReference
+
+    fun consume(artifactId: String): ConsumedArtifact?
 
     fun delete(artifactId: String): Boolean
 
@@ -77,6 +85,8 @@ internal object RuntimeArtifactStore : ArtifactStore {
     private val delegate = EncryptedInMemoryArtifactStore()
 
     override fun put(request: ArtifactWriteRequest): ArtifactReference = delegate.put(request)
+
+    override fun consume(artifactId: String): ConsumedArtifact? = delegate.consume(artifactId)
 
     override fun delete(artifactId: String): Boolean = delegate.delete(artifactId)
 
@@ -94,8 +104,10 @@ internal fun interface ArtifactIdGenerator {
 /**
  * Process-local encrypted storage for D3 artifacts.
  *
- * The store deliberately exposes no content read method. Retrieval must later
- * be added through a separately authorized and audited broker operation.
+ * Content leaves this store only through a destructive one-shot consume. The
+ * caller must independently authorize the artifact id and clear the returned
+ * plaintext. The production caller is the task-scoped Agent bridge, which can
+ * consume only artifact ids emitted by that same task.
  */
 internal class EncryptedInMemoryArtifactStore(
     encryptionKey: ByteArray = randomKey(),
@@ -157,7 +169,27 @@ internal class EncryptedInMemoryArtifactStore(
     }
 
     @Synchronized
-    override fun delete(artifactId: String): Boolean = artifacts.remove(artifactId) != null
+    override fun consume(artifactId: String): ConsumedArtifact? {
+        purgeExpiredLocked()
+        val encrypted = artifacts.remove(artifactId) ?: return null
+        return try {
+            ConsumedArtifact(
+                reference = encrypted.reference,
+                content = decrypt(encrypted),
+            )
+        } finally {
+            encrypted.nonce.fill(0)
+            encrypted.ciphertext.fill(0)
+        }
+    }
+
+    @Synchronized
+    override fun delete(artifactId: String): Boolean =
+        artifacts.remove(artifactId)?.let { encrypted ->
+            encrypted.nonce.fill(0)
+            encrypted.ciphertext.fill(0)
+            true
+        } ?: false
 
     @Synchronized
     override fun purgeExpired(): Int = purgeExpiredLocked()
@@ -165,7 +197,11 @@ internal class EncryptedInMemoryArtifactStore(
     private fun purgeExpiredLocked(): Int {
         val now = clock.nowMillis()
         val expired = artifacts.values.filter { it.reference.expiresAtEpochMillis <= now }
-        expired.forEach { artifacts.remove(it.reference.artifactId) }
+        expired.forEach { encrypted ->
+            artifacts.remove(encrypted.reference.artifactId)
+            encrypted.nonce.fill(0)
+            encrypted.ciphertext.fill(0)
+        }
         return expired.size
     }
 
@@ -199,6 +235,17 @@ internal class EncryptedInMemoryArtifactStore(
         )
         cipher.updateAAD(associatedData)
         return cipher.doFinal(content)
+    }
+
+    private fun decrypt(encrypted: EncryptedArtifact): ByteArray {
+        val cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            SecretKeySpec(encryptionKey, "AES"),
+            GCMParameterSpec(GCM_TAG_BITS, encrypted.nonce),
+        )
+        cipher.updateAAD(associatedData(encrypted.reference))
+        return cipher.doFinal(encrypted.ciphertext)
     }
 
     private fun associatedData(reference: ArtifactReference): ByteArray =

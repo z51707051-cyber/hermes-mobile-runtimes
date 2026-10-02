@@ -2,7 +2,9 @@
 
 HMR-111 adds read-only `phone.notifications` and `phone.device_state`
 providers. It does not add Event Bus dispatch, notification actions, Bluetooth
-authority, artifact retrieval or production transport.
+authority or a general artifact retrieval surface. The embedded Agent can
+consume only the exact observation artifacts produced by its active task,
+once.
 
 ## Automated evidence
 

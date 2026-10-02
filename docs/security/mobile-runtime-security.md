@@ -145,8 +145,10 @@ five-minute process-local artifacts. Their separately keyed digests may appear
 as state fingerprints, but raw content cannot enter Tool JSON, ordinary logs
 or Audit. Screenshot capture has hard crop/pixel/encoded-size/deadline limits,
 and a foreground state race deletes the new artifact. Artifact retrieval is
-not yet exposed; production transport must make every read separately
-authorized and audited.
+exposed only to the user-started embedded task bridge for exact artifact ids
+emitted by that task. Reads are media-bound, destructive and one-shot; the
+configured model receives redacted semantic/device data or ephemeral image
+content, while protocol JSON, ordinary logs and Audit retain metadata only.
 
 `before_state` and `after_state` contain references and summaries. Artifact access is separately authorized and logged. Deleting a task or device must have a documented effect on retained sensitive artifacts.
 

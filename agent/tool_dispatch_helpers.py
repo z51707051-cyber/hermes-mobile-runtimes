@@ -650,6 +650,7 @@ _UNTRUSTED_TOOL_NAMES = frozenset({
 _UNTRUSTED_TOOL_PREFIXES = (
     "browser_",
     "mcp_",
+    "phone_",
 )
 
 _UNTRUSTED_WRAP_MIN_CHARS = 32

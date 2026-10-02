@@ -81,6 +81,8 @@ The debug APK deliberately has:
 - one separately system-bound Notification Listener with a bounded memory-only
   ledger, HMAC ids, dedupe and process-session cursors;
 - protected D3 notification and minimized D2 device-state artifacts;
+- task-bound, one-shot plaintext delivery from the encrypted store to the
+  embedded Agent for semantic UI, screenshots, notifications and device state;
 - bounded timer/semantic waits capped by request deadline and authorization
   expiry, with process-local cancellation and no automatic action retry;
 - artifact-free semantic wait probes with process-keyed fingerprints and no
@@ -111,15 +113,18 @@ typed unavailable capability, never an empty-success result; reconnect also
 requires a new event.
 
 The read-screen Provider emits a new UI-hierarchy PhoneState generation and a
-closed `ArtifactRef`; raw tree content never enters Tool JSON, logs or Audit.
-The process-local artifact store intentionally has no direct read method.
-Authorized and audited retrieval will be composed with the production bridge
-transport rather than exposed as an in-process bypass.
+closed `ArtifactRef`; raw tree content never enters protocol JSON, logs or
+Audit. For a user-started embedded task, the same task bridge may consume that
+exact artifact id once, deliver the already redacted nodes to the configured
+model as untrusted data, and immediately remove the encrypted entry. Unknown,
+expired, cross-task and replayed artifact ids fail closed.
 
 The screenshot Provider likewise returns only a protected `ArtifactRef` and a
-new `SCREENSHOT` PhoneState fingerprint. A live active root revalidates
-package/window identity; if the state changes while capture is pending, the
-artifact is deleted.
+new `SCREENSHOT` PhoneState fingerprint. The embedded bridge turns a one-shot
+task-bound image into multimodal tool content only for the current model turn;
+text-only models receive a safe summary and can use `phone.read_screen`. A live
+active root revalidates package/window identity; if the state changes while
+capture is pending, the artifact is deleted.
 
 Navigation is not a raw gesture channel. The service enables gestures only so
 the closed providers can perform schema-bounded long presses and swipes after

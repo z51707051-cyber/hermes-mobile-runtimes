@@ -35,7 +35,10 @@ and rotates the session. No durable notification history is created.
 `phone.notifications` returns a five-minute encrypted D3 artifact reference,
 never notification content in Tool JSON, logs or Audit. Notification text is
 untrusted data and cannot grant authority or directly start a task. HMR-111
-does not implement Event Bus dispatch.
+does not implement Event Bus dispatch. During a user-started task, the
+task-bound embedded bridge may destructively consume its own result artifact
+once and deliver the already redacted records to the configured model as
+untrusted device content.
 
 ### Least-authority device-state projection
 
@@ -47,7 +50,7 @@ location, nearby devices, identifiers or scan results.
 
 Bluetooth state is explicitly withheld because the Runtime does not request
 `BLUETOOTH_CONNECT`. Device state is returned as a five-minute encrypted D2
-artifact reference.
+artifact reference and uses the same task-bound one-shot delivery path.
 
 ### Independent protected paths
 
@@ -61,8 +64,7 @@ production PEP remains deny-all until authenticated transport is composed.
 - Notification access requires explicit user setup.
 - Process restart invalidates notification cursors.
 - Bluetooth state remains unavailable in HMR-111.
-- Artifact retrieval and production transport are still absent, so the APK is
-  not yet an end-user Hermes control path.
+- Observation plaintext remains process/task scoped and is not durable history.
 
 ## Rejected alternatives
 

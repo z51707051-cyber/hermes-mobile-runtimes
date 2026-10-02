@@ -2,6 +2,8 @@ package ai.hermes.mobile.runtime.bridge.runtime
 
 import ai.hermes.mobile.runtime.bridge.attachment.AndroidAttachmentShareSource
 import ai.hermes.mobile.runtime.bridge.attachment.SelectedAttachment
+import ai.hermes.mobile.runtime.bridge.artifact.ArtifactStore
+import ai.hermes.mobile.runtime.bridge.artifact.RuntimeArtifactStore
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateObserver
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateSource
 import ai.hermes.mobile.runtime.bridge.observer.PhoneStateStore
@@ -207,14 +209,18 @@ internal class AgentTaskAuthorizationSession(
 
 /**
  * Narrow object passed from Android to the embedded Hermes Python runtime.
- * Its only callable surface is one canonical tool plus one JSON parameter object.
+ * It accepts one canonical tool plus one JSON parameter object and exposes one
+ * task-bound, one-shot artifact consumer for reviewed observation results.
  */
 class HermesAndroidToolBridge internal constructor(
     private val authorization: AgentTaskAuthorizationSession,
     private val router: AndroidToolRouter,
     private val phoneStateSource: PhoneStateSource = PhoneStateStore,
     private val clock: AgentBridgeEpochClock = AgentBridgeEpochClock { System.currentTimeMillis() },
+    private val artifactStore: ArtifactStore = RuntimeArtifactStore,
 ) : AutoCloseable {
+    private val modelReadableArtifacts = linkedMapOf<String, String>()
+
     @Synchronized
     fun execute(
         canonicalTool: String,
@@ -225,7 +231,9 @@ class HermesAndroidToolBridge internal constructor(
             ProtocolCodec.validateToolParameters(canonicalTool, parameters)
             val request = request(canonicalTool, parameters)
             val action = authorization.authorize(request)
-            router.routeAuthorized(ProtocolCodec.encode(action)).toString(Charsets.UTF_8)
+            val routed = router.routeAuthorized(ProtocolCodec.encode(action))
+            rememberModelReadableArtifact(canonicalTool, routed)
+            routed.toString(Charsets.UTF_8)
         } catch (exc: AndroidRouteRejectedException) {
             rejection(canonicalTool, exc.code)
         } catch (_: Exception) {
@@ -233,8 +241,62 @@ class HermesAndroidToolBridge internal constructor(
         }
     }
 
+    /**
+     * Delivers one artifact emitted by this exact task exactly once.
+     *
+     * The protocol result continues to contain metadata only. Embedded Python
+     * calls this narrow method immediately after a successful observation,
+     * then clears the decoded bytes after constructing the model input.
+     * Unknown, expired, cross-task and replayed ids return null.
+     */
+    @Synchronized
+    fun consumeArtifactForModel(artifactId: String): String? {
+        if (!OPAQUE_ID.matches(artifactId)) return null
+        val expectedMediaType = modelReadableArtifacts.remove(artifactId) ?: return null
+        val consumed = artifactStore.consume(artifactId) ?: return null
+        return try {
+            if (
+                consumed.reference.mediaType != expectedMediaType ||
+                consumed.reference.mediaType !in MODEL_READABLE_MEDIA_TYPES
+            ) {
+                null
+            } else {
+                Base64.getEncoder().encodeToString(consumed.content)
+            }
+        } finally {
+            consumed.content.fill(0)
+        }
+    }
+
+    @Synchronized
     override fun close() {
+        modelReadableArtifacts.keys.forEach(artifactStore::delete)
+        modelReadableArtifacts.clear()
         authorization.revoke()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun rememberModelReadableArtifact(
+        canonicalTool: String,
+        routed: ByteArray,
+    ) {
+        val expectedMediaTypes = MODEL_READABLE_TOOLS[canonicalTool] ?: return
+        val result = ProtocolCodec.decode(routed)
+        if (result["execution_status"] != "SUCCEEDED") return
+        val artifact =
+            (result["artifacts"] as? List<*>)
+                ?.filterIsInstance<Map<String, Any?>>()
+                ?.singleOrNull()
+                ?: return
+        val artifactId = artifact["artifact_id"] as? String ?: return
+        val mediaType = artifact["media_type"] as? String ?: return
+        if (!OPAQUE_ID.matches(artifactId) || mediaType !in expectedMediaTypes) return
+        while (modelReadableArtifacts.size >= MAX_PENDING_MODEL_ARTIFACTS) {
+            val oldest = modelReadableArtifacts.keys.first()
+            modelReadableArtifacts.remove(oldest)
+            artifactStore.delete(oldest)
+        }
+        modelReadableArtifacts[artifactId] = mediaType
     }
 
     private fun request(
@@ -328,5 +390,15 @@ class HermesAndroidToolBridge internal constructor(
 
         private val STATE_BOUND_TOOLS =
             setOf("phone.tap", "phone.long_press", "phone.type", "phone.swipe")
+        private const val MAX_PENDING_MODEL_ARTIFACTS = 4
+        private val MODEL_READABLE_TOOLS =
+            mapOf(
+                "phone.read_screen" to setOf("application/vnd.hermes.ui-tree+json"),
+                "phone.screenshot" to setOf("image/png", "image/webp"),
+                "phone.notifications" to setOf("application/vnd.hermes.notifications+json"),
+                "phone.device_state" to setOf("application/vnd.hermes.device-state+json"),
+            )
+        private val MODEL_READABLE_MEDIA_TYPES = MODEL_READABLE_TOOLS.values.flatten().toSet()
+        private val OPAQUE_ID = Regex("[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
     }
 }
