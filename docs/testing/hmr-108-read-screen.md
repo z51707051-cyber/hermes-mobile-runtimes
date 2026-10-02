@@ -47,3 +47,6 @@ cd apps/mobile-bridge-android
 
 The CI Android lane is authoritative. It also verifies that embedded Agent
 delivery is media-bound, one-shot and cleared when the task closes.
+The normal phone-tool envelope remains structured JSON so deterministic
+tool-call parsing is preserved while the consumed semantic UI is explicitly
+marked as untrusted observation data.
