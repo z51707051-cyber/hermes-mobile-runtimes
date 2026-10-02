@@ -11,7 +11,7 @@
     "task_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
     "span_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
     "device_id": {"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/opaque_id"},
-    "tool": {"enum": ["phone.read_screen", "phone.screenshot", "phone.tap", "phone.long_press", "phone.type", "phone.swipe", "phone.back", "phone.home", "phone.open_app", "phone.wait", "phone.notifications", "phone.current_app", "phone.device_state"]},
+    "tool": {"enum": ["phone.read_screen", "phone.screenshot", "phone.tap", "phone.long_press", "phone.type", "phone.swipe", "phone.back", "phone.home", "phone.open_app", "phone.share_attachment", "phone.wait", "phone.notifications", "phone.current_app", "phone.device_state"]},
     "parameters": {"type": "object"},
     "state_precondition": {"oneOf": [{"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/state_precondition"}, {"type": "null"}]},
     "verification": {"oneOf": [{"$ref": "https://hermesmobile.dev/schemas/v0.1/common/definitions.schema.json#/$defs/verification_request"}, {"type": "null"}]},

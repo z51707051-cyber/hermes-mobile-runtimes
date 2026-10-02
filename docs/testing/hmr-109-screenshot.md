@@ -55,6 +55,6 @@ HMR-113/114 must exercise API 30/33/35/36 and the release OEM matrix for:
 - foreground changes during capture; and
 - PNG/WebP decode and artifact expiry/deletion.
 
-The production bridge transport must also prove separately authorized,
-audited retrieval before a remote planner can consume an image, and the
-release UI must surface screenshot capture in user-visible task history.
+The embedded bridge must also prove task-bound one-shot image delivery and
+text-only-model fallback. The release UI must surface screenshot capture in
+user-visible task history.

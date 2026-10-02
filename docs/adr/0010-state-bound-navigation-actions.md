@@ -5,6 +5,10 @@
 - Decision owners: Hermes Mobile Runtime maintainers
 - Phase: 1 / HMR-110
 
+> The historical artifact-retrieval limitation in this decision is superseded
+> by the embedded task bridge's media-bound, one-shot observation delivery.
+> Navigation state binding and risk policy remain authoritative.
+
 ## Context
 
 HMR-105–109 established the protected Router/PEP, coherent PhoneState,
@@ -146,8 +150,8 @@ recovery may re-observe but must not blindly repeat the mutation.
 - UI capture and gesture behavior still require emulator/OEM validation.
 - Post-action polling is a local bridge bound, not the complete Recovery
   Engine; ADR-0006 remains required before automated retry.
-- Artifact retrieval and production broker transport are still absent, so
-  this is not yet an installable end-user control path.
+- This slice alone was not an installable end-user control path; later embedded
+  runtime and task-bound observation delivery work complete that composition.
 
 ## Rejected alternatives
 

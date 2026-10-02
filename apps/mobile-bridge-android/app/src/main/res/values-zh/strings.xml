@@ -1,7 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Hermes 手机运行时</string>
-    <string name="trial_connection_pending">开发预览版 · 未连接\n此版本尚未开放 Hermes 任务连接。授予手机权限后，也不会自动允许远程操作。</string>
+    <string name="runtime_integration_status">开发预览版 · Hermes 在本机 Android 内运行</string>
+    <string name="embedded_runtime_ready">手机内 Hermes Agent 已就绪。</string>
+    <string name="embedded_runtime_missing">当前是仅含桥接层的构建，尚未包含 Agent 完整运行包。</string>
+    <string name="task_title">Hermes 任务</string>
+    <string name="task_idle">请先配置模型 API、开启任务所需权限，然后输入任务。</string>
+    <string name="task_prompt_hint">描述一个需要 Hermes 在本手机执行的任务</string>
+    <string name="task_send">执行任务</string>
+    <string name="task_stop">停止并撤销授权</string>
+    <string name="attachment_not_selected">尚未为下一项任务选择文件或图片。</string>
+    <string name="attachment_selected">下一项任务可使用：%1$s（%2$s）。该授权仅供这一次任务使用。</string>
+    <string name="select_attachment">选择文件或图片</string>
+    <string name="clear_attachment">清除选择</string>
+    <string name="attachment_selection_failed">无法读取该项目，请选择 128 MiB 以内的本地文件或图片。</string>
+    <string name="attachment_picker_unavailable">系统文件选择器不可用。</string>
+    <string name="task_running">你：\n%1$s\n\nHermes 正在执行…</string>
+    <string name="task_stopping">你：\n%1$s\n\n手机工具授权已撤销，正在等待模型请求停止…</string>
+    <string name="task_completed">你：\n%1$s\n\nHermes：\n%2$s</string>
+    <string name="task_cancelled">你：\n%1$s\n\n任务已停止，Android 工具授权已撤销。</string>
+    <string name="task_failed_configuration">开始任务前，请配置 HTTPS 模型地址和 API Key。</string>
+    <string name="task_failed_runtime">开始任务前，请安装包含 Hermes 完整运行时的版本。</string>
+    <string name="task_failed_execution">任务执行失败，模型凭据未被显示。请检查网络后重试。</string>
+    <string name="task_notification_channel">正在执行的 Hermes 任务</string>
+    <string name="task_notification_channel_description">当你明确启动的 Hermes 任务在后台继续时，显示不含任务内容的状态。</string>
+    <string name="task_notification_title">Hermes 任务正在执行</string>
+    <string name="task_notification_running">正在本手机执行，通知中不会显示任务详情。</string>
+    <string name="task_notification_stopping">正在停止并撤销 Android 工具授权…</string>
+    <string name="task_notification_stop">停止并撤销授权</string>
+    <string name="task_notification_permission_required">请允许任务通知，Hermes 才能在关闭本页面后透明地继续执行。</string>
+    <string name="permissions_title">手机权限</string>
     <string name="trial_permissions_help">测试屏幕观察前，请在无障碍设置中启用「Hermes 屏幕观察」。通知读取为可选权限。你可以随时在系统设置中撤销权限，返回此页面后会刷新可用能力。</string>
     <string name="open_accessibility_settings">设置屏幕观察权限</string>
     <string name="open_notification_settings">设置通知读取权限</string>
@@ -10,4 +38,18 @@
     <string name="current_app_accessibility_label">Hermes 屏幕观察</string>
     <string name="current_app_accessibility_description">读取当前应用及有限范围的屏幕状态，仅执行经过 Hermes 手机运行时授权的导航操作。</string>
     <string name="notification_listener_label">Hermes 通知观察</string>
+    <string name="model_settings_title">模型 API 设置</string>
+    <string name="model_key_configured">API Key 已使用 Android 密钥库加密保存。</string>
+    <string name="model_key_missing">尚未配置 API Key。</string>
+    <string name="use_openai_preset">使用 OpenAI 默认配置</string>
+    <string name="use_deepseek_preset">使用 DeepSeek 默认配置</string>
+    <string name="model_base_url_hint">HTTPS API 地址，例如 https://api.openai.com/v1</string>
+    <string name="model_name_hint">模型名称</string>
+    <string name="model_api_key_hint">API Key</string>
+    <string name="model_api_key_keep_hint">留空将保留已经保存的 API Key</string>
+    <string name="save_model_settings">保存模型设置</string>
+    <string name="clear_model_api_key">清除已保存的 API Key</string>
+    <string name="model_settings_saved">模型设置已保存。</string>
+    <string name="model_settings_invalid">请输入 HTTPS API 地址和模型名称。</string>
+    <string name="model_settings_store_failed">无法安全保存模型设置。</string>
 </resources>

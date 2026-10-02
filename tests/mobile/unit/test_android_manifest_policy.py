@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 import textwrap
+import xml.etree.ElementTree as ET
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -56,6 +57,10 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
           <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+          <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          <uses-permission android:name="android.permission.WAKE_LOCK" />
           <queries><intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -86,6 +91,8 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
                 <action android:name="android.service.notification.NotificationListenerService" />
               </intent-filter>
             </service>
+            <service android:name=".runtime.HermesTaskForegroundService"
+                android:exported="false" android:foregroundServiceType="dataSync" />
           </application>
         </manifest>
         """,
@@ -105,6 +112,32 @@ def test_accepts_compiled_network_security_reference_only_when_table_matches(
     ]
 
 
+def test_accepts_exact_compiled_data_sync_foreground_service_value(
+    tmp_path: Path,
+) -> None:
+    source = (
+        REPO_ROOT
+        / "apps"
+        / "mobile-bridge-android"
+        / "app"
+        / "src"
+        / "main"
+        / "AndroidManifest.xml"
+    )
+    tree = ET.parse(source)
+    android = "{http://schemas.android.com/apk/res/android}"
+    service = next(
+        node
+        for node in tree.getroot().find("application").findall("service")
+        if node.get(f"{android}name") == ".runtime.HermesTaskForegroundService"
+    )
+    service.set(f"{android}foregroundServiceType", "0x00000001")
+    manifest = tmp_path / "AndroidManifest.xml"
+    tree.write(manifest, encoding="utf-8", xml_declaration=True)
+
+    assert VERIFIER.validate_manifest(manifest) == []
+
+
 def test_rejects_any_permission_beyond_reviewed_minimum(tmp_path: Path) -> None:
     manifest = _write_xml(
         tmp_path,
@@ -113,6 +146,10 @@ def test_rejects_any_permission_beyond_reviewed_minimum(tmp_path: Path) -> None:
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
           <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+          <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          <uses-permission android:name="android.permission.WAKE_LOCK" />
           <uses-permission android:name="android.permission.RECORD_AUDIO" />
           <queries><intent>
             <action android:name="android.intent.action.MAIN" />
@@ -144,6 +181,8 @@ def test_rejects_any_permission_beyond_reviewed_minimum(tmp_path: Path) -> None:
                 <action android:name="android.service.notification.NotificationListenerService" />
               </intent-filter>
             </service>
+            <service android:name=".runtime.HermesTaskForegroundService"
+                android:exported="false" android:foregroundServiceType="dataSync" />
           </application>
         </manifest>
         """,
@@ -151,8 +190,13 @@ def test_rejects_any_permission_beyond_reviewed_minimum(tmp_path: Path) -> None:
 
     assert VERIFIER.validate_manifest(manifest) == [
         "Android permissions must be exactly android.permission.ACCESS_NETWORK_STATE, "
-        "android.permission.INTERNET; found android.permission.ACCESS_NETWORK_STATE, "
-        "android.permission.INTERNET, android.permission.RECORD_AUDIO"
+        "android.permission.FOREGROUND_SERVICE, "
+        "android.permission.FOREGROUND_SERVICE_DATA_SYNC, android.permission.INTERNET, "
+        "android.permission.POST_NOTIFICATIONS, android.permission.WAKE_LOCK; found "
+        "android.permission.ACCESS_NETWORK_STATE, android.permission.FOREGROUND_SERVICE, "
+        "android.permission.FOREGROUND_SERVICE_DATA_SYNC, android.permission.INTERNET, "
+        "android.permission.POST_NOTIFICATIONS, android.permission.RECORD_AUDIO, "
+        "android.permission.WAKE_LOCK"
     ]
 
 
@@ -166,6 +210,10 @@ def test_rejects_unprotected_service_and_insecure_application_defaults(
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
           <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+          <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          <uses-permission android:name="android.permission.WAKE_LOCK" />
           <queries><intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -189,7 +237,8 @@ def test_rejects_unprotected_service_and_insecure_application_defaults(
         "application android:usesCleartextTraffic must be false",
         "application android:networkSecurityConfig must reference "
         "@xml/network_security_config; found <none>",
-        "services must be exactly the protected accessibility and notification listeners",
+        "services must be exactly the protected accessibility and notification "
+        "listeners plus the private task foreground service",
         "only the launcher activity and protected system-bound services may be exported",
     ]
 
@@ -202,6 +251,10 @@ def test_rejects_broad_package_visibility(tmp_path: Path) -> None:
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
           <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+          <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          <uses-permission android:name="android.permission.WAKE_LOCK" />
           <queries><package android:name="com.example.target" /></queries>
           <application android:name=".HermesMobileApplication"
               android:allowBackup="false"
@@ -229,6 +282,8 @@ def test_rejects_broad_package_visibility(tmp_path: Path) -> None:
                 <action android:name="android.service.notification.NotificationListenerService" />
               </intent-filter>
             </service>
+            <service android:name=".runtime.HermesTaskForegroundService"
+                android:exported="false" android:foregroundServiceType="dataSync" />
           </application>
         </manifest>
         """,
@@ -249,6 +304,10 @@ def test_rejects_unprotected_or_widened_notification_listener(
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET" />
           <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+          <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          <uses-permission android:name="android.permission.WAKE_LOCK" />
           <queries><intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -280,6 +339,8 @@ def test_rejects_unprotected_or_widened_notification_listener(
               </intent-filter>
               <meta-data android:name="unreviewed" android:value="true" />
             </service>
+            <service android:name=".runtime.HermesTaskForegroundService"
+                android:exported="false" android:foregroundServiceType="dataSync" />
           </application>
         </manifest>
         """,
@@ -291,6 +352,41 @@ def test_rejects_unprotected_or_widened_notification_listener(
         "the notification listener must declare only the system "
         "NotificationListenerService action",
         "notification listener metadata is forbidden",
+    ]
+
+
+def test_rejects_exported_or_widened_task_foreground_service(
+    tmp_path: Path,
+) -> None:
+    source = (
+        REPO_ROOT
+        / "apps"
+        / "mobile-bridge-android"
+        / "app"
+        / "src"
+        / "main"
+        / "AndroidManifest.xml"
+    )
+    tree = ET.parse(source)
+    android = "{http://schemas.android.com/apk/res/android}"
+    service = next(
+        node
+        for node in tree.getroot().find("application").findall("service")
+        if node.get(f"{android}name") == ".runtime.HermesTaskForegroundService"
+    )
+    service.set(f"{android}exported", "true")
+    service.set(f"{android}permission", "android.permission.BIND_JOB_SERVICE")
+    service.set(f"{android}foregroundServiceType", "shortService")
+    ET.SubElement(service, "intent-filter")
+    manifest = tmp_path / "AndroidManifest.xml"
+    tree.write(manifest, encoding="utf-8", xml_declaration=True)
+
+    assert VERIFIER.validate_manifest(manifest) == [
+        "the task foreground service must set android:exported=false",
+        "task foreground service custom permissions are forbidden",
+        "the task foreground service type must be exactly dataSync",
+        "the task foreground service must not contain child elements",
+        "only the launcher activity and protected system-bound services may be exported",
     ]
 
 

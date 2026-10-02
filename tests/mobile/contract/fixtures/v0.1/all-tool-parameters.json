@@ -8,6 +8,7 @@
   "phone.back": {"valid": {}, "invalid": {"force": true}},
   "phone.home": {"valid": {}, "invalid": {"force": true}},
   "phone.open_app": {"valid": {"package": "com.spotify.music"}, "invalid": {"package": "Spotify"}},
+  "phone.share_attachment": {"valid": {"package": "com.tencent.mm"}, "invalid": {"package": "com.example.receiver"}},
   "phone.wait": {"valid": {"timeout_ms": 1000, "condition": {"kind": "STATE_CHANGED"}}, "invalid": {"timeout_ms": 60000}},
   "phone.notifications": {"valid": {"limit": 20, "source_packages": ["com.example.chat"]}, "invalid": {"limit": 0}},
   "phone.current_app": {"valid": {}, "invalid": {"details": true}},

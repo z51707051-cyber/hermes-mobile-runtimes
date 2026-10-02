@@ -1,0 +1,15 @@
+.gradle/
+.idea/
+**/build/
+local.properties
+*.iml
+
+# CI stages the repository runtime and freshly built Android wheels here.
+app/src/generated/
+app/android-wheelhouse/
+evidence/
+
+# Generated during the bootstrap build and uploaded for review.
+gradle/verification-metadata.xml
+gradle.lockfile
+app/gradle.lockfile

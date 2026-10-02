@@ -86,11 +86,13 @@ The canonical tree is written to a process-local `ArtifactStore` as D3,
 - supports explicit deletion and expiry purge; and
 - returns only a closed `ArtifactRef` in Tool/PhoneState JSON.
 
-The current store intentionally exposes no content read method. Artifact
-retrieval must be a separately authorized and audited transport operation; it
-will be added with the production bridge transport rather than as a raw local
-escape hatch. Until then, HMR-108 proves capture/storage but is not a complete
-end-user screen-reading path.
+The store exposes only destructive one-shot consumption. The current
+user-started task bridge records the exact artifact id returned by its own
+authorized action; only that bridge may consume it, and only once. Embedded
+Python validates the media type, declared byte count, foreground package and
+state id before delivering the redacted tree to the configured model as
+explicitly untrusted UI data. Unknown, expired, cross-task and replayed ids
+fail closed. Tree content still never enters protocol JSON, Audit or logs.
 
 ### 6. No mutation authority
 
@@ -117,8 +119,8 @@ HMR-110 must introduce mutation only behind a new PEP-reviewed provider.
 - Some custom/canvas/WebView surfaces expose sparse semantics and will need
   screenshot/vision fallback in HMR-109.
 - The process-local store is lost on restart by design.
-- A production authorized artifact retrieval route is still required before a
-  remote Hermes planner can consume the tree.
+- The delivered tree exists in process memory and the active model turn; it is
+  not a durable screen-history feature.
 
 ## Rejected alternatives
 
@@ -152,3 +154,5 @@ Rejected because UI content is D3 and ephemeral by default.
 6. Result JSON contains ArtifactRef metadata, not tree content.
 7. Artifact keys are separate, nonce reuse is rejected and expiry deletes the
    encrypted entry.
+8. Task-scoped consumption is one-shot, media-bound and rejected after task
+   revocation.

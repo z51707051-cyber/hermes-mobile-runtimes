@@ -13,7 +13,17 @@ def test_builtin_bundle_is_complete_and_meta_valid() -> None:
 
     assert bundle.version == "0.1.1"
     assert bundle.digest.startswith("sha256:")
-    assert len([path for path in bundle.schemas if path.startswith("tools/")]) == 13
+    tool_schemas = {
+        path.removeprefix("tools/").removesuffix(".schema.json")
+        for path in bundle.schemas
+        if path.startswith("tools/")
+    }
+    request_tools = set(
+        bundle.schemas["requests/tool-execution-request.schema.json"]["properties"][
+            "tool"
+        ]["enum"]
+    )
+    assert tool_schemas == request_tools
     for path in bundle.schemas:
         bundle.validator(path)
 

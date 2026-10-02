@@ -73,6 +73,7 @@ internal class CapabilityRegistry(
                 CapabilityDefinition("phone.back", "L1", true),
                 CapabilityDefinition("phone.home", "L1", true),
                 CapabilityDefinition("phone.open_app", "L1", true),
+                CapabilityDefinition("phone.share_attachment", "L3", true),
                 CapabilityDefinition("phone.wait", "L0", false),
                 CapabilityDefinition("phone.notifications", "L0", false),
                 CapabilityDefinition("phone.current_app", "L0", false),

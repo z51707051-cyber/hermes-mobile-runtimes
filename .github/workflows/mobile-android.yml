@@ -8,6 +8,8 @@ on:
       - "scripts/android/**"
       - "scripts/mobile/**"
       - "tests/mobile/**"
+      - "tools/android_phone_tools.py"
+      - "toolsets.py"
       - "third_party/**"
       - "docs/testing/android-bootstrap.md"
       - "docs/testing/hmr-102-device-security.md"
@@ -22,6 +24,7 @@ on:
       - "docs/testing/hmr-111-notifications-device-state.md"
       - "docs/testing/hmr-112-bounded-wait.md"
       - "docs/testing/hmr-113-emulator-contract.md"
+      - "docs/testing/hmr-116-embedded-runtime-launcher.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -43,6 +46,8 @@ on:
       - "scripts/android/**"
       - "scripts/mobile/**"
       - "tests/mobile/**"
+      - "tools/android_phone_tools.py"
+      - "toolsets.py"
       - "third_party/**"
       - "docs/testing/android-bootstrap.md"
       - "docs/testing/hmr-102-device-security.md"
@@ -57,6 +62,7 @@ on:
       - "docs/testing/hmr-111-notifications-device-state.md"
       - "docs/testing/hmr-112-bounded-wait.md"
       - "docs/testing/hmr-113-emulator-contract.md"
+      - "docs/testing/hmr-116-embedded-runtime-launcher.md"
       - "docs/protocol/**"
       - "docs/adr/0002-mobile-agent-protocol-v0.1.md"
       - "docs/adr/0004-phone-state-consistency-and-artifact-storage.md"
@@ -110,11 +116,15 @@ jobs:
           set -euo pipefail
           uv run python scripts/mobile/generate_protocol_manifest.py --check
           uv run ruff check hermes_mobile tests/mobile/contract \
+            tools/android_phone_tools.py \
+            tests/mobile/unit/test_android_phone_tools.py \
+            tests/mobile/unit/test_mobile_runtime_entry.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py \
             scripts/mobile scripts/android/verify_android_manifest_policy.py
           uv run ruff format --check hermes_mobile tests/mobile/contract \
+            tests/mobile/unit/test_mobile_runtime_entry.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py \
@@ -123,6 +133,8 @@ jobs:
       - name: Run protocol and routing contract tests
         run: |
           scripts/run_tests.sh -j 4 tests/mobile/contract \
+            tests/mobile/unit/test_android_phone_tools.py \
+            tests/mobile/unit/test_mobile_runtime_entry.py \
             tests/mobile/unit/test_audit_store.py \
             tests/mobile/unit/test_runtime_router.py \
             tests/mobile/unit/test_android_manifest_policy.py -q
@@ -155,6 +167,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          accept-android-sdk-licenses: false
+          packages: ''
 
       - name: Install pinned Android packages
         run: |
@@ -342,6 +357,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          accept-android-sdk-licenses: false
+          packages: ''
 
       - name: Install build and matrix emulator packages
         env:

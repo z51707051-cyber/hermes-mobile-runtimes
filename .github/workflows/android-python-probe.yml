@@ -1,0 +1,102 @@
+name: On-device Python feasibility probe
+on:
+  pull_request:
+    paths:
+      - 'experiments/android-python-probe/**'
+      - 'experiments/android-hermes-import-probe/**'
+      - 'apps/mobile-bridge-android/app/src/main/**'
+      - 'tools/android_phone_tools.py'
+      - 'toolsets.py'
+      - '.github/workflows/android-python-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: python-probe-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  bundled-python:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
+        with:
+          version: '0.9.28'
+      - run: uv python install 3.11
+      - name: Inventory exact native dependency wheels
+        run: |
+          set -euo pipefail
+          mkdir -p experiments/android-python-probe/evidence
+          python3 experiments/android-python-probe/audit_native_wheels.py --online \
+            > experiments/android-python-probe/evidence/native-wheels.json
+          python3 -m json.tool experiments/android-python-probe/evidence/native-wheels.json >/dev/null
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          accept-android-sdk-licenses: false
+          packages: ''
+      - name: Install Android 15 test environment
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'emulator' 'system-images;android-35;google_apis;x86_64'
+      - name: Build isolated probe and generate reviewable metadata
+        run: |
+          set -euo pipefail
+          echo "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7  apps/mobile-bridge-android/gradle/wrapper/gradle-wrapper.jar" | sha256sum -c -
+          export PATH="$(dirname "$(uv python find 3.11)"):$PATH"
+          apps/mobile-bridge-android/gradlew -p experiments/android-python-probe \
+            --no-daemon --write-locks --write-verification-metadata sha256 \
+            :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Execute Python on Android 15
+        run: |
+          set -euo pipefail
+          probe_dir=experiments/android-python-probe
+          mkdir -p "$probe_dir/evidence"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/python-probe-avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd --name python-probe \
+            --package 'system-images;android-35;google_apis;x86_64' --device pixel_2
+          if [[ -e /dev/kvm ]]; then sudo chmod 666 /dev/kvm; fi
+          "$ANDROID_SDK_ROOT/emulator/emulator" -avd python-probe \
+            -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect \
+            > "$probe_dir/evidence/emulator.log" 2>&1 &
+          probe_pid=$!
+          trap 'kill "$probe_pid" 2>/dev/null || true' EXIT
+          deadline=$((SECONDS + 240))
+          booted=false
+          while (( SECONDS < deadline )); do
+            kill -0 "$probe_pid"
+            if [[ "$(timeout 10s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" == 1 ]]; then
+              booted=true
+              break
+            fi
+            sleep 2
+          done
+          test "$booted" = true
+          adb install "$probe_dir/app/build/outputs/apk/debug/app-debug.apk"
+          adb install "$probe_dir/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+          timeout 90s adb shell am instrument -w \
+            ai.hermes.runtime.probe.test/ai.hermes.runtime.probe.RuntimeInstrumentation \
+            | tee "$probe_dir/evidence/instrumentation.txt"
+          grep -q 'HERMES_PYTHON_PROBE_PASS' "$probe_dir/evidence/instrumentation.txt"
+          ! grep -q 'HERMES_PYTHON_PROBE_FAIL' "$probe_dir/evidence/instrumentation.txt"
+          adb shell getprop ro.product.cpu.abi > "$probe_dir/evidence/abi.txt"
+          sha256sum "$probe_dir/app/build/outputs/apk/debug/app-debug.apk" > "$probe_dir/evidence/apk.sha256"
+      - name: Upload probe evidence, not a production release
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: on-device-python-probe
+          path: |
+            experiments/android-python-probe/evidence/
+            experiments/android-python-probe/app/build/outputs/apk/
+            experiments/android-python-probe/gradle/verification-metadata.xml
+            experiments/android-python-probe/app/gradle.lockfile
+            experiments/android-python-probe/gradle.lockfile
+          retention-days: 14

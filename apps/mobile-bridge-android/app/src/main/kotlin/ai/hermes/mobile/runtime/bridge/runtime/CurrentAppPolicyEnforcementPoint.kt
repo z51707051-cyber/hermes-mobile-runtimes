@@ -1,6 +1,7 @@
 package ai.hermes.mobile.runtime.bridge.runtime
 
 import ai.hermes.mobile.runtime.bridge.observer.DeviceStateCaptureSource
+import ai.hermes.mobile.runtime.bridge.observer.AttachmentShareSource
 import ai.hermes.mobile.runtime.bridge.observer.NavigationActionSource
 import ai.hermes.mobile.runtime.bridge.observer.NavigationFailureException
 import ai.hermes.mobile.runtime.bridge.observer.NotificationCaptureSource
@@ -22,6 +23,7 @@ internal class CurrentAppPolicyEnforcementPoint(
     private val navigationSource: NavigationActionSource? = null,
     private val notificationSource: NotificationCaptureSource? = null,
     private val deviceStateSource: DeviceStateCaptureSource? = null,
+    private val attachmentShareSource: AttachmentShareSource? = null,
     private val maximumAgeMillis: Long = PhoneStateObserver.DEFAULT_MAXIMUM_AGE_MILLIS,
 ) : AndroidPolicyEnforcementPoint {
     override fun evaluate(action: AuthorizedAction): PepDecision {
@@ -64,6 +66,12 @@ internal class CurrentAppPolicyEnforcementPoint(
                 }
             DEVICE_STATE_TOOL ->
                 if (deviceStateSource?.let { it.availability() == null } == true) {
+                    PepDecision.allow()
+                } else {
+                    PepDecision.deny("CAPABILITY_UNAVAILABLE")
+                }
+            ATTACHMENT_SHARE_TOOL ->
+                if (attachmentShareSource?.availability() == null) {
                     PepDecision.allow()
                 } else {
                     PepDecision.deny("CAPABILITY_UNAVAILABLE")
@@ -157,6 +165,7 @@ internal class CurrentAppPolicyEnforcementPoint(
         const val SCREENSHOT_TOOL = "phone.screenshot"
         const val NOTIFICATIONS_TOOL = "phone.notifications"
         const val DEVICE_STATE_TOOL = "phone.device_state"
+        const val ATTACHMENT_SHARE_TOOL = "phone.share_attachment"
         const val WAIT_TOOL = "phone.wait"
         val NAVIGATION_TOOLS =
             setOf(

@@ -16,7 +16,11 @@ COMPONENT_TAGS = ("activity", "activity-alias", "service", "receiver", "provider
 PERMISSION_TAGS = ("uses-permission", "uses-permission-sdk-23")
 ALLOWED_PERMISSIONS = {
     "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
     "android.permission.INTERNET",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.WAKE_LOCK",
 }
 NETWORK_SECURITY_CONFIG = "@xml/network_security_config"
 ACCESSIBILITY_SERVICE_CONFIG = "@xml/current_app_accessibility_service"
@@ -26,6 +30,8 @@ NOTIFICATION_SERVICE_PERMISSION = (
     "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
 )
 NOTIFICATION_SERVICE_ACTION = "android.service.notification.NotificationListenerService"
+FOREGROUND_SERVICE_TYPE = "dataSync"
+FOREGROUND_SERVICE_COMPILED_TYPES = {"1", "0x1", "0x00000001"}
 COMPILED_REFERENCE = re.compile(r"@ref/(0x[0-9a-fA-F]{8})\Z")
 BACKUP_DOMAINS = {"root", "file", "database", "sharedpref", "external"}
 LAUNCHER_QUERY_ACTION = "android.intent.action.MAIN"
@@ -223,23 +229,35 @@ def validate_manifest(
         ".notification.CurrentNotificationListenerService",
         "ai.hermes.mobile.runtime.bridge.notification.CurrentNotificationListenerService",
     }
+    foreground_names = {
+        ".runtime.HermesTaskForegroundService",
+        "ai.hermes.mobile.runtime.bridge.runtime.HermesTaskForegroundService",
+    }
     accessibility_services = [
         node for node in services if _android(node, "name") in accessibility_names
     ]
     notification_services = [
         node for node in services if _android(node, "name") in notification_names
     ]
+    foreground_services = [
+        node for node in services if _android(node, "name") in foreground_names
+    ]
     if (
-        len(services) != 2
+        len(services) != 3
         or len(accessibility_services) != 1
         or len(notification_services) != 1
+        or len(foreground_services) != 1
     ):
         errors.append(
-            "services must be exactly the protected accessibility and notification listeners"
+            "services must be exactly the protected accessibility and notification "
+            "listeners plus the private task foreground service"
         )
     service = accessibility_services[0] if len(accessibility_services) == 1 else None
     notification_service = (
         notification_services[0] if len(notification_services) == 1 else None
+    )
+    foreground_service = (
+        foreground_services[0] if len(foreground_services) == 1 else None
     )
 
     if service is not None:
@@ -306,6 +324,20 @@ def validate_manifest(
             )
         if notification_service.findall("meta-data"):
             errors.append("notification listener metadata is forbidden")
+
+    if foreground_service is not None:
+        if _android(foreground_service, "exported") != "false":
+            errors.append("the task foreground service must set android:exported=false")
+        if _android(foreground_service, "permission"):
+            errors.append("task foreground service custom permissions are forbidden")
+        foreground_type = _android(foreground_service, "foregroundServiceType")
+        if foreground_type not in {
+            FOREGROUND_SERVICE_TYPE,
+            *FOREGROUND_SERVICE_COMPILED_TYPES,
+        }:
+            errors.append("the task foreground service type must be exactly dataSync")
+        if list(foreground_service):
+            errors.append("the task foreground service must not contain child elements")
 
     exported = [node for node in components if _android(node, "exported") == "true"]
     expected_exported = (

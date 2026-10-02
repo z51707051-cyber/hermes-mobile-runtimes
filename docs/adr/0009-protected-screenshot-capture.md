@@ -73,9 +73,12 @@ an ordinary public hash. Tool results, PhoneState and Audit contain only the
 closed `ArtifactRef` metadata.
 
 The store now permits artifacts up to 16 MiB; semantic tree construction
-retains its independent 1 MiB limit. The store still has no content read API.
-Production retrieval must be separately authorized, audited, encrypted in
-transport and deleted on expiry.
+retains its independent 1 MiB limit. A user-started task bridge may consume
+only a screenshot artifact id emitted by that same bridge. Consumption is
+one-shot and destructive. Embedded Python validates the media type and byte
+count, then constructs ephemeral multimodal tool content for a vision-capable
+configured model. Screenshot bytes do not enter protocol JSON, Audit, logs or
+public storage.
 
 ### 5. Stable failure policy
 
@@ -101,8 +104,8 @@ change requires re-observation.
   screenshot capability.
 - Some secure windows intentionally cannot be captured.
 - Full-resolution lossless images may exceed 16 MiB and require a crop.
-- The current in-memory artifact cannot yet be consumed by remote Hermes;
-  authorized/audited artifact retrieval remains transport work.
+- Text-only models cannot inspect pixels and must use the semantic reader;
+  sparse canvas surfaces therefore require a vision-capable configured model.
 - A dedicated in-app capture indicator/history UI is not implemented yet;
   release transport must surface capture through user-visible task Audit.
 - Physical-device and OEM validation is still required by HMR-113/114.
@@ -141,3 +144,5 @@ oracles.
 6. Result JSON contains only ArtifactRef metadata, never screenshot bytes.
 7. Screenshot content is encrypted, keyed-digested, short-lived and zeroed
    after storage.
+8. The task bridge consumes only its own screenshot id, at most once, and
+   revocation deletes any pending entry.

@@ -3,6 +3,7 @@ package ai.hermes.mobile.runtime.bridge.observer
 import ai.hermes.mobile.runtime.bridge.protocol.StrictJson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -79,6 +80,29 @@ class NotificationLedgerTest {
                 ledger.query(NotificationQuery(cursor, 20, emptySet()))
             }
         assertEquals(NotificationFailureReason.CURSOR_EXPIRED, exception.reason)
+    }
+
+    @Test
+    fun authenticationNotificationsNeverExposeVerificationCodes() {
+        val ledger = ledger { 5_000L }
+        ledger.post(notification(text = "Your verification code is 739204"))
+        ledger.post(notification(systemKey = "zh", text = "登录验证码 482913，五分钟内有效"))
+
+        val batch = ledger.query(NotificationQuery(null, 20, emptySet()))
+        val records = document(batch).getValue("records") as List<*>
+
+        assertEquals(
+            listOf("NOTIFICATION_FIELDS_MINIMIZED", "AUTHENTICATION_SECRETS_WITHHELD"),
+            batch.redactions,
+        )
+        records.forEach { recordValue ->
+            val record = recordValue as Map<*, *>
+            assertNull(record["title"])
+            assertNull(record["text"])
+            assertNull(record["sub_text"])
+        }
+        assertFalse(batch.payload.toString(Charsets.UTF_8).contains("739204"))
+        assertFalse(batch.payload.toString(Charsets.UTF_8).contains("482913"))
     }
 
     private fun document(batch: NotificationBatch): Map<String, Any?> =

@@ -11,7 +11,7 @@ enable gestures, all-window inspection or a transport listener.
 - Flat semantic node normalization with node, text, depth and child limits.
 - Mandatory password-content redaction and safe Unicode truncation.
 - AES-256-GCM in-memory D3 artifact storage with a separately keyed digest,
-  five-minute expiry and no plaintext retrieval escape hatch.
+  five-minute expiry and task-bound one-shot plaintext delivery.
 - Schema-valid result containing the same protected ArtifactRef in result and
   PhoneState metadata.
 - Recoverable typed failures for disconnected, missing or changed windows.
@@ -45,6 +45,8 @@ cd apps/mobile-bridge-android
   :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
-The CI Android lane is authoritative. A production separately authorized
-artifact retrieval operation remains required before a remote planner can
-consume the encrypted tree.
+The CI Android lane is authoritative. It also verifies that embedded Agent
+delivery is media-bound, one-shot and cleared when the task closes.
+The normal phone-tool envelope remains structured JSON so deterministic
+tool-call parsing is preserved while the consumed semantic UI is explicitly
+marked as untrusted observation data.

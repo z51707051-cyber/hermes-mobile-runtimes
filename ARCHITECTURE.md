@@ -252,6 +252,7 @@ V0.1 exposes only:
 - `phone.back`
 - `phone.home`
 - `phone.open_app`
+- `phone.share_attachment`
 - `phone.wait`
 - `phone.notifications`
 - `phone.current_app`

@@ -167,6 +167,21 @@ TOOLSETS = {
         "includes": []
     },
 
+    "mobile": {
+        "description": (
+            "On-device Android observation and accessibility actions. "
+            "Available only while the Android app has supplied a scoped "
+            "user-task transport."
+        ),
+        "tools": [
+            "phone_read_screen", "phone_screenshot", "phone_tap",
+            "phone_long_press", "phone_type", "phone_swipe", "phone_back",
+            "phone_home", "phone_open_app", "phone_share_attachment", "phone_wait",
+            "phone_notifications", "phone_current_app", "phone_device_state",
+        ],
+        "includes": [],
+    },
+
     "terminal": {
         "description": "Terminal/command execution and process management tools",
         "tools": ["terminal", "process"],

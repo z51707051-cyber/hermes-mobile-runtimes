@@ -107,6 +107,7 @@ grammar.
 | `phone.back` | `phone_back` | L1 | Empty object |
 | `phone.home` | `phone_home` | L1 | Empty object |
 | `phone.open_app` | `phone_open_app` | L1+ | Exact Android package; resolver output is not trusted implicitly |
+| `phone.share_attachment` | `phone_share_attachment` | L3 | Reviewed WeChat/QQ package; content is the single picker-selected task grant |
 | `phone.wait` | `phone_wait` | L0 | Bounded timeout and optional observable condition |
 | `phone.notifications` | `phone_notifications` | L0 | Cursor, bounded limit and optional source filter |
 | `phone.current_app` | `phone_current_app` | L0 | Empty object |
@@ -120,6 +121,13 @@ Skill definitions.
 Coordinates are a fallback. A target has a `state_id` and either a normalized
 semantic node reference or normalized coordinates. It must not contain raw
 Android objects. State validity and target generation are decided in ADR-0004.
+
+`phone.share_attachment` cannot accept a path, URI, MIME type, filename or
+arbitrary Intent field from the model. Android binds the operation to one
+system-picker result consumed by the current task, opens only a reviewed exact
+WeChat/QQ package, and withholds URI metadata from the result. A successful result
+means only that the target app's share surface opened; recipient selection and
+delivery require later screen-bound actions and verification.
 
 ### 5. ToolExecutionRequest
 
@@ -398,7 +406,7 @@ state.
 
 Before the first Android action is enabled:
 
-1. All 13 tools have closed request schemas and valid/invalid fixtures.
+1. Every canonical tool has a closed request schema and shared valid/invalid fixtures.
 2. Python and Kotlin validate the same schema bundle digest.
 3. The canonical alias map is one-to-one and the `mobile` toolset is
    session-gated.
