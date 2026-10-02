@@ -179,7 +179,196 @@ class MainActivity : Activity() {
             }
         modelInput =
             EditText(this).apply {
-                hint = gevço-¢G§²ÚîÆ­yÒequestCode: Int,
+                hint = getString(R.string.model_name_hint)
+                inputType = InputType.TYPE_CLASS_TEXT
+                importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+            }
+        apiKeyInput =
+            EditText(this).apply {
+                hint = getString(R.string.model_api_key_hint)
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+                imeOptions = imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+            }
+        layout.addView(modelKeyStatus)
+        layout.addView(
+            Button(this).apply {
+                setText(R.string.use_openai_preset)
+                setOnClickListener {
+                    baseUrlInput.setText(OPENAI_BASE_URL)
+                    modelInput.setText(OPENAI_MODEL)
+                }
+            },
+        )
+        layout.addView(
+            Button(this).apply {
+                setText(R.string.use_deepseek_preset)
+                setOnClickListener {
+                    baseUrlInput.setText(DEEPSEEK_BASE_URL)
+                    modelInput.setText(DEEPSEEK_MODEL)
+                }
+            },
+        )
+        layout.addView(baseUrlInput)
+        layout.addView(modelInput)
+        layout.addView(apiKeyInput)
+        layout.addView(
+            Button(this).apply {
+                setText(R.string.save_model_settings)
+                setOnClickListener { saveModelSettings() }
+            },
+        )
+        layout.addView(
+            Button(this).apply {
+                setText(R.string.clear_model_api_key)
+                setOnClickListener { clearModelApiKey() }
+            },
+        )
+
+        layout.addView(sectionTitle(R.string.permissions_title, spacing))
+        layout.addView(TextView(this).apply { setText(R.string.trial_permissions_help) })
+        addSettingsButton(layout, R.string.open_accessibility_settings, Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        addSettingsButton(layout, R.string.open_notification_settings, Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        setContentView(ScrollView(this).apply { addView(layout) })
+    }
+
+    private fun sectionTitle(
+        label: Int,
+        spacing: Int,
+    ): TextView =
+        TextView(this).apply {
+            setText(label)
+            textSize = 20f
+            setPadding(0, spacing, 0, spacing / 4)
+        }
+
+    private fun refreshConfigurationStatus() {
+        val bootstrap = BootstrapStatusProvider.current()
+        val modelStatus = modelConfigStore.status()
+        runtimeStatus.setText(
+            if (taskCoordinator.isRuntimeAvailable) {
+                R.string.embedded_runtime_ready
+            } else {
+                R.string.embedded_runtime_missing
+            },
+        )
+        capabilityStatus.text =
+            if (bootstrap.enabledCapabilities.isEmpty()) {
+                getString(R.string.capabilities_disabled)
+            } else {
+                getString(R.string.capabilities_enabled, bootstrap.enabledCapabilities.joinToString())
+            }
+        modelKeyStatus.setText(
+            if (modelStatus.hasApiKey) {
+                R.string.model_key_configured
+            } else {
+                R.string.model_key_missing
+            },
+        )
+        baseUrlInput.setText(modelStatus.endpoint?.baseUrl ?: DEFAULT_BASE_URL)
+        modelInput.setText(modelStatus.endpoint?.model ?: DEFAULT_MODEL)
+        apiKeyInput.hint =
+            getString(
+                if (modelStatus.hasApiKey) {
+                    R.string.model_api_key_keep_hint
+                } else {
+                    R.string.model_api_key_hint
+                },
+            )
+        refreshAttachmentStatus()
+    }
+
+    private fun renderTaskState(state: HermesTaskSession) {
+        val busy = state.phase == HermesTaskPhase.RUNNING || state.phase == HermesTaskPhase.STOPPING
+        sendButton.isEnabled = !busy
+        stopButton.isEnabled = state.phase == HermesTaskPhase.RUNNING
+        selectAttachmentButton.isEnabled = !busy
+        clearAttachmentButton.isEnabled = !busy && attachmentSelectionStore.current() != null
+        conversation.text =
+            when (state.phase) {
+                HermesTaskPhase.IDLE -> getString(R.string.task_idle)
+                HermesTaskPhase.RUNNING -> getString(R.string.task_running, state.prompt)
+                HermesTaskPhase.STOPPING -> getString(R.string.task_stopping, state.prompt)
+                HermesTaskPhase.COMPLETED ->
+                    getString(R.string.task_completed, state.prompt, state.response)
+                HermesTaskPhase.CANCELLED -> getString(R.string.task_cancelled, state.prompt)
+                HermesTaskPhase.FAILED ->
+                    getString(
+                        when (state.failure) {
+                            HermesTaskFailure.CONFIGURATION -> R.string.task_failed_configuration
+                            HermesTaskFailure.RUNTIME_UNAVAILABLE -> R.string.task_failed_runtime
+                            else -> R.string.task_failed_execution
+                        },
+                    )
+            }
+    }
+
+    private fun saveModelSettings() {
+        try {
+            val endpoint =
+                ModelEndpointValidator.validate(
+                    baseUrlInput.text.toString(),
+                    modelInput.text.toString(),
+                )
+            val key = apiKeyInput.text.toString().takeIf { it.isNotBlank() }?.toCharArray()
+            modelConfigStore.save(endpoint, key)
+            apiKeyInput.text?.clear()
+            Toast.makeText(this, R.string.model_settings_saved, Toast.LENGTH_SHORT).show()
+            refreshConfigurationStatus()
+        } catch (_: IllegalArgumentException) {
+            Toast.makeText(this, R.string.model_settings_invalid, Toast.LENGTH_LONG).show()
+        } catch (_: IllegalStateException) {
+            Toast.makeText(this, R.string.model_settings_store_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun clearModelApiKey() {
+        try {
+            modelConfigStore.clearApiKey()
+            refreshConfigurationStatus()
+        } catch (_: IllegalStateException) {
+            Toast.makeText(this, R.string.model_settings_store_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun submitTaskWithNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST,
+            )
+            return
+        }
+        submitCurrentTask()
+    }
+
+    private fun submitCurrentTask() {
+        if (taskCoordinator.submit(taskInput.text.toString())) {
+            taskInput.text?.clear()
+            refreshAttachmentStatus()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun selectAttachment() {
+        val intent =
+            Intent(Intent.ACTION_OPEN_DOCUMENT)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .setType("*/*")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            startActivityForResult(intent, ATTACHMENT_PICK_REQUEST)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.attachment_picker_unavailable, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(
+        requestCode: Int,
         resultCode: Int,
         data: Intent?,
     ) {
