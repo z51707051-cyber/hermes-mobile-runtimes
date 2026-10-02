@@ -49,7 +49,6 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         taskCoordinator = (application as HermesMobileApplication).taskCoordinator
         buildUi()
         refreshConfigurationStatus()
@@ -185,10 +184,14 @@ class MainActivity : Activity() {
             }
         apiKeyInput =
             EditText(this).apply {
+                id = R.id.model_api_key_input
                 hint = getString(R.string.model_api_key_hint)
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                 importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
                 imeOptions = imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+                setOnFocusChangeListener { _, hasFocus ->
+                    setApiKeyScreenshotProtection(hasFocus)
+                }
             }
         layout.addView(modelKeyStatus)
         layout.addView(
@@ -313,6 +316,7 @@ class MainActivity : Activity() {
             val key = apiKeyInput.text.toString().takeIf { it.isNotBlank() }?.toCharArray()
             modelConfigStore.save(endpoint, key)
             apiKeyInput.text?.clear()
+            apiKeyInput.clearFocus()
             Toast.makeText(this, R.string.model_settings_saved, Toast.LENGTH_SHORT).show()
             refreshConfigurationStatus()
         } catch (_: IllegalArgumentException) {
@@ -325,9 +329,19 @@ class MainActivity : Activity() {
     private fun clearModelApiKey() {
         try {
             modelConfigStore.clearApiKey()
+            apiKeyInput.text?.clear()
+            apiKeyInput.clearFocus()
             refreshConfigurationStatus()
         } catch (_: IllegalStateException) {
             Toast.makeText(this, R.string.model_settings_store_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun setApiKeyScreenshotProtection(enabled: Boolean) {
+        if (enabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
 

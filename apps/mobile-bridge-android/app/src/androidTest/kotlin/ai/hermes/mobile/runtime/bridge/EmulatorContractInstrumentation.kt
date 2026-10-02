@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.WindowManager
+import android.widget.EditText
 import ai.hermes.mobile.runtime.bridge.protocol.CanonicalJson
 import ai.hermes.mobile.runtime.bridge.protocol.ProtocolCodec
 import ai.hermes.mobile.runtime.bridge.runtime.AndroidPolicyEnforcementPoint
@@ -41,6 +43,7 @@ class EmulatorContractInstrumentation : Instrumentation() {
         val mode = arguments.getString(ARG_MODE, MODE_GRANTED)
         try {
             verifyModelConfigEncryption()
+            verifyScreenshotWindowPolicy()
             when (mode) {
                 MODE_UNGRANTED -> verifyAccessibilityUnavailable()
                 MODE_GRANTED -> verifyGrantedScenarios()
@@ -91,6 +94,28 @@ class EmulatorContractInstrumentation : Instrumentation() {
         )
         store.clearApiKey()
     }
+
+    private fun verifyScreenshotWindowPolicy() {
+        val activity =
+            startActivitySync(
+                Intent(targetContext, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                },
+            ) as MainActivity
+        try {
+            val apiKeyInput = activity.findViewById<EditText>(R.id.model_api_key_input)
+            check(!activity.hasSecureWindowFlag(), "Hermes main window blocked screenshots by default")
+            runOnMainSync { apiKeyInput.requestFocus() }
+            check(activity.hasSecureWindowFlag(), "API key editing did not enable screenshot protection")
+            runOnMainSync { apiKeyInput.clearFocus() }
+            check(!activity.hasSecureWindowFlag(), "screenshot protection remained after API key editing")
+        } finally {
+            runOnMainSync { activity.finish() }
+        }
+    }
+
+    private fun Activity.hasSecureWindowFlag(): Boolean =
+        window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0
 
     private fun verifyAccessibilityUnavailable() {
         val capabilities = BridgeRuntime.availableCapabilities().toSet()
